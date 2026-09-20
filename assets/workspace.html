@@ -263,7 +263,18 @@ function startOperation(p,kind,input={},outcome='success',options={}){
 }
 function tick(id){const o=S.operations.find(o=>o.id===id);if(!o||o.status!=='running'){clearInterval(timers.get(id));timers.delete(id);return;}const i=o.steps.findIndex(s=>s.status==='running');const last=o.outcome==='failed'?Math.min(1,o.steps.length-1):o.outcome==='unknown'?Math.max(1,o.steps.length-2):o.steps.length-1;
  if(i>=last){finishOperation(o,o.outcome);return;}if(i>=0)o.steps[i].status='success';o.steps[i+1].status='running';persist();render();if(ui.modal?.kind==='opdetail'&&ui.modal.id===id)renderModal();}
-function notifyDependencies(p,o){S.projects.forEach(x=>{if(x.deps.includes(p.id))x.depChanges.push({project:p.id,change:uid('chg'),text:`${opLabels[o.kind]}已有内容被确认应用${o.status==='partial'?'，整体部分完成':''}`,time:now()})});}
+// 只比较已冻结且完整应用的实际内容；修订号、systemd 展示版本和后来保存的草稿不代表交付变化。
+function appliedConfigContent(p,c){return c?configText(p,p.type==='systemd'&&typeof c.source!=='string'?{...c,version:''}:c):null;}
+function notifyDependencies(p,o){
+ if(o.status!=='success'||!['deploy','apply','update','restore'].includes(o.kind)||o.dependencyNotificationChecked||!Object.prototype.hasOwnProperty.call(o.input,'applied')||!p.applied)return;
+ const previous=o.input.applied,current=p.applied;
+ // 旧演示数据缺少程序内容身份时不能由当前文件记录倒推出历史身份。
+ const programChanged=typeof previous?.contentIdentity==='string'&&previous.contentIdentity!==''&&typeof current.contentIdentity==='string'&&current.contentIdentity!==''&&previous.contentIdentity!==current.contentIdentity;
+ const changed=appliedConfigContent(p,previous)!==appliedConfigContent(p,current)||programChanged;
+ o.dependencyNotificationChecked=true;
+ if(!changed)return;
+ S.projects.forEach(x=>{if(x.deps.includes(p.id)&&!x.depChanges.some(c=>c.operation===o.id))x.depChanges.push({project:p.id,change:uid('chg'),operation:o.id,text:`${opLabels[o.kind]}已完整完成，实际配置或程序内容已改变`,time:now()});});
+}
 function addBackup(p,o){if(S.backups.some(b=>b.operation===o.id))return;S.backups.unshift({id:uid('backup'),project:p.id,time:now(),size:'256 MB（演示）',kind:'日',status:'usable',path:`controller:/backup-demo/${p.name}/${o.id}`,config:clone(o.input.applied||o.input.cfg),databases:p.software==='mysql'?['本实例全部目标数据库（演示）']:clone(o.input.backup.databases),files:true,source:o.planId?'计划触发（演示）':'手工备份（演示）',protected:false,operation:o.id});}
 function finishOperation(o,result='success'){
  if(!o||!['running','unknown'].includes(o.status))return;clearInterval(timers.get(o.id));timers.delete(o.id);const p=pr(o.project),input=o.input,before=input.before||{},at=now();o.outcome=result;o.status=result==='start-failed'?'partial':result;o.ended=result==='unknown'?null:at;
@@ -274,7 +285,7 @@ function finishOperation(o,result='success'){
  if(p){
   if(['deploy','apply','update'].includes(o.kind)){
    if(result==='success'){p.life='installed';p.applied=clone(input.cfg);p.appliedRev=input.draftRev;if(input.binary){p.programUpdate=S.programs.some(b=>b.name===input.binary.name&&b.arch===input.binary.arch&&b.identity!==input.binary.identity);if(p.draftRev===input.draftRev)p.cfg.contentIdentity=input.binary.identity;}p.components=[];p.unsafe=false;p.runtime=p.desired==='running'?'running':'stopped';p.health=p.runtime==='running'?'healthy':'na';p.observed=at;p.dataStatus=p.dataStatus==='retained'?'in-place':p.dataStatus;notifyDependencies(p,o);}
-   else if(result==='partial'){p.life=before.life==='installed'?'installed':'incomplete';p.components=[{name:'程序 / 镜像文件',result:'部分新内容已交付 '+input.cfg.version},{name:'配置与运行定义',result:'未完整核对，参照仍保留历史完整版本'}];o.message='程序或配置部分交付，尚未完整应用。不是全部旧版，也没有自动回退。';o.steps[o.steps.length-2].status='failed';o.steps[o.steps.length-1].status='pending';notifyDependencies(p,o);}
+   else if(result==='partial'){p.life=before.life==='installed'?'installed':'incomplete';p.components=[{name:'程序 / 镜像文件',result:'部分新内容已交付 '+input.cfg.version},{name:'配置与运行定义',result:'未完整核对，参照仍保留历史完整版本'}];o.message='程序或配置部分交付，尚未完整应用。不是全部旧版，也没有自动回退。';o.steps[o.steps.length-2].status='failed';o.steps[o.steps.length-1].status='pending';}
   }
   if(['start','stop','restart'].includes(o.kind)){
    if(result==='success'){p.desired=o.kind==='stop'?'stopped':o.kind==='start'?'running':p.desired;p.runtime=o.kind==='stop'?'stopped':'running';p.health=p.runtime==='running'?'healthy':'na';p.observed=at;}
