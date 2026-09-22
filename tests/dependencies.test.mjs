@@ -49,27 +49,13 @@ test('程序身份确实改变才通知；未知历史身份和展示版本号�
   }
 });
 
-for (const kind of ['start', 'stop', 'restart', 'backup']) {
+for (const kind of ['start', 'stop', 'restart']) {
   test(`${kind} 不通知依赖`, () => {
     const p = scenario();
     p.run(`const operation=startOperation(subject,'${kind}',{},'success',{hold:true});finishOperation(operation,'success');`);
     assert.equal(changes(p), 0);
   });
 }
-
-for (const outcome of ['success', 'partial', 'unknown', 'start-failed']) {
-  test(`恢复 ${outcome} 只有完整成功且正文变化才通知`, () => {
-    const p = scenario();
-    p.run(`const backup=S.backups.find(b=>b.id==='b4');backup.config.env+='\\nRESTORED=change';const operation=startOperation(subject,'restore',{backupId:backup.id},'${outcome}',{hold:true});finishOperation(operation,'${outcome}');`);
-    assert.equal(changes(p), outcome === 'success' ? 1 : 0);
-  });
-}
-
-test('同内容恢复不通知', () => {
-  const p = scenario();
-  p.run("const operation=startOperation(subject,'restore',{backupId:'b4'},'success',{hold:true});finishOperation(operation,'success');");
-  assert.equal(changes(p), 0);
-});
 
 test('原操作由 unknown 核对成功只通知一次，刷新和重复回读不重复追加', () => {
   const p = scenario();

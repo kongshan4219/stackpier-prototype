@@ -1,6 +1,6 @@
 'use strict';
 
-const navItems=[['overview','总览','home','工作空间'],['servers','服务器','server',''],['projects','项目','box',''],['templates','部署配置','config','配置与保护'],['programs','程序文件','file',''],['backups','备份与恢复','backup',''],['plans','计划与策略','clock',''],['monitor','巡检与通知','monitor','运行与网络'],['firewall','主机防火墙','shield',''],['dns','DNS 记录','globe',''],['operations','操作记录','list',''],['settings','设置','settings','实例']];
+const navItems=[['overview','总览','home','工作空间'],['servers','服务器','server',''],['projects','项目','box',''],['templates','部署配置','config','配置'],['programs','程序文件','file',''],['monitor','巡检与通知','monitor','运行与网络'],['firewall','主机防火墙','shield',''],['dns','DNS 记录','globe',''],['operations','操作记录','list',''],['settings','设置','settings','实例']];
 
 function brand(){return '<div class="brand" aria-label="栈桥 StackPier"><span class="brand-mark" aria-hidden="true"><i></i><b></b></span><span class="brand-word"><strong>栈桥</strong><span lang="en">STACKPIER</span></span></div>'}
 
@@ -16,4 +16,4 @@ function render(){
  if(focus){const f=document.getElementById(focus);if(f){f.focus({preventScroll:true});try{if(ss!=null)f.setSelectionRange(ss,se)}catch{}}}
 }
 
-function pageContent(){switch(ui.page){case'overview':return overview();case'servers':return serversPage();case'projects':return projectsPage();case'project':return projectPage();case'templates':return templatesPage();case'programs':return programsPage();case'backups':return backupsPage();case'plans':return plansPage();case'monitor':return monitorPage();case'firewall':return firewallPage();case'dns':return dnsPage();case'operations':return operationsPage();case'settings':return settingsPage();default:return'';}}
+function pageContent(){switch(ui.page){case'overview':return overview();case'servers':return serversPage();case'projects':return projectsPage();case'project':return projectPage();case'templates':return templatesPage();case'programs':return programsPage();case'monitor':return monitorPage();case'firewall':return firewallPage();case'dns':return dnsPage();case'operations':return operationsPage();case'settings':return settingsPage();default:return'';}}

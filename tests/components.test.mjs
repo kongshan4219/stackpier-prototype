@@ -5,7 +5,7 @@ import { prototype } from './prototype-harness.mjs';
 test('实际入口在组件全部就绪后初始化；组件加载失败保留错误与重载入口', () => {
   const p = prototype();
   assert.equal(p.run('prototypeLoading.ready'), true);
-  const failed = prototype(undefined, { missingScript: 'assets/features/plans.js' });
+  const failed = prototype(undefined, { missingScript: 'assets/features/monitoring.js' });
   assert.equal(failed.run('prototypeLoading.ready'), false);
   assert.equal(failed.run('prototypeLoading.errors.length'), 1);
   assert.match(failed.document.getElementById('boot-status').textContent, /组件加载失败/);
@@ -16,7 +16,7 @@ test('实际入口在组件全部就绪后初始化；组件加载失败保留�
 
 test('入口组件共同渲染全部导航页面、项目页与内容分类', () => {
   const p = prototype();
-  const pages = ['overview', 'servers', 'projects', 'frp', 'templates', 'programs', 'backups', 'plans', 'monitor', 'firewall', 'dns', 'operations', 'settings'];
+  const pages = ['overview', 'servers', 'projects', 'frp', 'templates', 'programs', 'monitor', 'firewall', 'dns', 'operations', 'settings'];
   assert.equal(p.run('navItems.map(item=>item[0]).join(",")'), pages.join(','));
   for (const page of pages) {
     p.click('navigate', { page });
@@ -24,12 +24,12 @@ test('入口组件共同渲染全部导航页面、项目页与内容分类', ()
     assert.match(p.html('app'), /<main id="main"[^>]*>[\s\S]*<h1\b/, page);
   }
   p.click('project', { id: 'p1' });
-  for (const tab of ['overview', 'config', 'backups', 'monitor', 'deps', 'logs', 'history']) {
+  for (const tab of ['overview', 'config', 'monitor', 'deps', 'logs', 'history']) {
     p.click('tab', { id: tab });
     assert.equal(p.run('ui.tab'), tab);
     assert.match(p.html('app'), /<h1\b/);
   }
-  for (const [page, action, id, state] of [['backups', 'backuptab', 'ranges', 'backupTab'], ['plans', 'plantab', 'policies', 'planTab'], ['monitor', 'monitortab', 'notifications', 'monitorTab']]) {
+  for (const [page, action, id, state] of [['monitor', 'monitortab', 'notifications', 'monitorTab']]) {
     p.click('navigate', { page });
     p.click(action, { id });
     assert.equal(p.run('ui.' + state), id);
@@ -52,8 +52,7 @@ test('关键弹窗通过共同分发器渲染，FRP 弹窗覆盖仍生效', () =
     ['serveredit', {}], ['serverdetail', { id: 's1' }],
     ['newproject', { step: 1, draft: {} }], ['projectop', { id: 'p1', op: 'stop' }],
     ['configdiff', { id: 'p1' }], ['templateedit', {}], ['programupload', {}],
-    ['backupconfig', { id: 'p1' }], ['restore', { id: 'b4' }],
-    ['planedit', {}], ['policyedit', {}], ['dnsedit', {}], ['firewalledit', {}],
+    ['dnsedit', {}], ['firewalledit', {}],
     ['feedback', {}], ['scenes', {}],
     ['frp-nodeedit', { id: 'n4' }], ['frp-proxyedit', { node: 'n4', index: 0 }],
     ['frp-template', { id: 'frpc.toml.tpl' }], ['frp-settings', {}],
@@ -87,6 +86,14 @@ test('演示访问流程保留错误提示、首次设置与登录，密码不�
   assert.equal(p.run('ui.auth'), null);
   assert.match(p.html('app'), /<main id="main"/);
   assert.equal(p.saved().includes(password), false);
+});
+
+test('共享配置跳转到 FRP 页面后不会重新打开已经关闭的弹窗', () => {
+  const p = prototype();
+  p.run('frpEnsure();openModal("templateedit",{id:"frp-template-client"});');
+  assert.equal(p.run('ui.page'), 'frp');
+  assert.equal(p.run('ui.modal'), null);
+  assert.equal(p.document.getElementById('modal').open, false);
 });
 
 test('共享配置正文原样保存；显式采用和项目保存都不应用或启动', () => {

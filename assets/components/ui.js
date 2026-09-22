@@ -4,9 +4,9 @@ const lifeName={draft:'未部署',incomplete:'部署未完成',installed:'已部
 
 const runtimeName={running:'运行中',stopped:'已停止',partial:'部分运行',unknown:'待核对',na:'不适用'};
 
-const statusName={running:'执行中',success:'成功',failed:'明确失败',partial:'部分完成',unknown:'结果待核对',rejected:'已拒绝',skipped:'已跳过',missed:'已错过',pending:'未执行',usable:'可用',deleted:'已删除'};
+const statusName={running:'执行中',success:'成功',failed:'明确失败',partial:'部分完成',unknown:'结果待核对',rejected:'已拒绝',skipped:'已跳过',missed:'已错过',pending:'未执行',deleted:'已删除'};
 
-const statusTone={running:'running',success:'success',usable:'success',failed:'error',partial:'warning',unknown:'warning',rejected:'warning',skipped:'',missed:'',pending:'',deleted:''};
+const statusTone={running:'running',success:'success',failed:'error',partial:'warning',unknown:'warning',rejected:'warning',skipped:'',missed:'',pending:'',deleted:''};
 
 function badge(text,tone=''){return `<span class="badge ${tone}">${h(text)}</span>`}
 
@@ -34,7 +34,7 @@ function check(name,label,checked=false,hint=''){return `<label class="check"><i
 
 function tabs(items,active,action='tab'){return `<div class="tabs" role="navigation" aria-label="内容分类">${items.map(([id,name])=>`<button class="${active===id?'active':''}" data-action="${action}" data-id="${id}" ${active===id?'aria-current="page"':''}>${h(name)}</button>`).join('')}</div>`}
 
-function projectIcon(p){return p.software==='mysql'||p.software==='redis'?'backup':p.software==='frpc'?'link':'box'}
+function projectIcon(p){return p.software==='mysql'||p.software==='redis'?'database':p.software==='frpc'?'link':'box'}
 
 function runtimeBadge(p){return badge(runtimeName[p.runtime],p.runtime==='running'?'success':p.runtime==='unknown'||p.runtime==='partial'?'warning':'')}
 

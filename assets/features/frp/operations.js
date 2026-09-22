@@ -52,7 +52,7 @@ function frpFinish(o,result){
   if(p.frpLastOp&&p.frpLastOp!==o.id)return;
   if(state==='success'){
    if(op==='deploy'){p.life='installed';p.frpApplied=clone(x.snapshot);p.applied={...clone(p.cfg),port:x.role==='server'?x.snapshot.node.bind_port:0,appConfig:x.files.toml,version:'模拟程序条件（非附件二进制）'};p.appliedRev=x.snapshot.revision;p.runtime=o.input.goal==='running'?'running':'stopped';p.components=[];}
-   else if(op==='uninstall'){p.life='uninstalled';p.runtime='na';p.plansPaused=true;p.dataStatus='retained';p.components=[];}
+   else if(op==='uninstall'){p.life='uninstalled';p.runtime='na';p.monitorPaused=true;p.dataStatus='retained';p.components=[];}
    else {p.runtime=op==='stop'?'stopped':'running';p.components=[];if(S.review.p1!=='accepted')p.desired=op==='stop'?'stopped':'running';}
    p.health='unknown';p.observed=at;p.lastCheck=at;
   }else if((state==='partial'||state==='failed'&&anySuccess)&&op==='deploy'){

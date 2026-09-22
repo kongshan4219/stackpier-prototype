@@ -4,7 +4,7 @@ const dialog=document.getElementById('modal');
 
 let lastFocus=null;
 
-function openModal(kind,data={}){if(!dialog.open)lastFocus=document.activeElement;ui.modal={kind,...data};renderModal();if(!dialog.open)dialog.showModal();setTimeout(()=>{(dialog.querySelector('[autofocus]')||dialog.querySelector('input:not([type=checkbox]):not([disabled]),select,textarea,button'))?.focus()},0)}
+function openModal(kind,data={}){if(!prototypeModals[kind]&&!kind.startsWith('frp-')){closeModal();toast('此入口当前不提供，请从现有页面重新选择。');return;}if(!dialog.open)lastFocus=document.activeElement;ui.modal={kind,...data};renderModal();if(!ui.modal)return;if(!dialog.open)dialog.showModal();setTimeout(()=>{(dialog.querySelector('[autofocus]')||dialog.querySelector('input:not([type=checkbox]):not([disabled]),select,textarea,button'))?.focus()},0)}
 
 function closeModal(){if(dialog.open)dialog.close();ui.modal=null;try{lastFocus?.focus({preventScroll:true})}catch{}}
 
