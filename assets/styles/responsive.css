@@ -1,0 +1,80 @@
+@keyframes spin{to{transform:rotate(360deg)}
+}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important}
+}
+@media(min-width:1600px){.workbench{padding-top:38px}
+.page-heading{margin-bottom:30px}
+}
+@media(max-width:1170px){.workbench{padding:26px}
+.topline{padding:0 26px}
+.grid3{grid-template-columns:1fr 1fr}
+.server-row{grid-template-columns:1fr 1.25fr}
+.server-actions{grid-column:1/-1;justify-content:flex-end;max-width:none}
+.server-fingerprint{margin-top:0}
+.state-grid{grid-template-columns:repeat(3,1fr)}
+.state-cell{border-bottom:1px solid var(--line)}
+.summary-grid{gap:10px}
+.metric{padding:17px}
+.app-footer{padding-left:26px;padding-right:26px}
+}
+
+@media(max-width:820px){.workspace-sidebar{transform:translateX(-100%);transition:transform .18s;top:44px;width:236px;box-shadow:6px 0 30px #21364e1a}
+.nav-open .workspace-sidebar{transform:translateX(0)}
+.nav-open .overlay{display:block;position:fixed;inset:44px 0 0;background:#21364e44;z-index:19}
+.workspace-content{margin-left:0}
+.mobile-header{display:flex;height:72px;align-items:center;justify-content:space-between;padding:0 22px;border-bottom:1px solid var(--line);background:white}
+.mobile-header .brand-mark{transform:scale(.85)}
+.mobile-header .brand-word strong{font-size:18px}
+.topline{height:44px;padding:0 22px}
+.workbench{padding:23px 22px 36px}
+.review-bar{padding:0 12px;font-size:11px}
+.review-bar button{padding:5px 7px}
+.review-tag,.review-number{display:none}
+.toast-region{left:50%}
+.state-grid{grid-template-columns:repeat(3,1fr)}
+.summary-grid{grid-template-columns:repeat(4,1fr)}
+.metric-number{font-size:25px}
+.page-heading h1{font-size:26px}
+.app-footer{padding:12px 22px 22px}
+.desktop-only{display:none}
+}
+
+@media(max-width:560px){.review-bar{height:auto;min-height:44px;gap:6px;flex-wrap:wrap;padding:7px 12px}
+.review-label strong{font-size:11px}
+.review-bar .review-number{display:none}
+.review-bar button{font-size:10px;min-height:28px}
+.workspace-sidebar{top:44px}
+.workbench{padding:22px 16px}
+.topline{padding:0 16px}
+.page-heading{align-items:flex-start;flex-direction:column;gap:15px;margin-bottom:21px}
+.page-actions{width:100%;gap:7px}
+.page-actions .btn{flex:1}
+.summary-grid{grid-template-columns:repeat(2,1fr)}
+.grid2,.grid3,.grid4{grid-template-columns:1fr}
+.state-grid{grid-template-columns:repeat(2,1fr)}
+.state-cell{padding:14px}
+.state-cell:last-child{grid-column:1/-1}
+.server-row{grid-template-columns:1fr;padding:18px;gap:14px}
+.server-actions{justify-content:flex-start}
+.server-result .details-grid{max-width:none}
+.server-fingerprint{font-size:9px}
+.card-body{padding:18px}
+.card-head{padding:16px 18px}
+.field-row,.diff-grid,.review-scenes,.checkbox-grid{grid-template-columns:1fr}
+.dialog{width:calc(100vw - 18px);max-height:calc(100svh - 26px)}
+.dialog-layout{max-height:calc(100svh - 30px)}
+.dialog-header,.dialog-body,.dialog-footer{padding:18px}
+.dialog-footer{flex-wrap:wrap;gap:8px}
+.dialog-footer .btn{flex:1}
+.dialog-footer .left{margin:0}
+.toolbar .searchbox{min-width:0;max-width:none;flex:1}
+.toolbar .filter{max-width:140px}
+.table-wrap table{min-width:680px}
+.tabs{gap:20px}
+.auth-main{margin-top:24px}
+.form-bottom{align-items:flex-start;flex-direction:column}
+.toast-region{bottom:14px}
+.review-controls{gap:2px!important}
+.app-footer{font-size:9px;flex-wrap:wrap}
+.insight{font-size:11px}
+}

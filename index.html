@@ -1,17 +1,65 @@
 <!doctype html>
-<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'self'; base-uri 'none'; form-action 'none'; frame-src 'none'">
-<meta name="description" content="StackPier 静态交互原型，含基于脱敏部署方案的 FRP 三角色管理。所有业务均为浏览器模拟。">
-<title>栈桥 · 交互原型</title><style>body{margin:0;background:#f5f7fa;color:#243447;font:14px/1.7 system-ui,sans-serif}main{max-width:640px;margin:18vh auto;padding:28px}h1{font-size:24px}button{padding:10px 20px;cursor:pointer}p{color:#60748a}</style></head>
-<body><main><h1>栈桥 · 交互原型</h1><p id="boot-status" role="status">正在加载本站静态界面资源……</p><noscript>需要启用 JavaScript 才能试用交互原型。</noscript><button id="reload" hidden>重新加载</button></main>
-<script>
-(async function(){
- try {
-  const paths=['assets/workspace.html?base=5e466522','assets/frp.js?review=frp-1'];
-  const [base,extension]=await Promise.all(paths.map(async path=>{const response=await fetch(path,{cache:'no-store',credentials:'omit'});if(!response.ok)throw new Error('静态资源 '+response.status);return response.text();}));
-  if(!base.startsWith('<!doctype html>')||!extension.includes('const FRP_SOURCE='))throw new Error('静态资源内容不完整');
-  const html=base.replace(/<\/body>\s*<\/html>\s*$/i,()=>'<script>'+extension+'\n<\/script></body></html>');
-  document.open();document.write(html);document.close();
- }catch(error){document.getElementById('boot-status').textContent='未能载入完整原型。请刷新重试；本站不会发送 SSH 或其他运维请求。'+(error.message||'');const button=document.getElementById('reload');button.hidden=false;button.onclick=()=>location.reload();}
-})();
-</script></body></html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src data:; connect-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'">
+  <meta name="description" content="StackPier 可交互审阅原型。所有数据为浏览器内模拟，不连接任何真实服务器或服务。">
+  <title>栈桥 · 交互原型</title>
+  <script src="assets/core/loading.js"></script>
+  <link rel="stylesheet" href="assets/styles/tokens.css">
+  <link rel="stylesheet" href="assets/styles/base.css">
+  <link rel="stylesheet" href="assets/styles/workspace.css">
+  <link rel="stylesheet" href="assets/styles/responsive.css">
+  <link rel="stylesheet" href="assets/styles/configuration.css">
+  <link rel="stylesheet" href="assets/features/frp/frp.css">
+  <!-- 按依赖顺序加载独立组件；defer 共用同一份状态，不拼接页面或生成大脚本。 -->
+  <script defer src="assets/core/utils.js"></script>
+  <script defer src="assets/data/sample.js"></script>
+  <script defer src="assets/components/icons.js"></script>
+  <script defer src="assets/core/registry.js"></script>
+  <script defer src="assets/core/state.js"></script>
+  <script defer src="assets/components/ui.js"></script>
+  <script defer src="assets/core/navigation.js"></script>
+  <script defer src="assets/components/shell.js"></script>
+  <script defer src="assets/components/modal.js"></script>
+  <script defer src="assets/data/scenes.js"></script>
+  <script defer src="assets/features/projects/configuration.js"></script>
+  <script defer src="assets/features/operations/execution.js"></script>
+  <script defer src="assets/features/overview.js"></script>
+  <script defer src="assets/features/servers.js"></script>
+  <script defer src="assets/features/projects/list.js"></script>
+  <script defer src="assets/features/projects/detail.js"></script>
+  <script defer src="assets/features/monitoring.js"></script>
+  <script defer src="assets/features/backups.js"></script>
+  <script defer src="assets/features/projects/dependencies.js"></script>
+  <script defer src="assets/features/deployments.js"></script>
+  <script defer src="assets/features/programs.js"></script>
+  <script defer src="assets/features/plans.js"></script>
+  <script defer src="assets/features/network/firewall.js"></script>
+  <script defer src="assets/features/network/dns.js"></script>
+  <script defer src="assets/features/operations/view.js"></script>
+  <script defer src="assets/features/settings.js"></script>
+  <script defer src="assets/features/auth.js"></script>
+  <script defer src="assets/features/projects/create.js"></script>
+  <script defer src="assets/features/network/shared.js"></script>
+  <script defer src="assets/features/operations/results.js"></script>
+  <script defer src="assets/features/review.js"></script>
+  <script defer src="assets/core/events.js"></script>
+  <script defer src="assets/features/frp/data.js"></script>
+  <script defer src="assets/features/frp/model.js"></script>
+  <script defer src="assets/features/frp/files.js"></script>
+  <script defer src="assets/features/frp/views.js"></script>
+  <script defer src="assets/features/frp/dialogs.js"></script>
+  <script defer src="assets/features/frp/operations.js"></script>
+  <script defer src="assets/features/frp/integration.js"></script>
+  <script defer src="assets/features/frp/events.js"></script>
+  <script defer src="assets/boot.js"></script>
+</head>
+<body>
+  <div id="app"><main class="workbench" id="prototype-loading"><h1>栈桥 · 交互原型</h1><p id="boot-status" role="status">正在加载界面组件……</p><button id="reload" class="btn" hidden>重新加载</button></main></div>
+  <dialog id="modal" class="dialog" aria-labelledby="dialog-title"></dialog>
+  <div id="toasts" class="toast-region" aria-live="polite"></div>
+  <noscript>此交互原型需要启用 JavaScript；只加载本站静态文件，不连接真实服务器。</noscript>
+</body>
+</html>

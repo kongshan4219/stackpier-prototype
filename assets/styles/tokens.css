@@ -1,0 +1,2 @@
+/* 基于仓库 source/styles.css 与 web/src/servers.css 的雾白、墨蓝令牌；仅用于交互审阅。 */
+:root{--canvas:#f5f7fa;--surface:#fff;--ink:#21364e;--text:#243447;--muted:#728091;--line:#e2e7ee;--accent:#243e5b;--accent-hover:#172e48;--focus:#6c8fae;--error:#ac413c;--error-surface:#fff4f2;--success:#427368;--success-surface:#edf4f1;--warning:#8a6939;--warning-surface:#fbf6ec;--mono:SFMono-Regular,Consolas,"Liberation Mono",monospace;--font:-apple-system,BlinkMacSystemFont,"PingFang SC","Noto Sans CJK SC","Microsoft YaHei",sans-serif}

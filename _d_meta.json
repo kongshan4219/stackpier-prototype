@@ -1,0 +1,22 @@
+{
+  "type": "design",
+  "designSystems": [],
+  "primaryDesignSystem": null,
+  "assets": {
+    "栈桥统一原型": {
+      "versions": [
+        {
+          "path": "index.html",
+          "createdAt": "2026-09-20T17:27:15.563Z",
+          "status": "needs-review",
+          "viewport": {
+            "width": 1440,
+            "height": 900
+          }
+        }
+      ]
+    }
+  },
+  "createdAt": "2026-09-20T17:27:15.563Z",
+  "updatedAt": "2026-09-22T09:41:39.333Z"
+}
