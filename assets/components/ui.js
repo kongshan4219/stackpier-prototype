@@ -36,7 +36,9 @@ function tabs(items,active,action='tab'){return `<div class="tabs" role="navigat
 
 function projectIcon(p){return p.software==='mysql'||p.software==='redis'?'database':p.software==='frpc'?'link':'box'}
 
-function runtimeBadge(p){return badge(runtimeName[p.runtime],p.runtime==='running'?'success':p.runtime==='unknown'||p.runtime==='partial'?'warning':'')}
+function runtimeBadge(p){if(p.runtimeCheckStatus==='unknown')return badge('当前待核对','warning')+`<span class="cell-sub">上次观测：${h(runtimeName[p.runtime])}</span>`;return badge(runtimeName[p.runtime],p.runtime==='running'?'success':p.runtime==='unknown'||p.runtime==='partial'?'warning':'')}
+
+function isExpectedStop(p){return p.stopVerified===true&&p.desired==='stopped'&&p.runtime==='stopped'&&p.runtimeCheckStatus!=='unknown';}
 
 function searchFilter(placeholder='搜索名称…',extra=''){return `<div class="toolbar"><div class="searchbox">${I('search')}<input id="global-search" data-filter="q" value="${h(ui.q)}" placeholder="${h(placeholder)}" aria-label="${h(placeholder)}"></div>${extra}<span class="grow"></span></div>`}
 

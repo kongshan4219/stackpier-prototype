@@ -4,6 +4,44 @@ function activeOps(p){return S.operations.filter(o=>(o.status==='running'||o.sta
 
 const opLabels={deploy:'部署',apply:'应用配置',update:'更新程序 / 镜像',start:'启动',stop:'停止',restart:'重启',uninstall:'卸载',replica:'初始化只读副本',env:'补齐缺失环境'};
 
+function isRuntimeAction(kind){return ['start','stop','restart'].includes(kind);}
+
+// 命令返回与实际状态是两份证据；终态还必须证明本次执行已经结束。
+function assessRuntimeEvidence(evidence){
+ const {kind,requestedState,commandResult,executionEnded,identityVerified,observedState,observedAt,restartVerified,notBefore}=evidence;
+ const fresh=!!observedAt&&!Number.isNaN(Date.parse(observedAt))&&(!notBefore||Date.parse(observedAt)>=Date.parse(notBefore));
+ const canUpdateObservation=identityVerified===true&&['running','stopped','partial'].includes(observedState)&&fresh;
+ const baselineVerified=canUpdateObservation&&executionEnded===true&&['running','stopped'].includes(observedState);
+ const targetReached=canUpdateObservation&&observedState===requestedState;
+ let status='unknown',reason='尚未取得当前实际状态，保留上次观测与资源保护。';
+ if(canUpdateObservation){
+  if(executionEnded!==true)reason='已取得状态快照，但尚不能证明原执行已结束，继续保留保护。';
+  else if(observedState==='partial'){status='partial';reason='本次执行已结束，仅部分运行成员达到请求状态。';}
+  else if(!targetReached){status='failed';reason='本次执行已结束，但实际状态没有达到请求状态。';}
+  else if(kind==='restart'&&restartVerified!==true)reason='当前运行不代表本次重启已完成，仍缺停止再启动或新进程证据。';
+  else{status='success';reason=commandResult==='error'?'命令报错，但本次执行已结束，实际状态核对已达到请求。':'本次执行已结束，实际状态及必要动作证据核对通过。';}
+ }
+ return {status,reason,canUpdateObservation,baselineVerified,targetReached,observedState,observedAt};
+}
+
+function applyRuntimeObservation(p,assessment,{kind,operationId}={}){
+ if(!p||p.lastRuntimeOperation&&p.lastRuntimeOperation!==operationId)return false;
+ if(!assessment.canUpdateObservation){p.runtimeCheckStatus='unknown';p.health='unknown';return false;}
+ if(p.observed&&Date.parse(assessment.observedAt)<Date.parse(p.observed))return false;
+ p.runtime=assessment.observedState;p.observed=assessment.observedAt;p.runtimeCheckStatus='verified';
+ if(p.runtime==='running')p.stopVerified=false;
+ if(assessment.baselineVerified)p.desired=p.runtime;
+ if(assessment.status==='success'&&assessment.targetReached&&kind==='stop')p.stopVerified=true;
+ p.health=p.runtime==='running'?'healthy':p.runtime==='stopped'&&p.stopVerified?'na':'unhealthy';
+ return true;
+}
+
+function simulatedRuntimeEvidence(o,result='success'){
+ if(result&&typeof result==='object')return {...clone(result),observedAt:Object.hasOwn(result,'observedAt')?result.observedAt:result.observedState==='unknown'?null:now()};
+ const requestedState=o.input.requestedState||(o.kind==='stop'?'stopped':'running');
+ return {commandResult:result==='success'?'success':result==='unknown'?'unknown':'error',executionEnded:result!=='unknown',identityVerified:result!=='unknown',observedState:result==='unknown'?'unknown':result==='partial'?'partial':result==='failed'?o.input.before?.runtime||'unknown':requestedState,observedAt:result==='unknown'?null:now(),restartVerified:result==='success'};
+}
+
 function resourcesFor(p,kind){const keys=['project:'+p.id];if(p.software==='mysql')keys.push('mysql:'+p.id+':*');if(p.software==='redis')keys.push('redis:'+p.id+':*');return keys;}
 
 function intersects(a,b){return a===b||(a.endsWith(':*')&&b.startsWith(a.slice(0,-1)))||(b.endsWith(':*')&&a.startsWith(b.slice(0,-1)));}
@@ -36,9 +74,11 @@ function startOperation(p,kind,input={},outcome='success',options={}){
  const resources=p?[...resourcesFor(p,kind),...(input.extraResources||[])]:input.resources||[];const cf=conflictFor(resources);if(cf)return rejectOperation(p,kind,'与原操作 '+cf.label+' 冲突，本次不受理。');
  const fixed={...clone(input),...(p?{cfg:clone(p.cfg),applied:clone(p.applied),draftRev:p.draftRev,before:{life:p.life,runtime:p.runtime,desired:p.desired,health:p.health}}:{})};
  if(p?.type==='systemd'&&['deploy','update'].includes(kind)){const binary=S.programs.find(b=>b.name===p.cfg.program&&b.arch===sr(p.server)?.arch);if(binary){fixed.binary=clone(binary);fixed.cfg.contentIdentity=binary.identity;}}
- if(p&&['start','stop'].includes(kind)&&S.review.p1==='accepted')p.desired=kind==='start'?'running':'stopped';
- if(p&&kind==='deploy'&&input.desired)p.desired=input.desired;
- const o={id:uid('op'),kind,project:p?.id,label:input.label||`${opLabels[kind]||'修改网络'} ${p?.name||''}`,status:'running',time:now(),input:fixed,resources,outcome,steps:stepsFor(kind,fixed),message:'已受理并固定输入；这里仅执行浏览器模拟。',hold:!!options.hold};o.steps[0].status='running';S.operations.unshift(o);persist();render();closeModal();if(!options.silent)openModal('opdetail',{id:o.id});
+ if(p&&isRuntimeAction(kind))fixed.requestedState=kind==='stop'?'stopped':'running';
+ if(p&&kind==='deploy')fixed.requestedState=input.desired||p.desired;
+ const o={id:uid('op'),kind,project:p?.id,label:input.label||`${opLabels[kind]||'修改网络'} ${p?.name||''}`,status:'running',time:now(),input:fixed,resources,outcome,steps:stepsFor(kind,fixed),message:'已受理并固定输入；这里仅执行浏览器模拟。',hold:!!options.hold};o.steps[0].status='running';S.operations.unshift(o);
+ if(p&&isRuntimeAction(kind)){p.lastRuntimeOperation=o.id;if(['start','restart'].includes(kind))p.stopVerified=false;}
+ persist();render();closeModal();if(!options.silent)openModal('opdetail',{id:o.id});
  if(!o.hold)timers.set(o.id,setInterval(()=>tick(o.id),900));return o;
 }
 

@@ -31,6 +31,22 @@ function migrateDeferredProtection(state){
 
 migrateDeferredProtection(S);
 
+// 旧 P1 只改变受理意图，不能升级成当前实际状态或预期停止的证据。
+function migrateRuntimeReview(state){
+ const legacyIntent=Object.hasOwn(state.review,'p1');
+ for(const project of state.projects){
+  const last=state.operations.find(operation=>operation.project===project.id&&['start','stop','restart'].includes(operation.kind)&&operation.status!=='rejected');
+  if(legacyIntent&&last&&['running','unknown','failed','partial'].includes(last.status)&&last.input?.before?.desired)project.desired=last.input.before.desired;
+  if(project.stopVerified===undefined)project.stopVerified=project.life==='installed'&&project.desired==='stopped'&&project.runtime==='stopped'&&!!project.observed&&!(last&&['running','unknown'].includes(last.status));
+ }
+ for(const operation of state.operations){
+  if(['start','stop','restart'].includes(operation.kind)&&operation.input)operation.input.requestedState??=operation.kind==='stop'?'stopped':'running';
+ }
+ delete state.review.p1;
+}
+
+migrateRuntimeReview(S);
+
 S.operations.forEach(o=>{if(o.status==='running'){o.status='unknown';o.message='页面刷新时演示执行尚未完成。保留输入及已确认步骤，需核对原操作，不自动重跑。';o.interrupted=true;}});
 
 let ui={page:'overview',project:'p1',tab:'overview',templateTab:'templates',monitorTab:'checks',q:'',filter:'all',server:'all',zone:'all',view:'table',nav:false,auth:null,initialized:true,password:DEMO_PASSWORD,scenario:'',nextOutcome:'success',modal:null,showAllOps:false};

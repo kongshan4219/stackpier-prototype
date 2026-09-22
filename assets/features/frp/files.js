@@ -1,19 +1,37 @@
 'use strict';
 // 逐角色生成 TOML / unit、固定参照并校验草稿。
 const frpQuote=v=>JSON.stringify(String(v)).replace(/\u007f/g,'\\u007f');
+function frpSubstitute(text,values){return text.replace(/\$\$|\$\{([A-Za-z_][A-Za-z0-9_]*)\}|\$([A-Za-z_][A-Za-z0-9_]*)|\$/g,(token,braced,plain)=>{if(token==='$$')return '$';const key=braced||plain;if(!key||!Object.hasOwn(values,key))throw Error('模板占位符未知或不完整：'+token);return String(values[key]);});}
+function frpValidateTemplate(name,text){
+ if(!frpTemplateSlots.includes(name))throw Error('仅维护三种角色的六类 TOML / service 模板。');
+ if(!text.trim())throw Error('模板正文不能为空。');
+ const role=frpTemplateRole(name),toml=name.endsWith('.toml.tpl');
+ const allowed=toml?(role==='server'?['bind_addr','bind_port','auth_method','auth_token']:['server_ip','bind_port','auth_method','auth_token',role==='client'?'proxies':'visitors']):['server_ip'];
+ frpSubstitute(text,Object.fromEntries(allowed.map(key=>[key,''])));
+ const authKeys=[...text.matchAll(/^\s*(?:auth|"auth"|'auth')\s*\.\s*(token|method|"token"|"method"|'token'|'method')\s*=/gm)].map(match=>match[1].replace(/["']/g,''));
+ if(toml&&(authKeys.filter(key=>key==='token').length!==1||authKeys.filter(key=>key==='method').length!==1||/^\s*\[\s*(?:auth\s*[\].]|"auth"|'auth')/m.test(text)))throw Error('全局认证只能由固定 auth.method / auth.token 占位生成，不允许重复或另设认证表。');
+ if(toml){
+  const placeholder=key=>'\\$(?:\\{'+key+'\\}|'+key+')',required={auth_method:['auth\\.method',true],auth_token:['auth\\.token',true],...(role==='server'?{bind_addr:['bindAddr',true],bind_port:['bindPort',false]}:{server_ip:['serverAddr',true],bind_port:['serverPort',false]})};
+  for(const [key,[field,quoted]] of Object.entries(required)){const value=(quoted?'"':'')+placeholder(key)+(quoted?'"':'');if(!new RegExp('^\\s*'+field+'\\s*=\\s*'+value+'\\s*(?:#.*)?$','m').test(text))throw Error(name+'：'+field+' 必须使用 '+key+' 占位，不允许注释占位或硬编码替代。');}
+  if(role!=='server'){const key=role==='client'?'proxies':'visitors';if(!new RegExp('^\\s*'+placeholder(key)+'\\s*(?:#.*)?$','m').test(text))throw Error(name+'：需要独立的 '+key+' 映射块占位。');}
+ }
+ return allowed;
+}
 function frpUnit(n,r){const ip=n.ip;return S.frp.naming==='role'?frpPrefixes[r]+'-'+ip+'.service':ip+(r==='visitor'?'-visitor':'')+'.service';}
 function frpFiles(n,r){
  const F=S.frp,prefix=frpPrefixes[r],esc=v=>frpQuote(v).slice(1,-1);
  const proxy=n.proxies.map(x=>['[[proxies]]','name = '+frpQuote(x.name),'type = '+frpQuote(x.type),'localIP = '+frpQuote(x.local_ip),'localPort = '+x.local_port,x.type==='tcp'?'remotePort = '+x.remote_port:'secretKey = '+frpQuote(x.secret_key)].join('\n')).join('\n\n');
  const visitor=n.proxies.filter(x=>x.type==='stcp').map(x=>['[[visitors]]','name = '+frpQuote(x.name+'-visitor'),'type = "stcp"','serverName = '+frpQuote(x.name),'secretKey = '+frpQuote(x.secret_key),'bindAddr = '+frpQuote(x.visitor_bind_addr),'bindPort = '+x.visitor_bind_port].join('\n')).join('\n\n');
  const vars={server_ip:n.ip,bind_addr:n.bind_addr,bind_port:n.bind_port,auth_method:'token',auth_token:esc(F.token),proxies:proxy,visitors:visitor};
- function substitute(text){return text.replace(/\$\{([a-z_]+)\}/g,(_,key)=>{if(!(key in vars))throw Error('模板变量未定义：'+key);return String(vars[key]);});}
+ function substitute(text){return frpSubstitute(text,vars);}
+ for(const suffix of ['.toml.tpl','.service.tpl'])frpValidateTemplate(prefix+suffix,F.templates[prefix+suffix]);
  let unit=substitute(F.templates[prefix+'.service.tpl']).replaceAll('/srv/services/frp',F.root).replace(/^User=.*$/m,'User='+F.user);
  if(r==='visitor')unit=unit.replace('After=network-online.target '+n.ip+'.service','After=network-online.target '+frpUnit(n,'server'));
  return {toml:substitute(F.templates[prefix+'.toml.tpl']),unit,tomlPath:F.root+'/generated/'+prefix+'/'+n.ip+'.toml',unitPath:F.systemdDir+'/'+frpUnit(n,r),binaryPath:F.root+'/bin/'+(r==='server'?'frps':'frpc')};
 }
 function frpRenderSafe(n,r){try{return frpFiles(n,r)}catch(e){return {toml:'无法生成：'+e.message,unit:'无法生成：'+e.message,tomlPath:'—',unitPath:'—',binaryPath:'—'}}}
-function frpSnapshot(n,r){return {files:frpFiles(n,r),node:clone(n),role:r,revision:n.revision,templateRev:S.frp.templateRev,root:S.frp.root,naming:S.frp.naming,host:frpHost(n,r),unit:frpUnit(n,r)};}
+function frpSnapshot(n,r){const names=['.toml.tpl','.service.tpl'].map(suffix=>frpPrefixes[r]+suffix);return {files:frpFiles(n,r),node:clone(n),role:r,revision:n.revision,settingsRevision:S.frp.settingsRev,templateRev:S.frp.templateRev,templateRevisions:Object.fromEntries(names.map(name=>[name,S.frp.templateRevisions[name]])),templateSources:Object.fromEntries(names.map(name=>[name,S.frp.templates[name]])),root:S.frp.root,naming:S.frp.naming,host:frpHost(n,r),unit:frpUnit(n,r)};}
+function frpPreviewBinding(items,op){return JSON.stringify(items.map(x=>{const n=frpNode(x.node),p=pr(frpPid(n,x.role));return op==='deploy'?{node:n.id,role:x.role,snapshot:frpSnapshot(n,x.role)}:{project:p.id,applied:p.frpApplied};}));}
 function frpValidate(nodes=S.frp.nodes){
  const errors=[],F=S.frp,ips=new Set(),listeners=[];
  const port=(p,where)=>{if(!Number.isInteger(p)||p<1||p>65535)errors.push(where+'：端口必须是 1–65535 的整数');};

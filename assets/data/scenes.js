@@ -2,7 +2,7 @@
 
 const scenes=[
  {id:'saved',title:'保存了配置，但还没有应用',desc:'新端口留在草稿，远端旧端口并不因此异常。'},
- {id:'stop-failed',title:'你要求停止，但停止失败',desc:'查看真实仍运行与停止目标如何同时显示。'},
+ {id:'stop-failed',title:'你要求停止，但停止失败',desc:'命令报错后仍核对实际状态，未停止就记录失败。'},
  {id:'update-partial',title:'更新部分完成后失败',desc:'保留已交付内容，不假装全部旧版或自动回退。'},
  {id:'deploy-partial',title:'首次部署没有完成',desc:'已经写入部分文件，但核心交付并未完成。'},
  {id:'ssh-unknown',title:'SSH 断线，结果待核对',desc:'已有观测保留；先核对原操作，不盲目重放。'},

@@ -1,6 +1,36 @@
 'use strict';
 
+function finishRuntimeOperation(o,result='success',{recheck=false}={}){
+ if(!o||!isRuntimeAction(o.kind)||!(['running','unknown'].includes(o.status)||recheck&&['failed','partial'].includes(o.status)))return;
+ clearInterval(timers.get(o.id));timers.delete(o.id);
+ const p=pr(o.project),evidence=simulatedRuntimeEvidence(o,result),at=now();
+ if(o.commandResult)evidence.commandResult=o.commandResult;
+ if(o.runtimeChecks?.some(entry=>entry.evidence.executionEnded&&entry.evidence.identityVerified))evidence.executionEnded=true;
+ const requestedState=o.input.requestedState||(o.kind==='stop'?'stopped':'running');
+ o.input.requestedState=requestedState;
+ const notBefore=[o.time,...(o.runtimeChecks||[]).map(entry=>entry.checkedAt)].filter(Boolean).sort().at(-1);
+ const assessment=assessRuntimeEvidence({...evidence,kind:o.kind,requestedState,notBefore});
+ const previousStatus=o.status;
+ o.runtimeChecks||=[];
+ o.runtimeChecks.push({id:uid('runtime-check'),checkedAt:at,previousStatus,source:recheck?'reconcile':'execution',evidence:clone(evidence),assessment:clone(assessment)});
+ o.commandResult??=evidence.commandResult;
+ o.outcome=clone(evidence);o.status=assessment.status;o.ended=evidence.executionEnded?at:o.ended||null;
+ o.protectionReleased=o.protectionReleased===true||assessment.status!=='unknown';
+ o.message=assessment.reason+' 本次请求：'+runtimeName[requestedState]+'；'+(assessment.canUpdateObservation?'实际核对：'+runtimeName[evidence.observedState]+'。':'未将旧观测改写为本次结果。');
+ o.steps=[
+  {title:'提交本次运行操作',status:evidence.commandResult==='success'?'success':evidence.commandResult==='error'?'failed':'unknown',note:'命令返回：'+({success:'成功',error:'报错',unknown:'响应未知'}[evidence.commandResult]||'未知')+'；不单独决定业务结果'},
+  {title:'确认原执行结束及目标身份',status:evidence.executionEnded&&evidence.identityVerified?'success':'unknown',note:evidence.executionEnded&&evidence.identityVerified?'已取得原操作身份及执行结束证据（演示）':'不能仅靠状态快照证明原执行已经结束'},
+  {title:'只读核对实际运行状态',status:assessment.canUpdateObservation?'success':'unknown',note:assessment.canUpdateObservation?runtimeName[evidence.observedState]+' · '+fmt(evidence.observedAt):'保留上次观测时间，不猜测停止'},
+  {title:'比对本次请求及动作证据',status:assessment.status,note:assessment.reason}
+ ];
+ applyRuntimeObservation(p,assessment,{kind:o.kind,operationId:o.id});
+ persist();render();if(ui.modal?.kind==='opdetail'&&ui.modal.id===o.id)renderModal();
+ toast(o.label+'：'+statusName[o.status],o.status==='success'?'success':o.status==='failed'?'error':'');
+ return assessment;
+}
+
 function finishOperation(o,result='success'){
+ if(o&&isRuntimeAction(o.kind))return finishRuntimeOperation(o,result);
  if(!o||!['running','unknown'].includes(o.status))return;clearInterval(timers.get(o.id));timers.delete(o.id);const p=pr(o.project),input=o.input,before=input.before||{},at=now();o.outcome=result;o.status=result;o.ended=result==='unknown'?null:at;
  if(result==='success'){o.steps.forEach(s=>{s.status='success';s.note='此分项已核对（演示）'});o.message='本次约定的适用分项均已完成并核对。';}
  else if(result==='failed'){o.steps.forEach((s,i)=>{s.status=i===0?'failed':'pending';s.note=i===0?'明确失败，原操作确认结束':'前置失败，未执行'});o.message='本次操作明确失败，已记录失败点；不会自动重试或回退。';}
@@ -8,13 +38,8 @@ function finishOperation(o,result='success'){
  else{o.steps.forEach((s,i)=>{s.status=i===o.steps.length-1?'failed':'success';s.note=i===o.steps.length-1?'本分项失败；不会抹掉前面已完成结果':'已核对完成'});o.message='部分完成：已成功的分项保留，失败部分单独处理。';}
  if(p){
   if(['deploy','apply','update'].includes(o.kind)){
-   if(result==='success'){p.life='installed';p.applied=clone(input.cfg);p.appliedRev=input.draftRev;if(input.binary){p.programUpdate=S.programs.some(b=>b.name===input.binary.name&&b.arch===input.binary.arch&&b.identity!==input.binary.identity);if(p.draftRev===input.draftRev)p.cfg.contentIdentity=input.binary.identity;}p.components=[];p.unsafe=false;p.runtime=p.desired==='running'?'running':'stopped';p.health=p.runtime==='running'?'healthy':'na';p.observed=at;p.dataStatus=p.dataStatus==='retained'?'in-place':p.dataStatus;notifyDependencies(p,o);}
+   if(result==='success'){p.life='installed';p.applied=clone(input.cfg);p.appliedRev=input.draftRev;if(input.binary){p.programUpdate=S.programs.some(b=>b.name===input.binary.name&&b.arch===input.binary.arch&&b.identity!==input.binary.identity);if(p.draftRev===input.draftRev)p.cfg.contentIdentity=input.binary.identity;}p.components=[];p.unsafe=false;p.desired=input.requestedState||input.before.desired;p.runtime=p.desired==='running'?'running':'stopped';p.stopVerified=p.runtime==='stopped';p.runtimeCheckStatus='verified';p.health=p.runtime==='running'?'healthy':'na';p.observed=at;p.dataStatus=p.dataStatus==='retained'?'in-place':p.dataStatus;notifyDependencies(p,o);}
    else if(result==='partial'){p.life=before.life==='installed'?'installed':'incomplete';p.components=[{name:'程序 / 镜像文件',result:'部分新内容已交付 '+input.cfg.version},{name:'配置与运行定义',result:'未完整核对，参照仍保留历史完整版本'}];o.message='程序或配置部分交付，尚未完整应用。不是全部旧版，也没有自动回退。';o.steps[o.steps.length-2].status='failed';o.steps[o.steps.length-1].status='pending';}
-  }
-  if(['start','stop','restart'].includes(o.kind)){
-   if(result==='success'){p.desired=o.kind==='stop'?'stopped':o.kind==='start'?'running':p.desired;p.runtime=o.kind==='stop'?'stopped':'running';p.health=p.runtime==='running'?'healthy':'na';p.observed=at;}
-   else if(result==='partial'){p.runtime=o.kind==='restart'?'stopped':'partial';p.health='unhealthy';p.observed=at;o.message=o.kind==='restart'?'停止已完成，随后启动失败；项目仍已部署。':'仅部分运行成员达到目标，需逐项处理。';}
-   else if(result==='failed'){o.message=`${opLabels[o.kind]}失败；实际仍为${runtimeName[p.runtime]}。运行目标${p.desired==='running'?'运行':'停止'}，不会自动重试。`;}
   }
   if(o.kind==='uninstall'&&['success','partial'].includes(result)){
    p.life='uninstalled';p.runtime='na';p.health='na';p.monitorPaused=true;p.dataStatus=input.deleteData?'deleted':'retained';p.observed=at;p.components=[];

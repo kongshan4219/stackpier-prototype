@@ -10,7 +10,7 @@ test('当前页面、项目标签、更多操作和试用场景均无备份恢�
   }
   p.click('project', { id: 'p1' });
   assert.doesNotMatch(p.html('app'), /备份|恢复来源/);
-  for (const kind of ['projectmore', 'scenes', 'reviewsettings']) {
+  for (const kind of ['projectmore', 'scenes']) {
     p.run(`openModal(${JSON.stringify(kind)},{id:'p1'});`);
     assert.doesNotMatch(p.html('modal'), /备份|保护策略|review-p2|review-p3/);
     p.click('closemodal');
@@ -26,7 +26,7 @@ test('旧入口和旧模拟操作不可复活，不重置当前演示状态', ()
     assert.equal(p.run('ui.page'), 'overview');
     assert.match(p.html('app'), /工作空间/);
   }
-  for (const kind of ['backupconfig', 'choosebackup', 'chooserestore', 'backupdetail', 'restore', 'planedit', 'policyedit', 'cleanup']) {
+  for (const kind of ['reviewsettings', 'backupconfig', 'choosebackup', 'chooserestore', 'backupdetail', 'restore', 'planedit', 'policyedit', 'cleanup']) {
     p.run(`openModal(${JSON.stringify(kind)},{id:'p1'});`);
     assert.equal(p.document.getElementById('modal').open, false, kind);
   }
