@@ -1,22 +1,6 @@
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
-import vm from 'node:vm';
 import test from 'node:test';
-
-const source = readFileSync(new URL('../assets/workspace.html', import.meta.url), 'utf8').match(/<script>([\s\S]*?)<\/script>/)[1];
-
-// 执行原型原有受理/完成逻辑；只替换 DOM 渲染，不复制业务实现或加载网络依赖。
-function prototype(saved) {
-  let stored = saved;
-  const context = vm.createContext({
-    localStorage: { getItem: () => stored || null, setItem: (_, value) => { stored = value; } },
-    document: { getElementById: () => ({ addEventListener() {} }), addEventListener() {} },
-    clearInterval() {}, setInterval() { throw Error('测试操作必须保持执行中'); }, console,
-  });
-  vm.runInContext(source.replace(/persist\(\);render\(\);\s*$/, 'persist();'), context);
-  vm.runInContext('render=()=>{};closeModal=()=>{};openModal=()=>{};toast=()=>{};', context);
-  return { run: code => vm.runInContext(code, context), saved: () => stored };
-}
+import { prototype } from './prototype-harness.mjs';
 
 function scenario() {
   const p = prototype();
