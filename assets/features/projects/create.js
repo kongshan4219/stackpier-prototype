@@ -29,8 +29,16 @@ registerPrototypeHandlers(prototypeForms, ["newproject"], function(event, form, 
 case'newproject':{
   if(m.step===1){m.draft.template=get('np-template');m.step=2;renderModal();break;}
   if(m.step===2){if(S.projects.some(p=>p.name===get('np-name')&&p.server===get('np-server'))){modalError('这台服务器已存在同名项目记录，请回到原项目处理。');break;}Object.assign(m.draft,{name:get('np-name'),server:get('np-server'),port:fd.has('np-port')?Number(get('np-port')):null,env:get('np-env'),desired:get('np-desired')});m.step=3;renderModal();break;}
-  const d=m.draft,t=tpl(d.template),s=sr(d.server);if(!t||!s){modalError('请先接入服务器并建立部署配置。');break;}if(t.software==='mysql'&&S.projects.some(p=>p.server===d.server&&p.template===t.id&&p.life!=='uninstalled')){modalError('同一服务器已有相同 MySQL 配置的项目。多实例须维护不同配置并核对端口、目录和名称。');break;}
-  const cfg={fileMappings:clone(t.fileMappings||[]),...(t.contentMode==='file'?{source:t.tpl}:{}),port:d.port,version:t.version,dataDir:`/srv/stackpier-demo/${d.name}/data`,env:d.env,templateRev:t.rev,appConfig:'logLevel = "info"',serviceUser:'app',program:t.program};
-  const project={id:uid('project'),name:d.name,server:d.server,serverName:s.name,template:t.id,type:t.type,software:t.software,life:'draft',desired:d.desired,runtime:'na',health:'na',observed:null,lastCheck:null,cfg,applied:null,draftRev:1,appliedRev:0,components:[],monitorPaused:false,dataStatus:'in-place',deps:[],depChanges:[],monitor:{hours:24,http:'',tcp:d.port?String(d.port):'',channels:[],inherit:true},hasBusinessData:false};S.projects.push(project);persist();const deploy=event.submitter?.value==='deploy',outcome=get('outcome');closeModal();navigate('project',project.id);if(deploy)startOperation(project,'deploy',{desired:d.desired},outcome);else toast('项目已保存，尚未部署。','success');break;}
+  saveNewProject(m.draft,event.submitter?.value==='deploy',get('outcome'));break;}
   }
 });
+
+// 两个创建入口共用快照复制、唯一性检查及模拟部署。
+function saveNewProject(d,deploy,outcome){
+ const t=tpl(d.template),s=sr(d.server);
+ if(!d.name?.trim()){modalError('请填写项目名称。');return;}
+ if(S.projects.some(p=>p.name===d.name&&p.server===d.server)){modalError('这台服务器已存在同名项目记录，请修改项目名称。');return;}
+ if(!t||!s){modalError('请选择有效的服务器和部署配置。');return;}if(t.software==='mysql'&&S.projects.some(p=>p.server===d.server&&p.template===t.id&&p.life!=='uninstalled')){modalError('同一服务器已有相同 MySQL 配置的项目。多实例须维护不同配置并核对端口、目录和名称。');return;}
+  const cfg={fileMappings:clone(t.fileMappings||[]),...(t.contentMode==='file'?{source:t.tpl}:{}),port:d.port,version:t.version,dataDir:`/srv/stackpier-demo/${d.name}/data`,env:d.env,templateRev:t.rev,appConfig:'logLevel = "info"',serviceUser:'app',program:t.program};
+  const project={id:uid('project'),name:d.name,server:d.server,serverName:s.name,template:t.id,type:t.type,software:t.software,life:'draft',desired:d.desired,runtime:'na',health:'na',observed:null,lastCheck:null,cfg,applied:null,draftRev:1,appliedRev:0,components:[],monitorPaused:false,dataStatus:'in-place',deps:[],depChanges:[],monitor:{hours:24,http:'',tcp:d.port?String(d.port):'',channels:[],inherit:true},hasBusinessData:false};S.projects.push(project);persist();closeModal();navigate('project',project.id);if(deploy)startOperation(project,'deploy',{desired:d.desired},outcome);else toast('项目已保存，尚未部署。','success');return project;
+}
