@@ -1,1 +1,29 @@
 .field textarea.config-source-input{font-family:var(--mono);font-size:12px;line-height:1.75;min-height:280px;tab-size:2;white-space:pre;overflow-wrap:normal;overflow:auto;}
+.file-mapping-editor{border-top:1px solid var(--line);padding-top:22px;}
+.mapping-section-head,.mapping-row-head{display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.mapping-section-head{margin-bottom:14px;}
+.mapping-section-head h3{font-size:14px;margin:0 0 5px;}
+.mapping-section-head p{margin:0;}
+.mapping-list{display:grid;gap:12px;}
+.mapping-row{padding:16px;border:1px solid var(--line);border-radius:10px;background:#f8fafc;display:grid;gap:12px;}
+.mapping-row-head strong{font-size:12px;color:var(--muted);}
+.mapping-row .field-row{margin:0;}
+.mapping-row .field{min-width:0;}
+.mapping-file-control{display:flex;align-items:stretch;gap:8px;min-width:0;}
+.mapping-file-control select{flex:1;min-width:0;}
+.mapping-file-control .btn{flex-shrink:0;white-space:nowrap;}
+.mapping-empty{border:1px dashed var(--line);border-radius:8px;padding:20px;color:var(--muted);font-size:12px;line-height:1.8;}
+.mapping-note{margin:12px 0 0;line-height:1.8;}
+.mapping-summary{margin-bottom:18px;}
+.mapping-summary-list{display:grid;gap:14px;}
+.mapping-summary-list p,.file-link-row span{overflow-wrap:anywhere;}
+.file-library-banner{display:flex;gap:16px;align-items:center;margin-bottom:20px;padding:18px 22px;}
+.file-library-banner p{margin:5px 0 0;line-height:1.7;}
+.file-library-banner code{font-size:12px;}
+.file-link-row{display:grid;gap:5px;padding:12px 0;border-top:1px solid var(--line);}
+.project-file-directory{padding-top:18px;}
+.project-file-directory>code{display:block;margin:8px 0 14px;color:var(--muted);font-size:12px;}
+.file-link-row .mono{font-size:12px;}
+.program-file-path{overflow-wrap:anywhere;max-width:360px;}
+.file-library-layout{display:grid;gap:20px;}
+@media(max-width:600px){.mapping-section-head{align-items:flex-start;}.mapping-row{padding:12px;}.mapping-row .field-row{grid-template-columns:1fr;}.file-library-banner{padding:16px;}.mapping-section-head>.btn{white-space:nowrap;}}

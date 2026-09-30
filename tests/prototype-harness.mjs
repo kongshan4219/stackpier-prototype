@@ -64,7 +64,8 @@ function elements(html) {
     const element = new Element(match[1], attributes(match[2]));
     if (element.tagName === 'SELECT' || element.tagName === 'TEXTAREA') {
       const content = html.slice(match.index + match[0].length).split(new RegExp(`</${match[1]}\\s*>`, 'i'))[0];
-      if (element.tagName === 'TEXTAREA') element.value = decode(content);
+      // 浏览器解析 textarea 时会忽略紧随起始标签的第一个换行。
+      if (element.tagName === 'TEXTAREA') element.value = decode(content.replace(/^\r?\n/, ''));
       else {
         const options = [...content.matchAll(/<option\b([^>]*)>([^<]*)<\/option>/gi)].map(([, attrs, text]) => ({ attrs: attributes(attrs), text }));
         const selected = options.find(option => Object.hasOwn(option.attrs, 'selected')) || options[0];
@@ -138,6 +139,7 @@ export function prototype(saved, { hash = '', missingScript } = {}) {
     run, document, saved: () => stored,
     html: id => document.getElementById(id).innerHTML,
     click(action, data = {}) { dispatch('click', new Element('button', { 'data-action': action, ...Object.fromEntries(Object.entries(data).map(([key, value]) => ['data-' + key, String(value)])) })); },
+    change(id, properties) { const element = document.getElementById(id); assert.ok(element); Object.assign(element, properties); dispatch('change', element); },
     submit(kind, values, { id, submitter } = {}) {
       const form = new Element('form', { 'data-form': kind, ...(id ? { 'data-id': id } : {}) });
       form.values = values;

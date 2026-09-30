@@ -10,7 +10,7 @@ const frpOldModal=renderModal;renderModal=function(){const m=ui.modal;if(m?.kind
 const frpOldStart=startOperation;startOperation=function(p,kind,...args){if(p?.frpRef)return rejectOperation(p,kind,'请通过 FRP 专用确认执行，避免通用命令、单端口或共享目录假设覆盖真实角色关系。');if(p?.software==='frpc'||p?.software==='frps')return rejectOperation(p,kind,'旧通用 FRP 占位项目未配置正确角色，请进入 FRP 部署方案选择服务端、提供端或 visitor。');return frpOldStart(p,kind,...args);};
 const frpOldFinish=finishOperation;finishOperation=function(o,result='success'){return o?.frp?frpFinish(o,result):frpOldFinish(o,result);};
 const frpOldReset=resetSample;resetSample=function(...a){const x=frpOldReset(...a);frpInit();FRP.tab='connections';FRP.node='n4';return x;};
-const frpOldPrograms=programsPage;programsPage=function(){frpEnsure();return `<div class="mb">${notice('FRP 参考包提供的是四个空文件','frpc、frpc-arm64、frps、frps-arm64 都为 0 B。按文件名展示架构约定，不把存在文件或上传元数据当成可执行 / 校验通过。')}${btn('查看 FRP 文件与部署','frp-openfiles',{node:'n4',role:'visitor'},'mt')}</div>`+frpOldPrograms();};
+const frpOldPrograms=programsPage;programsPage=function(){frpEnsure();return `<div class="mb">${notice('FRP 参考包提供的是四个空文件','frpc、frpc-arm64、frps、frps-arm64 都为 0 B。按文件名展示架构约定，不把存在文件或上传元数据当成可执行 / 校验通过。')}</div>`+frpOldPrograms();};
 function frpGo(tab='connections',node=FRP.node,role=FRP.role){frpEnsure();FRP.tab=tab;FRP.node=node;FRP.role=role;closeModal();navigate('frp');persist();}
 if(!navItems.some(x=>x[0]==='frp'))navItems.splice(3,0,['frp','FRP 部署','link','']);
 
