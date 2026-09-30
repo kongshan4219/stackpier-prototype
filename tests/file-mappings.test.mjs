@@ -10,17 +10,19 @@ function mappedPrototype() {
   return p;
 }
 
-test('文件映射随配置保存并持久化；创建和显式采用复制到项目，不自动部署', () => {
+test('文件映射随配置持久化；部署创建与显式采用复制独立映射', () => {
   const p = mappedPrototype();
   p.run('const beforeOps=S.operations.length;'); save(p);
   const id = p.run('S.templates.at(-1).id');
   assert.equal(p.run('S.templates.at(-1).fileMappings[0].fileId'), 'bin1');
   assert.equal(p.run('S.templates.at(-1).tpl'), source);
-  p.run(`openModal('newproject',{step:3,draft:{template:${JSON.stringify(id)},server:'s4',name:'mapping-demo',desired:'running'}});`);
-  p.submit('newproject', {}, { submitter: 'save' });
+  p.click('newproject');
+  p.submit('newproject', { 'np-template': id, 'np-server': 's4' }, { submitter: 'deploy' });
   assert.equal(p.run('S.projects.at(-1).cfg.fileMappings[0].targetPath'), '/srv/demo/app');
   assert.equal(p.run('S.projects.at(-1).applied'), null);
-  assert.equal(p.run('S.operations.length===beforeOps'), true);
+  assert.equal(p.run('S.operations.length===beforeOps+1'), true);
+  assert.equal(p.run('S.operations[0].kind'), 'deploy');
+  assert.equal(p.run('S.operations[0].status'), 'rejected');
   const loaded = prototype(p.saved());
   assert.match(loaded.run('projectFileDirectories()'), /bin\/projects\//);
   assert.match(loaded.run('projectFileDirectories()'), /bin\/files\/bin1--/);

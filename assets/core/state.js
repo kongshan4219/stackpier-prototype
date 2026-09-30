@@ -49,7 +49,7 @@ migrateRuntimeReview(S);
 
 S.operations.forEach(o=>{if(o.status==='running'){o.status='unknown';o.message='页面刷新时演示执行尚未完成。保留输入及已确认步骤，需核对原操作，不自动重跑。';o.interrupted=true;}});
 
-let ui={page:'overview',project:'p1',tab:'overview',templateTab:'templates',monitorTab:'checks',q:'',filter:'all',server:'all',zone:'all',view:'table',nav:false,auth:null,initialized:true,password:DEMO_PASSWORD,scenario:'',nextOutcome:'success',modal:null,showAllOps:false};
+let ui={page:'overview',project:'p1',tab:'overview',templateTab:'templates',monitorTab:'checks',q:'',filter:'all',category:'all',server:'all',zone:'all',view:'table',nav:false,auth:null,initialized:true,password:DEMO_PASSWORD,scenario:'',nextOutcome:'success',modal:null,showAllOps:false};
 
 const timers=new Map();
 

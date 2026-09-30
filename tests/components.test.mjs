@@ -50,7 +50,7 @@ test('关键弹窗通过共同分发器渲染，FRP 弹窗覆盖仍生效', () =
   p.run('frpEnsure();');
   const cases = [
     ['serveredit', {}], ['serverdetail', { id: 's1' }],
-    ['newproject', { step: 1, draft: {} }], ['projectop', { id: 'p1', op: 'stop' }],
+    ['newproject', {}], ['projectop', { id: 'p1', op: 'stop' }],
     ['configdiff', { id: 'p1' }], ['templateedit', {}], ['programupload', {}],
     ['dnsedit', {}], ['firewalledit', {}],
     ['feedback', {}], ['scenes', {}],

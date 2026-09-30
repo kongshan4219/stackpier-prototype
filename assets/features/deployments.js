@@ -43,5 +43,5 @@ registerPrototypeHandlers(prototypeActions,['deploytemplate'],function(event,tar
 registerPrototypeHandlers(prototypeForms,['deploytemplate'],function(event,form,fd,get,has,all,m){
  const t=tpl(m.id);
  if(!t){modalError('部署配置已不存在，请关闭后重新选择。');return;}
- saveNewProject({template:t.id,name:get('deploy-name'),server:get('deploy-server'),desired:'running',port:t.contentMode==='file'?null:t.port,env:t.env||''},true,ui.nextOutcome||'success');
+ saveNewProject({template:t.id,name:get('deploy-name'),server:get('deploy-server'),desired:'running',port:t.contentMode==='file'?null:t.port,env:t.env||''},ui.nextOutcome||'success');
 });

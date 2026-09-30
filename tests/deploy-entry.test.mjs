@@ -70,3 +70,50 @@ test('服务器缺少环境时保留项目草稿并显示原有部署拒绝结�
   assert.equal(p.run('S.operations[0].status'), 'rejected');
   assert.match(p.run('S.operations[0].message'), /Docker/);
 });
+
+test('部署入口取消无写入，表单提交即发起部署而非仅保存', () => {
+  const p = prototype();
+  p.run('const before=JSON.stringify([S.projects,S.operations]);');
+  p.click('newproject');
+  assert.doesNotMatch(p.html('modal'), /stepper|下一步|np-name|np-port|np-env|np-desired|outcome|仅保存项目/);
+  assert.equal(p.document.getElementById('np-template').value, '');
+  assert.equal(p.document.getElementById('np-server').value, '');
+  p.click('closemodal');
+  assert.equal(p.run('JSON.stringify([S.projects,S.operations])===before'), true);
+  p.click('newproject');
+  p.submit('newproject', { 'np-template': 't5', 'np-server': 's4' });
+  assert.equal(p.run('S.projects.at(-1).name'), p.run('tpl("t5").name'));
+  assert.equal(p.run('S.projects.at(-1).server'), 's4');
+  assert.equal(p.run('S.projects.at(-1).life'), 'draft');
+  assert.equal(p.run('S.operations.length===JSON.parse(before)[1].length+1'), true);
+  assert.equal(p.run('S.operations[0].kind'), 'deploy');
+  assert.equal(p.run('S.operations[0].status'), 'rejected');
+});
+
+test('新建项目直接模拟部署；失效选择、同机重名及 MySQL 唯一性阻止创建', () => {
+  for (const failure of ['template', 'server', 'duplicate', 'mysql']) {
+    const p = prototype(); p.click('newproject');
+    if (failure === 'duplicate') p.run('pr("p1").name=tpl("t5").name;');
+    p.run('const before=JSON.stringify([S.projects,S.operations]);');
+    p.submit('newproject', { 'np-template': failure === 'template' ? 'missing' : failure === 'mysql' ? 't2' : 't5', 'np-server': failure === 'server' ? 'missing' : failure === 'mysql' ? 's1' : 's2' }, { submitter: 'deploy' });
+    assert.equal(p.document.getElementById('modal-error').hidden, false, failure);
+    assert.equal(p.run('JSON.stringify([S.projects,S.operations])===before'), true, failure);
+  }
+  const p = prototype(); p.run('sr("s4").docker=true;'); p.click('newproject');
+  p.submit('newproject', { 'np-template': 't5', 'np-server': 's4' }, { submitter: 'deploy' });
+  assert.equal(p.run('S.operations[0].kind'), 'deploy');
+  assert.equal(p.run('S.operations[0].status'), 'running');
+  assert.equal(p.run('S.operations[0].project===S.projects.at(-1).id'), true);
+});
+
+test('新建入口保留 FRP 专用流程；没有配置或服务器时不可提交', () => {
+  const p = prototype(); p.run('frpEnsure();const before=S.projects.length;'); p.click('newproject');
+  p.submit('newproject', { 'np-template': 't4', 'np-server': 's1' }, { submitter: 'deploy' });
+  assert.equal(p.run('ui.page'), 'frp');
+  assert.equal(p.run('ui.modal'), null);
+  assert.equal(p.run('S.projects.length===before'), true);
+  for (const list of ['servers', 'templates']) {
+    const empty = prototype(); empty.run(`S.${list}=[];`); empty.click('newproject');
+    assert.equal((empty.html('modal').match(/value="deploy" disabled/g) || []).length, 1);
+  }
+});
