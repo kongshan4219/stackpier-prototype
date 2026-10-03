@@ -4,9 +4,24 @@ import { prototype } from './prototype-harness.mjs';
 
 function installed(roles = ['server']) {
   const p = prototype(undefined, { hash: '#frp' });
-  p.run(`const items=${JSON.stringify(roles.map(role => ({ node: 'n4', role })))};const frpInitial=frpRun(items,'deploy',{binary:true,identity:true,impact:true,goal:'running',hold:true});frpFinish(frpInitial,'success');`);
+  p.run(`const items=${JSON.stringify(roles.map(role => ({ node: 'n4', role })))};const frpInitial=frpRun(items,'deploy',{binary:true,identity:true,impact:true,hold:true});frpFinish(frpInitial,'success');`);
   return p;
 }
+
+test('FRP 部署不提供运行目标选项，停止后再次部署会启动', () => {
+  const p = installed();
+  p.run('const stopped=frpRun([{node:"n4",role:"server"}],"stop",{identity:true,impact:true,hold:true});frpFinish(stopped,{commandResult:"success",executionEnded:true,identityVerified:true,observedState:"stopped"});');
+  assert.equal(p.run('pr("frp-n4-server").desired'), 'stopped');
+  p.click('frp-op', { node: 'n4', role: 'server', op: 'deploy' });
+  assert.doesNotMatch(p.html('modal'), /fo-goal|本次部署后的目标|保持停止/);
+  p.submit('frp-op', { 'fo-binary': 'on', 'fo-identity': 'on', 'fo-impact': 'on', outcome: 'success', 'fo-hold': 'on' });
+  assert.equal(p.run('S.operations[0].input.requestedState'), 'running');
+  assert.equal(p.run('Object.hasOwn(S.operations[0].input,"goal")'), false);
+  p.run('frpFinish(S.operations[0],"success");FRP.tab="deploy";FRP.node="n4";render();');
+  assert.equal(p.run('pr("frp-n4-server").runtime'), 'running');
+  assert.equal(p.run('pr("frp-n4-server").desired'), 'running');
+  assert.doesNotMatch(p.html('app'), /用户长期目标/);
+});
 
 test('六类模板原文可编辑，未保存预览不改变草稿、应用或操作记录', () => {
   const p = installed();
@@ -59,7 +74,7 @@ test('固定占位支持参考包两种写法及字面美元，不读取环境�
 
 test('全局token保存只改草稿，STCP密钥、在途输入及旧应用参照保持', () => {
   const p = installed(['server', 'client', 'visitor']);
-  p.run('const beforeApplied=JSON.stringify(S.projects.map(p=>p.frpApplied)),beforeSecrets=JSON.stringify(S.frp.nodes.map(n=>n.proxies.map(x=>x.secret_key)));const pendingOp=frpRun([{node:"n3",role:"server"}],"deploy",{binary:true,identity:true,impact:true,goal:"running",hold:true}),frozen=JSON.stringify(pendingOp.input);');
+  p.run('const beforeApplied=JSON.stringify(S.projects.map(p=>p.frpApplied)),beforeSecrets=JSON.stringify(S.frp.nodes.map(n=>n.proxies.map(x=>x.secret_key)));const pendingOp=frpRun([{node:"n3",role:"server"}],"deploy",{binary:true,identity:true,impact:true,hold:true}),frozen=JSON.stringify(pendingOp.input);');
   p.click('frp-settings');
   assert.match(p.html('modal'), /全局统一 auth.token/);
   p.submit('frp-settings', { 'fs-root': '/srv/services/frp', 'fs-systemd': '/etc/systemd/system', 'fs-user': 'root', 'fs-naming': 'legacy', 'fs-token': 'DEMO_NEW_GLOBAL_TOKEN' });
@@ -74,12 +89,12 @@ test('全局token保存只改草稿，STCP密钥、在途输入及旧应用参�
 
 test('同连接认证更新须明确覆盖旧认证角色，其他连接不自动部署', () => {
   const p = installed(['server', 'client', 'visitor']);
-  p.run('S.frp.token="DEMO_GLOBAL_CHANGED";S.frp.settingsRev++;frpSyncConfigs();const otherBefore=JSON.stringify(pr("frp-n3-server"));frpRun([{node:"n4",role:"server"}],"deploy",{binary:true,identity:true,impact:true,authChange:true,goal:"running",hold:true});');
+  p.run('S.frp.token="DEMO_GLOBAL_CHANGED";S.frp.settingsRev++;frpSyncConfigs();const otherBefore=JSON.stringify(pr("frp-n3-server"));frpRun([{node:"n4",role:"server"}],"deploy",{binary:true,identity:true,impact:true,authChange:true,hold:true});');
   assert.equal(p.run('S.operations[0].status'), 'rejected');
   assert.match(p.run('S.operations[0].message'), /配对角色仍使用旧认证/);
   p.click('frp-group', { node: 'n4' });
   assert.equal(p.run('ui.modal.items.length'), 3);
-  p.submit('frp-op', { 'fo-binary': 'on', 'fo-identity': 'on', 'fo-impact': 'on', 'fo-authchange': 'on', 'fo-goal': 'running', 'outcome': 'success', 'fo-hold': 'on' });
+  p.submit('frp-op', { 'fo-binary': 'on', 'fo-identity': 'on', 'fo-impact': 'on', 'fo-authchange': 'on', 'outcome': 'success', 'fo-hold': 'on' });
   p.run('const changed=S.operations[0];frpFinish(changed,"success");');
   assert.equal(p.run('changed.status'), 'success');
   assert.equal(p.run('JSON.stringify(pr("frp-n3-server"))===otherBefore'), true);
@@ -94,7 +109,7 @@ test('旧节点不同token迁移为待确认草稿，不改变已应用及历史
   assert.equal(reloaded.run('frpNode("n4").authMigration.roles.length'), 3);
   assert.equal(reloaded.run('JSON.stringify(pr("frp-n4-server").frpApplied)'), p.run('before'));
   assert.match(reloaded.html('app'), /旧节点认证待确认/);
-  reloaded.run('frpRun([{node:"n4",role:"server"}],"deploy",{binary:true,identity:true,impact:true,goal:"running",hold:true});');
+  reloaded.run('frpRun([{node:"n4",role:"server"}],"deploy",{binary:true,identity:true,impact:true,hold:true});');
   assert.match(reloaded.run('S.operations[0].message'), /明确确认认证变化/);
 });
 
@@ -102,7 +117,7 @@ test('预览后修订变化拒绝受理，不悄悄采用新token', () => {
   const p = prototype(undefined, { hash: '#frp' });
   p.click('frp-op', { node: 'n4', role: 'server', op: 'deploy' });
   p.run('S.frp.token="DEMO_CHANGED_AFTER_PREVIEW";S.frp.settingsRev++;');
-  p.submit('frp-op', { 'fo-binary': 'on', 'fo-identity': 'on', 'fo-impact': 'on', 'fo-goal': 'running', 'outcome': 'success', 'fo-hold': 'on' });
+  p.submit('frp-op', { 'fo-binary': 'on', 'fo-identity': 'on', 'fo-impact': 'on', 'outcome': 'success', 'fo-hold': 'on' });
   assert.equal(p.run('S.operations[0].status'), 'rejected');
   assert.match(p.run('S.operations[0].message'), /预览后配置/);
 });

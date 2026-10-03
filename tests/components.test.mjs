@@ -24,7 +24,7 @@ test('入口组件共同渲染全部导航页面、项目页与内容分类', ()
     assert.match(p.html('app'), /<main id="main"[^>]*>[\s\S]*<h1\b/, page);
   }
   p.click('project', { id: 'p1' });
-  for (const tab of ['overview', 'config', 'monitor', 'deps', 'logs', 'history']) {
+  for (const tab of ['overview', 'config', 'monitor', 'logs', 'history']) {
     p.click('tab', { id: tab });
     assert.equal(p.run('ui.tab'), tab);
     assert.match(p.html('app'), /<h1\b/);
@@ -51,7 +51,7 @@ test('关键弹窗通过共同分发器渲染，FRP 弹窗覆盖仍生效', () =
   const cases = [
     ['serveredit', {}], ['serverdetail', { id: 's1' }],
     ['newproject', { step: 1, draft: {} }], ['projectop', { id: 'p1', op: 'stop' }],
-    ['configdiff', { id: 'p1' }], ['templateedit', {}], ['programupload', {}],
+    ['templateedit', {}], ['programupload', {}],
     ['dnsedit', {}], ['firewalledit', {}],
     ['feedback', {}], ['scenes', {}],
     ['frp-nodeedit', { id: 'n4' }], ['frp-proxyedit', { node: 'n4', index: 0 }],
@@ -96,7 +96,7 @@ test('共享配置跳转到 FRP 页面后不会重新打开已经关闭的弹窗
   assert.equal(p.document.getElementById('modal').open, false);
 });
 
-test('共享配置正文原样保存；显式采用和项目保存都不应用或启动', () => {
+test('共享配置正文原样保存；显式采用不改变服务器文件或运行状态', () => {
   const p = prototype();
   const source = '\n  # 保留注释与首尾空白\nservices:\n  example:\n    image: "example:${TAG}"\n    command: ["echo", "  demo  "]\n\n  ';
   p.run('const subject=pr("p3"),templateId=subject.template,appliedBefore=JSON.stringify(subject.applied),draftBefore=JSON.stringify(subject.cfg),opsBefore=S.operations.length,runtimeBefore=subject.runtime;openModal("templateedit",{id:templateId});');
@@ -106,12 +106,13 @@ test('共享配置正文原样保存；显式采用和项目保存都不应用�
   assert.equal(p.run('JSON.stringify(subject.cfg)===draftBefore&&JSON.stringify(subject.applied)===appliedBefore'), true);
   p.click('adopttemplate', { id: 'p3' });
   assert.equal(p.run('configText(subject)'), source);
-  const edited = source + '\n# 仅保存本项目\n ';
-  p.submit('fileprojectconfig', { 'cfg-source': edited }, { id: 'p3' });
-  assert.equal(p.run('configText(subject)'), edited);
   assert.equal(p.run('JSON.stringify(subject.applied)===appliedBefore&&subject.runtime===runtimeBefore&&S.operations.length===opsBefore'), true);
+  p.click('project', { id: 'p3' });
+  p.click('tab', { id: 'config' });
+  assert.doesNotMatch(p.html('app'), /data-form="(?:file)?projectconfig"|保存草稿/);
+  assert.doesNotMatch(p.html('app'), /保留注释与首尾空白/);
   const reloaded = prototype(p.saved());
-  assert.equal(reloaded.run('configText(pr("p3"))'), edited);
+  assert.equal(reloaded.run('configText(pr("p3"))'), source);
 });
 
 test('共享配置空正文不能覆盖已有内容，systemd 完整正文也原样保存', () => {
@@ -162,7 +163,7 @@ test('FRP 批量操作初始不预选客户端，明确选择全部 visitor 仅�
 
 test('FRP 零字节占位拒绝部署；普通项目操作也不能绕过专用流程', () => {
   const p = prototype();
-  p.run('frpEnsure();const subject=pr("frp-n4-server");const result=frpRun([{node:"n4",role:"server"}],"deploy",{binary:false,identity:true,impact:true,goal:"running",hold:true}),rejected=S.operations[0];');
+  p.run('frpEnsure();const subject=pr("frp-n4-server");const result=frpRun([{node:"n4",role:"server"}],"deploy",{binary:false,identity:true,impact:true,hold:true}),rejected=S.operations[0];');
   assert.equal(p.run('result'), null);
   assert.equal(p.run('rejected.status'), 'rejected');
   assert.match(p.run('rejected.message'), /零字节/);
@@ -177,7 +178,7 @@ test('FRP 零字节占位拒绝部署；普通项目操作也不能绕过专用�
 for (const outcome of ['partial', 'unknown']) {
   test(`FRP ${outcome} 保留先前完成角色、受理快照与独立网络记录`, () => {
     const p = prototype();
-    p.run('frpEnsure();const networkBefore=JSON.stringify([S.dns,S.firewalls]),items=[{node:"n4",role:"server"},{node:"n4",role:"visitor"}];const operation=frpRun(items,"deploy",{binary:true,identity:true,impact:true,goal:"running",outcome:"success",hold:true});const fixedToml=operation.input.items[0].files.toml;S.frp.token="EXAMPLE_CHANGED_DURING_OPERATION";frpSyncConfigs();');
+    p.run('frpEnsure();const networkBefore=JSON.stringify([S.dns,S.firewalls]),items=[{node:"n4",role:"server"},{node:"n4",role:"visitor"}];const operation=frpRun(items,"deploy",{binary:true,identity:true,impact:true,outcome:"success",hold:true});const fixedToml=operation.input.items[0].files.toml;S.frp.token="EXAMPLE_CHANGED_DURING_OPERATION";frpSyncConfigs();');
     p.run(`finishOperation(operation,${JSON.stringify(outcome)});`);
     assert.equal(p.run('operation.status'), outcome);
     assert.equal(p.run('pr("frp-n4-server").frpApplied.files.toml===fixedToml'), true);

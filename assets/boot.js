@@ -5,6 +5,7 @@ if (prototypeLoading.errors.length) {
   showPrototypeLoadError();
 } else {
   try {
+    initializeFailedDeployments();
     initializeFrp();
     prototypeLoading.ready = true;
   } catch (error) {

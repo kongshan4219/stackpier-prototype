@@ -31,6 +31,22 @@ function migrateDeferredProtection(state){
 
 migrateDeferredProtection(S);
 
+// 项目配置改为服务器文件观测，巡检只保留一种明确方式；清理已经移除的依赖与复制状态。
+function migrateProjectObservation(state){
+ state.operations=(state.operations||[]).filter(operation=>operation.kind!=='replica');
+ for(const operation of state.operations)delete operation.dependencyNotificationChecked;
+ for(const project of state.projects){
+  const monitor=project.monitor||{};
+  const method=monitor.method==='http'||monitor.method===project.type?monitor.method:monitor.http?'http':project.type==='compose'?'compose':'systemd';
+  project.monitor={hours:Number(monitor.hours)||24,method,http:monitor.http||'',channels:Array.isArray(monitor.channels)?monitor.channels:[],inherit:monitor.inherit!==false};
+  delete project.deps;delete project.depChanges;delete project.replicaOf;delete project.replication;delete project.hasBusinessData;delete project.initResidue;
+  if(!project.deployedFiles){const operation=state.operations.find(item=>item.project===project.id&&item.status==='success'&&['deploy','apply','update'].includes(item.kind)&&item.input?.mappedFiles?.length);if(operation)project.deployedFiles=clone(operation.input.mappedFiles);}
+ }
+ return state;
+}
+
+migrateProjectObservation(S);
+
 // 旧 P1 只改变受理意图，不能升级成当前实际状态或预期停止的证据。
 function migrateRuntimeReview(state){
  const legacyIntent=Object.hasOwn(state.review,'p1');
@@ -48,8 +64,7 @@ function migrateRuntimeReview(state){
 migrateRuntimeReview(S);
 
 S.operations.forEach(o=>{if(o.status==='running'){o.status='unknown';o.message='页面刷新时演示执行尚未完成。保留输入及已确认步骤，需核对原操作，不自动重跑。';o.interrupted=true;}});
-
-let ui={page:'overview',project:'p1',tab:'overview',templateTab:'templates',monitorTab:'checks',q:'',filter:'all',server:'all',zone:'all',view:'table',nav:false,auth:null,initialized:true,password:DEMO_PASSWORD,scenario:'',nextOutcome:'success',modal:null,showAllOps:false};
+let ui={page:'overview',project:'p1',tab:'overview',projectsTab:'list',templateTab:'templates',monitorTab:'checks',q:'',filter:'all',server:'all',zone:'all',view:'table',nav:false,auth:null,initialized:true,password:DEMO_PASSWORD,scenario:'',nextOutcome:'success',modal:null,showAllOps:false};
 
 const timers=new Map();
 

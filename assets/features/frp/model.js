@@ -34,7 +34,7 @@ function frpEnsure(){
   for(const r of ['server','client',...(n.proxies.some(x=>x.type==='stcp')?['visitor']:[])]){
    const id=frpPid(n,r);if(pr(id))continue;
    const cfg={port:r==='server'?n.bind_port:0,program:r==='server'?'frps':'frpc',version:'零字节占位，未部署',env:'',dataDir:F.root,serviceUser:F.user,appConfig:'',frp:true};
-   S.projects.push({id,name:frpPrefixes[r]+'-'+n.ip,server:r==='client'?n.provider:hid,serverName:r==='client'?'FRP 内网执行机（待核对）':'FRP 云节点 '+n.ip,template:'frp-template-'+r,type:'systemd',software:r==='server'?'frps':'frpc',frpRef:{node:n.id,role:r},life:'draft',desired:'stopped',runtime:'na',health:'unknown',observed:null,lastCheck:null,cfg,applied:null,draftRev:1,appliedRev:0,components:[],monitorPaused:false,dataStatus:'reference-only',deps:[],depChanges:[],monitor:{hours:24,http:'',tcp:r==='server'?String(n.bind_port):'',channels:[],inherit:true},note:'来自脱敏清单的参考项目；不是已接管、已部署或已健康的真实服务。'});
+   S.projects.push({id,name:frpPrefixes[r]+'-'+n.ip,server:r==='client'?n.provider:hid,serverName:r==='client'?'FRP 内网执行机（待核对）':'FRP 云节点 '+n.ip,template:'frp-template-'+r,type:'systemd',software:r==='server'?'frps':'frpc',frpRef:{node:n.id,role:r},life:'draft',desired:'stopped',runtime:'na',health:'unknown',observed:null,lastCheck:null,cfg,applied:null,draftRev:1,appliedRev:0,components:[],monitorPaused:false,dataStatus:'reference-only',monitor:{hours:24,method:'systemd',http:'',channels:[],inherit:true},note:'来自脱敏清单的参考项目；不是已接管、已部署或已健康的真实服务。'});
   }
  }
 }

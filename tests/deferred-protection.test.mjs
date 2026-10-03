@@ -89,7 +89,7 @@ test('卸载暂停定时巡检，重新部署后保持暂停并可明确恢复',
   assert.equal(p.run('subject.monitorPaused'), true);
   p.click('resumemonitor', { id: 'p2' });
   assert.equal(p.run('subject.monitorPaused'), true);
-  p.run(`const deploy=startOperation(subject,'deploy',{desired:'running'},'success',{hold:true});finishOperation(deploy,'success');`);
+  p.run(`const deploy=startOperation(subject,'deploy',{},'success',{hold:true});finishOperation(deploy,'success');`);
   assert.equal(p.run('subject.life'), 'installed');
   assert.equal(p.run('subject.monitorPaused'), true);
   p.click('project', { id: 'p2' });
@@ -101,17 +101,14 @@ test('卸载暂停定时巡检，重新部署后保持暂停并可明确恢复',
   assert.equal(p.run('S.operations[0].kind'), 'check');
 });
 
-test('全部剩余场景可装载，MySQL 复制初始化入口保留', () => {
+test('全部剩余场景可装载，已移除的复制场景不再出现', () => {
   const ids = JSON.parse(prototype().run('JSON.stringify(scenes.map(scene=>scene.id))'));
+  assert.equal(ids.includes('replica-init'), false);
   for (const id of ids) {
     const p = prototype();
     p.run(`loadScene(${JSON.stringify(id)});`);
     assert.equal(p.run('ui.scenario'), id);
     assert.equal(p.run('prototypeLoading.ready'), true);
     assert.equal(p.run('S.operations.some(operation=>["backup","restore","cleanup"].includes(operation.kind))'), false);
-    if (id === 'replica-init') {
-      assert.equal(p.run('ui.modal.kind'), 'replica');
-      assert.match(p.html('modal'), /初始化 MySQL 只读副本/);
-    }
   }
 });

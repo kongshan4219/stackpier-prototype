@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
+import { webcrypto } from 'node:crypto';
 
 const root = new URL('../', import.meta.url);
 const decode = value => value.replace(/&(?:amp|lt|gt|quot|#39);/g, entity => ({ '&amp;': '&', '&lt;': '<', '&gt;': '>', '&quot;': '"', '&#39;': "'" })[entity]);
@@ -111,7 +112,7 @@ export function prototype(saved, { hash = '', missingScript } = {}) {
   let timerId = 0;
   const schedule = callback => { scheduled.set(++timerId, callback); return timerId; };
   const context = vm.createContext({
-    document, FormData, URL, console,
+    document, FormData, URL, console, crypto: webcrypto, TextEncoder,
     location: { hash, reload() {} }, window, navigator: {},
     localStorage: { getItem: () => stored || null, setItem: (_, value) => { stored = value; } },
     setTimeout: schedule, setInterval: schedule,
@@ -128,15 +129,24 @@ export function prototype(saved, { hash = '', missingScript } = {}) {
 
   function dispatch(type, target, extra = {}, surface = document) {
     let stopped = false;
+    const results = [];
     const event = { target, preventDefault() {}, stopImmediatePropagation() { stopped = true; }, ...extra };
     for (const { callback } of [...(surface.listeners.get(type) || [])].sort((a, b) => Number(b.capture) - Number(a.capture))) {
-      callback(event);
+      results.push(callback(event));
       if (stopped) break;
     }
+    return Promise.all(results);
   }
   return {
     run, document, saved: () => stored,
     html: id => document.getElementById(id).innerHTML,
+    changeFiles(files) {
+      const input = document.getElementById('bin-file');
+      input.files = files;
+      return dispatch('change', input);
+    },
+    dropFiles(files) { return dispatch('drop', document.querySelector('[data-program-drop]'), { dataTransfer: { files } }); },
+    flushTimers() { const callbacks = [...scheduled.values()]; scheduled.clear(); callbacks.forEach(callback => callback()); },
     click(action, data = {}) { dispatch('click', new Element('button', { 'data-action': action, ...Object.fromEntries(Object.entries(data).map(([key, value]) => ['data-' + key, String(value)])) })); },
     submit(kind, values, { id, submitter } = {}) {
       const form = new Element('form', { 'data-form': kind, ...(id ? { 'data-id': id } : {}) });

@@ -23,9 +23,9 @@ function frpRun(items,op,conditions){
  }
  const fixed=frpCompileItems(items,op),resources=[...new Set(fixed.flatMap(x=>['project:'+x.project,'frp-node:'+x.node,'frp-bin:'+x.snapshot.host+':'+(x.role==='server'?'frps':'frpc')]))];
  const conflict=conflictFor(resources);if(conflict)return rejectOperation(p,'frp-'+op,'与 '+conflict.label+' 冲突；拒绝此次请求，不排队，不取消原操作。');
- const steps=[{title:'固定输入与模拟前置核对',status:'success'}];for(const x of fixed)for(const title of op==='deploy'?['交付程序和 TOML','登记 systemd 运行定义','按目标启停（不等于隧道连通）']:['start','stop','restart'].includes(op)?['执行'+(opLabels[op]||op)+'命令','核对原unit实际状态']:[(opLabels[op]||op)+'所选运行载体'])steps.push({title:frpNode(x.node).ip+' · '+frpRoles[x.role]+' · '+title,status:'pending'});
+ const steps=[{title:'固定输入与模拟前置核对',status:'success'}];for(const x of fixed)for(const title of op==='deploy'?['交付程序和 TOML','登记 systemd 运行定义','启动并核对（不等于隧道连通）']:['start','stop','restart'].includes(op)?['执行'+(opLabels[op]||op)+'命令','核对原unit实际状态']:[(opLabels[op]||op)+'所选运行载体'])steps.push({title:frpNode(x.node).ip+' · '+frpRoles[x.role]+' · '+title,status:'pending'});
  if(steps[1])steps[1].status='running';
- const o=record('FRP '+(op==='deploy'?'应用 / 部署':opLabels[op])+' · '+fixed.length+' 个角色','frp-'+op,p.id,'running','输入已固定；仅模拟执行，不连接服务器。',{frp:true,ended:null,input:{items:fixed,goal:conditions.goal,requestedState:op==='stop'?'stopped':'running',operation:op,runtimeEvidence:clone(conditions.runtimeEvidence||null),binaryCondition:conditions.binary?'虚构可用条件；附件仍为 0 B':'不执行程序'},resources,steps,outcome:conditions.outcome,hold:conditions.hold});
+ const o=record('FRP '+(op==='deploy'?'应用 / 部署':opLabels[op])+' · '+fixed.length+' 个角色','frp-'+op,p.id,'running','输入已固定；仅模拟执行，不连接服务器。',{frp:true,ended:null,input:{items:fixed,requestedState:op==='stop'?'stopped':'running',operation:op,runtimeEvidence:clone(conditions.runtimeEvidence||null),binaryCondition:conditions.binary?'虚构可用条件；附件仍为 0 B':'不执行程序'},resources,steps,outcome:conditions.outcome,hold:conditions.hold});
  for(const x of fixed){const q=pr(x.project);q.frpLastOp=o.id;if(['start','stop','restart'].includes(op))q.lastRuntimeOperation=o.id;if(['start','restart'].includes(op))q.stopVerified=false;}
  persist();render();closeModal();openModal('opdetail',{id:o.id});if(!conditions.hold)timers.set(o.id,setTimeout(()=>frpFinish(o,o.outcome),1600));return o;
 }
@@ -59,7 +59,7 @@ function frpFinish(o,result){
   // 已经有更新的受理操作时，迟到历史核对仅补记录，不覆盖较新的项目信息。
   if(p.frpLastOp&&p.frpLastOp!==o.id)return;
   if(state==='success'){
-   if(op==='deploy'){p.life='installed';p.frpApplied=clone(x.snapshot);p.applied={...clone(x.cfg||{}),port:x.role==='server'?x.snapshot.node.bind_port:0,appConfig:x.files.toml,version:'模拟程序条件（非附件二进制）'};p.appliedRev=x.draftRev||x.snapshot.revision;p.runtime=o.input.goal==='running'?'running':'stopped';p.desired=o.input.goal;p.runtimeCheckStatus='verified';p.stopVerified=p.runtime==='stopped';p.components=[];const n=frpNode(x.node);if(n.authMigration)n.authMigration.roles=n.authMigration.roles.filter(r=>r!==x.role);}
+   if(op==='deploy'){p.life='installed';p.frpApplied=clone(x.snapshot);p.applied={...clone(x.cfg||{}),port:x.role==='server'?x.snapshot.node.bind_port:0,appConfig:x.files.toml,version:'模拟程序条件（非附件二进制）'};p.appliedRev=x.draftRev||x.snapshot.revision;p.runtime='running';p.desired='running';p.runtimeCheckStatus='verified';p.stopVerified=false;p.components=[];const n=frpNode(x.node);if(n.authMigration)n.authMigration.roles=n.authMigration.roles.filter(r=>r!==x.role);}
    else if(op==='uninstall'){p.life='uninstalled';p.runtime='na';p.monitorPaused=true;p.dataStatus='retained';p.components=[];}
    p.health='unknown';p.observed=at;p.lastCheck=at;
   }else if((state==='partial'||state==='failed'&&anySuccess)&&op==='deploy'){
@@ -67,7 +67,7 @@ function frpFinish(o,result){
   }else if(state==='unknown'){p.components=[{name:'原操作待核对',result:'保留已知事实；本角色的后续远端效果未知'}];}
   else if(state==='failed'&&wasUnknown){p.components=[{name:'核对结论',result:'原执行已结束，本角色未完成；已完成角色与步骤保持，不重放'}];}
  });
- o.message=summary==='success'?'选定角色均完成模拟；未自动更改网络或初始化数据库。隧道端到端可用性仍未核对。':summary==='partial'?'部分完成：已完成角色与步骤保留；后续分项未完成。未重跑成功部分，未自动回退。':summary==='unknown'?'后续角色结果未知。保留前面已完成项与冲突保护；先核对原执行，不自动重放。':op==='deploy'&&!wasUnknown?'前置明确失败，未交付、未启动；受理目标与实际观测分别保存。':'所选操作明确失败；实际运行观测不因失败而改写，不自动重试。';
+ o.message=summary==='success'?'选定角色均完成模拟；未自动更改网络或初始化数据库。隧道端到端可用性仍未核对。':summary==='partial'?'部分完成：已完成角色与步骤保留；后续分项未完成。未重跑成功部分，未自动回退。':summary==='unknown'?'后续角色结果未知。保留前面已完成项与冲突保护；先核对原执行，不自动重放。':op==='deploy'&&!wasUnknown?'前置明确失败，未交付、未启动；本次请求与实际观测分别保存。':'所选操作明确失败；实际运行观测不因失败而改写，不自动重试。';
  frpSyncConfigs();persist();render();if(ui.modal?.kind==='opdetail'&&ui.modal.id===o.id)renderModal();
 }
 function frpFinishRuntime(o,result){

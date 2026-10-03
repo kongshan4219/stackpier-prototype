@@ -10,7 +10,9 @@
 | --- | --- |
 | `assets/components/` | 工作台外壳、图标、公共控件和弹窗容器。 |
 | `assets/features/` | 各功能页面、弹窗、按钮及表单处理。 |
-| `assets/features/projects/` | 项目列表、详情、创建、配置与依赖关系。 |
+| `assets/features/programs.js`、`assets/features/programs/` | 通用文件列表、内容分析、上传和命名确认；可识别的 ELF 文件额外记录架构。 |
+| `assets/features/deployments.js`、`assets/features/deployments/` | 部署配置列表、编辑及文件到目标路径的映射。 |
+| `assets/features/projects/` | 项目列表、详情、部署、失败记录、残留清理及服务器文件观测。 |
 | `assets/features/frp/` | FRP 数据、模型、文件生成、页面、弹窗和模拟操作。 |
 | `assets/features/operations/` | 操作记录界面、模拟执行与结果处理。 |
 | `assets/features/network/` | DNS、防火墙及共用的网络模拟操作。 |
@@ -19,6 +21,13 @@
 | `assets/styles/` | 设计变量、公共样式和响应式规则；FRP 专用样式位于对应功能目录。 |
 | `assets/boot.js` | 全部组件就绪后的初始化入口。 |
 | `tests/` | 浏览器接口的内存替身与组件交互测试。 |
+
+## 交互说明
+
+- [文件](docs/files.md)：任意类型文件的上传、架构识别、命名、去重与替换规则。
+- [部署配置](docs/deployment-configurations.md)：配置正文、文件映射及项目采用规则。
+- [部署项目](docs/project-deployment.md)：部署入口、失败记录、残留清理和同机项目名唯一性。
+- [项目文件与巡检](docs/project-files-and-checks.md)：服务器实际文件读取、检查方式和已移除范围。
 
 ## 维护方法
 

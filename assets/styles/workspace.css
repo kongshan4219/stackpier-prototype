@@ -160,11 +160,6 @@ tbody tr:hover{background:#fcfdfe}
 .logbox{background:#24364a;color:#c4d0dc;border:1px solid #1f3145}
 .diff-grid{display:grid;grid-template-columns:1fr 1fr;gap:13px}
 .diff-grid h3{font-size:11px;margin-bottom:9px;color:#8b9aaa}
-.stepper{display:flex;gap:13px;margin-bottom:23px}
-.stepper span{display:flex;align-items:center;gap:8px;flex:1;font-size:11px;color:#91a0af;border-bottom:2px solid #e7edf3;padding-bottom:11px}
-.stepper i{font-style:normal;display:grid;place-items:center;width:22px;height:22px;border:1px solid #dce4ed;border-radius:50%;font-size:10px}
-.stepper span.active{color:#426381;border-color:#426381}
-.stepper span.active i{background:#426381;color:#fff;border-color:#426381}
 .step-list{display:grid;gap:0}
 .step-item{display:flex;align-items:flex-start;gap:12px;padding:15px 0;border-bottom:1px solid #edf1f5}
 .step-item:last-child{border:0}

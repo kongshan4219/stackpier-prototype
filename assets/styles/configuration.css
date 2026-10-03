@@ -1,1 +1,18 @@
 .field textarea.config-source-input{font-family:var(--mono);font-size:12px;line-height:1.75;min-height:280px;tab-size:2;white-space:pre;overflow-wrap:normal;overflow:auto;}
+.server-file-path{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.server-file-path code{font-size:11px;overflow-wrap:anywhere}
+.project-config-file{max-height:none;min-height:360px}
+.server-file-list{display:grid;gap:12px}
+.server-file-item{display:grid;gap:12px;padding:14px;border:1px solid var(--line);border-radius:8px;background:#fbfcfd}
+.server-file-item .detail-list{border-top:1px solid var(--line)}
+.server-file-identity{display:inline-block;max-width:100%;overflow-wrap:anywhere;text-align:right}
+.monitor-target{display:grid;gap:5px;margin-top:14px;padding:12px 14px;border-radius:7px;background:#f7f9fc;border:1px solid var(--line)}
+.monitor-target small{color:var(--muted)}
+.monitor-target code,.monitor-table-target{overflow-wrap:anywhere;word-break:break-word}
+
+@media(max-width:700px){
+ .server-file-path{align-items:flex-start;flex-direction:column}
+ .server-file-item>.between{align-items:flex-start;flex-direction:column}
+ .server-file-identity{text-align:left}
+ .project-config-file{min-height:260px}
+}

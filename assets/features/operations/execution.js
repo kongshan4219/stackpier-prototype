@@ -2,7 +2,7 @@
 
 function activeOps(p){return S.operations.filter(o=>(o.status==='running'||o.status==='unknown'&&!o.protectionReleased)&&o.project===p.id)}
 
-const opLabels={deploy:'部署',apply:'应用配置',update:'更新程序 / 镜像',start:'启动',stop:'停止',restart:'重启',uninstall:'卸载',replica:'初始化只读副本',env:'补齐缺失环境'};
+const opLabels={deploy:'部署',apply:'应用配置',update:'更新文件 / 镜像',start:'启动',stop:'停止',restart:'重启',uninstall:'卸载',env:'补齐缺失环境'};
 
 function isRuntimeAction(kind){return ['start','stop','restart'].includes(kind);}
 
@@ -50,22 +50,28 @@ function conflictFor(resources){return S.operations.find(o=>['running','unknown'
 
 function record(label,kind,project,statusValue,message,extra={}){const o={id:uid('op'),label,kind,project,status:statusValue,time:now(),ended:now(),message,steps:[],input:{},resources:[],...extra};S.operations.unshift(o);persist();return o;}
 
-function rejectOperation(p,kind,message,extra={}){const o=record((opLabels[kind]||kind)+' '+(p?.name||''),kind,p?.id,'rejected',message,extra);closeModal();render();openModal('opdetail',{id:o.id});return null;}
+function rejectOperation(p,kind,message,extra={}){const o=record((opLabels[kind]||kind)+' '+(p?.name||''),kind,p?.id,'rejected',message,extra);if(kind==='deploy'&&p?.creationPending){o.newProject=true;o.input.deployment=deploymentSnapshot(p);archiveFailedDeployment(o,p);persist();}closeModal();render();openModal('opdetail',{id:o.id});return null;}
 
-function stepsFor(kind,input){const titles={deploy:['核对环境、身份与本次输入','交付程序 / 镜像与配置','建立核心运行定义','按目标启停并核对'],apply:['固定草稿与检查冲突','逐项交付配置内容','必要激活 / 保持停止','核对结果与完整参照'],update:['固定程序 / 镜像内容','交付程序及相关配置','必要激活 / 保持停止','核对实际更新结果'],start:['检查运行前提','提交启动','核对运行与端点'],stop:['检查目标与影响范围','提交停止','核对实际停止'],restart:['核对原运行目标','停止运行实体','重新启动','核对运行结果'],uninstall:['核对核心资源和清理选项','停止并移除核心运行实体','处理明确选定的业务数据','删除明确选定的网络条目'],replica:['核对主库条件与目标空库','准备并导入初始数据','写入复制配置并保持只读','核对复制运行'],env:['核对已授权管理身份','安装缺失依赖','检查已存在及新安装环境'],network:['核对目标、权限与影响','提交本次网络修改','读取核对目标条目']};return (titles[kind]||titles.network).map(title=>({title,status:'pending',note:''}));}
+function stepsFor(kind,input){const titles={deploy:['核对环境、身份与本次输入','交付文件 / 镜像与配置','建立核心运行定义','启动并核对'],apply:['固定草稿与检查冲突','逐项交付配置内容与映射文件','核对运行载体状态','核对结果与完整参照'],update:['固定文件 / 镜像内容','交付文件及相关配置','核对运行载体状态','核对实际更新结果'],start:['检查运行前提','提交启动','核对运行与端点'],stop:['检查目标与影响范围','提交停止','核对实际停止'],restart:['核对当前运行状态','停止运行实体','重新启动','核对运行结果'],uninstall:['核对核心资源和清理选项','停止并移除核心运行实体','处理明确选定的业务数据','删除明确选定的网络条目'],env:['核对已授权管理身份','安装缺失依赖','检查已存在及新安装环境'],network:['核对目标、权限与影响','提交本次网络修改','读取核对目标条目']};return (titles[kind]||titles.network).map(title=>({title,status:'pending',note:''}));}
 
 function startOperation(p,kind,input={},outcome='success',options={}){
  if(!Object.hasOwn(opLabels,kind)&&kind!=='network'){closeModal();toast('此操作当前不提供，请从现有入口重新选择。');return null;}
+ if(p&&kind==='deploy'&&!p.applied){options={...options,newProject:true};p.creationPending=true;}
+ let mappedFiles=[];
  if(p){
-  if(['apply','update','start','stop','restart','uninstall','replica'].includes(kind)&&p.life!=='installed')return rejectOperation(p,kind,'当前项目不是完整已部署状态，不能直接执行此操作。请先处理现有部署事实。');
+  if(['apply','update','start','stop','restart','uninstall'].includes(kind)&&p.life!=='installed')return rejectOperation(p,kind,'当前项目不是完整已部署状态，不能直接执行此操作。请先处理现有部署事实。');
   if(p.unsafe&&['start','restart'].includes(kind))return rejectOperation(p,kind,'已有部分覆盖尚未处理，不能用普通启动掩盖不安全的数据状态。');
-  if(kind==='restart'&&p.desired==='stopped')return rejectOperation(p,kind,'项目是主动停止目标。需要运行请明确提交启动，不通过重启隐式改变目标。');
+  if(kind==='restart'&&p.desired==='stopped')return rejectOperation(p,kind,'项目已主动停止。需要运行请明确提交启动，不通过重启隐式启动。');
   const resources=[...resourcesFor(p,kind),...(input.extraResources||[])];const conflict=conflictFor(resources);
   if(conflict)return rejectOperation(p,kind,`与“${conflict.label}”（${statusName[conflict.status]}）影响同一资源。本次拒绝、不排队、不取消原操作。`,{conflict:conflict.id});
   if(['deploy','apply','update'].includes(kind)){
+   const deploymentConflict=activeDeploymentConflict(deploymentSnapshot(p));if(deploymentConflict)return rejectOperation(p,kind,`与“${deploymentConflict.label}”使用相同项目资源，请先核对原操作。`);
    const server=sr(p.server);if(!server||server.state!=='online')return rejectOperation(p,kind,'主机身份或连接尚未核对，不能执行部署变更。');
    if(p.type==='compose'&&!server.docker)return rejectOperation(p,kind,'缺少 Docker / Compose。请在服务器详情中明确执行环境准备；巡检不会自动安装。');
-   if(p.type==='systemd'&&!S.programs.some(b=>b.name===p.cfg.program&&b.arch===server.arch))return rejectOperation(p,kind,`未找到程序 ${p.cfg.program} 对应 ${server.arch} 的文件，请先在“程序文件”提供演示文件。`);
+   if(p.type==='systemd'&&!executableFileFor(p.cfg.program,server))return rejectOperation(p,kind,`未找到程序 ${p.cfg.program} 对应 ${server.arch} 的 ELF 文件，请先在“文件”页面提供。`);
+   mappedFiles=resolvedFileMappings(p.cfg.fileMappings,server);
+   const invalidMapping=mappedFiles.find(mapping=>targetFilePathError(mapping.targetPath));if(invalidMapping)return rejectOperation(p,kind,`文件映射 ${invalidMapping.file} 的目标路径无效，请先修正部署配置。`);
+   const missingMapping=mappedFiles.find(mapping=>!mapping.binary);if(missingMapping)return rejectOperation(p,kind,`文件映射 ${missingMapping.file} 缺少适用于 ${server.arch} 的文件，请先在“文件”页面提供通用或对应架构版本。`);
    const occupied=p.cfg.port&&S.projects.find(x=>x.id!==p.id&&x.server===p.server&&x.life==='installed'&&Number(x.applied?.port)===Number(p.cfg.port));
    if(occupied)return rejectOperation(p,kind,`端口 ${p.cfg.port} 已由同机项目 ${occupied.name} 使用，不擅自覆盖。`);
    if(p.applied&&p.cfg.dataDir!==p.applied.dataDir)return rejectOperation(p,kind,'业务数据目录发生变化；这不等于已完成数据搬移。当前原型不假装支持目录迁移，请先恢复为已应用目录再体验其他配置变更。');
@@ -73,10 +79,12 @@ function startOperation(p,kind,input={},outcome='success',options={}){
  }
  const resources=p?[...resourcesFor(p,kind),...(input.extraResources||[])]:input.resources||[];const cf=conflictFor(resources);if(cf)return rejectOperation(p,kind,'与原操作 '+cf.label+' 冲突，本次不受理。');
  const fixed={...clone(input),...(p?{cfg:clone(p.cfg),applied:clone(p.applied),draftRev:p.draftRev,before:{life:p.life,runtime:p.runtime,desired:p.desired,health:p.health}}:{})};
- if(p?.type==='systemd'&&['deploy','update'].includes(kind)){const binary=S.programs.find(b=>b.name===p.cfg.program&&b.arch===sr(p.server)?.arch);if(binary){fixed.binary=clone(binary);fixed.cfg.contentIdentity=binary.identity;}}
+ if(p)fixed.deployment=deploymentSnapshot(p,fixed.cfg);
+ if(mappedFiles.length)fixed.mappedFiles=clone(mappedFiles);
+ if(p?.type==='systemd'&&['deploy','update'].includes(kind)){const binary=executableFileFor(p.cfg.program,sr(p.server));if(binary){fixed.binary=clone(binary);fixed.cfg.contentIdentity=binary.identity;}}
  if(p&&isRuntimeAction(kind))fixed.requestedState=kind==='stop'?'stopped':'running';
- if(p&&kind==='deploy')fixed.requestedState=input.desired||p.desired;
- const o={id:uid('op'),kind,project:p?.id,label:input.label||`${opLabels[kind]||'修改网络'} ${p?.name||''}`,status:'running',time:now(),input:fixed,resources,outcome,steps:stepsFor(kind,fixed),message:'已受理并固定输入；这里仅执行浏览器模拟。',hold:!!options.hold};o.steps[0].status='running';S.operations.unshift(o);
+ if(p&&kind==='deploy'){delete fixed.desired;fixed.requestedState='running';}
+ const o={id:uid('op'),kind,project:p?.id,label:input.label||`${opLabels[kind]||'修改网络'} ${p?.name||''}`,status:'running',time:now(),input:fixed,resources,outcome,steps:stepsFor(kind,fixed),message:'已受理并固定输入；这里仅执行浏览器模拟。',hold:!!options.hold,newProject:options.newProject===true};o.steps[0].status='running';S.operations.unshift(o);
  if(p&&isRuntimeAction(kind)){p.lastRuntimeOperation=o.id;if(['start','restart'].includes(kind))p.stopVerified=false;}
  persist();render();closeModal();if(!options.silent)openModal('opdetail',{id:o.id});
  if(!o.hold)timers.set(o.id,setInterval(()=>tick(o.id),900));return o;
