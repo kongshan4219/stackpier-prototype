@@ -108,7 +108,7 @@ test('旧节点不同token迁移为待确认草稿，不改变已应用及历史
   assert.equal(reloaded.run('Object.hasOwn(frpNode("n4"),"token")'), false);
   assert.equal(reloaded.run('frpNode("n4").authMigration.roles.length'), 3);
   assert.equal(reloaded.run('JSON.stringify(pr("frp-n4-server").frpApplied)'), p.run('before'));
-  assert.match(reloaded.html('app'), /旧节点认证待确认/);
+  assert.match(reloaded.html('app'), /连接认证待确认/);
   reloaded.run('frpRun([{node:"n4",role:"server"}],"deploy",{binary:true,identity:true,impact:true,hold:true});');
   assert.match(reloaded.run('S.operations[0].message'), /明确确认认证变化/);
 });

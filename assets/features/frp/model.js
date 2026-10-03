@@ -5,7 +5,7 @@ const frpRoles={server:'frps 服务端',client:'frpc 客户端（服务提供端
 const frpPrefixes={server:'frps',client:'frpc',visitor:'frpc-visitor'};
 const frpTemplateSlots=Object.values(frpPrefixes).flatMap(prefix=>[prefix+'.toml.tpl',prefix+'.service.tpl']);
 const frpTemplateRole=name=>Object.keys(frpPrefixes).find(role=>name.startsWith(frpPrefixes[role]+'.'));
-const frpPid=(n,r)=>'frp-'+n.id+'-'+r;
+const frpPid=(n,r)=>n.roleProjects?.[r]||'frp-'+n.id+'-'+r;
 const frpNode=id=>S.frp.nodes.find(n=>n.id===id);
 const frpLoopback=v=>v==='::1'||(validIPv4(v)&&v.split('.')[0]==='127');
 function frpInit(){
@@ -30,18 +30,26 @@ function frpEnsure(){
  const binaries=[['frps','x86_64','frps'],['frps','aarch64','frps-arm64'],['frpc','x86_64','frpc'],['frpc','aarch64','frpc-arm64']];
  for(const [name,arch,filename] of binaries)if(!S.programs.some(b=>b.id==='frp-bin-'+filename))S.programs.push({id:'frp-bin-'+filename,name,arch,filename,size:'0 B · 脱敏占位，不可执行',bytes:0,placeholder:true,time:null,identity:'仅文件名；无版本、架构或完整性验证'});
  for(const n of F.nodes){
-  const hid='frp-host-'+n.id;if(!sr(hid))S.servers.push({id:hid,name:'FRP 云节点 '+n.ip+'（参考）',host:n.ip,port:22,user:n.ssh_user,auth:'待登记',os:'未核对',arch:n.arch,kernel:'未观测',state:'unknown',group:'FRP 参考',cpu:0,mem:0,disk:0,checked:null,fp:'未提供 host key；架构为试用值，不是真实观测',docker:false});
+  const hid=n.server||'frp-host-'+n.id;if(!sr(hid))S.servers.push({id:hid,name:'FRP 云节点 '+n.ip+'（参考）',host:n.ip,port:22,user:n.ssh_user,auth:'待登记',os:'未核对',arch:n.arch,kernel:'未观测',state:'unknown',group:'FRP 参考',cpu:0,mem:0,disk:0,checked:null,fp:'未提供 host key；架构为试用值，不是真实观测',docker:false});
   for(const r of ['server','client',...(n.proxies.some(x=>x.type==='stcp')?['visitor']:[])]){
    const id=frpPid(n,r);if(pr(id))continue;
    const cfg={port:r==='server'?n.bind_port:0,program:r==='server'?'frps':'frpc',version:'零字节占位，未部署',env:'',dataDir:F.root,serviceUser:F.user,appConfig:'',frp:true};
-   S.projects.push({id,name:frpPrefixes[r]+'-'+n.ip,server:r==='client'?n.provider:hid,serverName:r==='client'?'FRP 内网执行机（待核对）':'FRP 云节点 '+n.ip,template:'frp-template-'+r,type:'systemd',software:r==='server'?'frps':'frpc',frpRef:{node:n.id,role:r},life:'draft',desired:'stopped',runtime:'na',health:'unknown',observed:null,lastCheck:null,cfg,applied:null,draftRev:1,appliedRev:0,components:[],monitorPaused:false,dataStatus:'reference-only',monitor:{hours:24,method:'systemd',http:'',channels:[],inherit:true},note:'来自脱敏清单的参考项目；不是已接管、已部署或已健康的真实服务。'});
+   S.projects.push({id,name:n.roleProjects?.server?frpPrefixes[r]+' · '+sname(frpHost(n,r))+' → '+n.ip:frpPrefixes[r]+'-'+n.ip,server:r==='client'?n.provider:hid,serverName:sname(frpHost(n,r)),template:'frp-template-'+r,type:'systemd',software:r==='server'?'frps':'frpc',frpRef:{node:n.id,role:r},life:'draft',desired:'stopped',runtime:'na',health:'unknown',observed:null,lastCheck:null,cfg,applied:null,draftRev:1,appliedRev:0,components:[],monitorPaused:false,dataStatus:'reference-only',monitor:{hours:24,method:'systemd',http:'',channels:[],inherit:true},note:'来自脱敏清单的参考项目；不是已接管、已部署或已健康的真实服务。'});
   }
  }
 }
-function frpHost(n,r){return r==='client'?n.provider:'frp-host-'+n.id;}
+function frpHost(n,r){return r==='client'?n.provider:(n.server||'frp-host-'+n.id);}
+// 只采用对应角色完整部署的原主机参照，不以草稿或程序名称推断已部署。
+function frpInstalledServers(role){
+ const hosts=new Set(S.projects.filter(p=>p.life==='installed'&&(p.frpInstallation?.role||p.frpRef?.role)===role&&p.frpApplied?.role===role&&p.frpApplied.host).map(p=>p.frpApplied.host));
+ return S.servers.filter(server=>hosts.has(server.id));
+}
+function frpValidateConnectionServers(candidate){
+ for(const [role,host] of [['client',candidate.provider],['server',candidate.server]])if(!frpInstalledServers(role).some(server=>server.id===host))throw Error('请选择已部署 '+(role==='client'?'frpc 客户端':'frps 服务端')+' 的服务器；部署状态可能已变化，请重新选择。');
+}
 function frpAuthChange(n,r){const p=pr(frpPid(n,r));if(n.authMigration?.roles.includes(r))return true;if(!p?.frpApplied)return false;const line=text=>text.match(/^\s*auth\.token\s*=.*$/m)?.[0]?.trim();return line(p.frpApplied.files.toml)!==line(frpRenderSafe(n,r).toml);}
 function frpPending(n,r){const p=pr(frpPid(n,r));return !!n.authMigration?.roles.includes(r)||!p?.frpApplied||JSON.stringify(p.frpApplied.files)!==JSON.stringify(frpRenderSafe(n,r));}
 function frpAffectedRoles(role){return S.frp.nodes.flatMap(n=>Object.keys(frpRoles).filter(r=>(!role||r===role)&&(r!=='visitor'||n.proxies.some(x=>x.type==='stcp')||pr(frpPid(n,r)))).map(r=>({node:n,role:r,project:pr(frpPid(n,r))})));}
 function frpAuthImpact(items){return frpAffectedRoles().filter(x=>items.some(item=>item.node===x.node.id)&&(x.project?.life==='installed'||items.some(item=>item.node===x.node.id&&item.role===x.role))&&frpAuthChange(x.node,x.role));}
-function frpSyncConfigs(){if(!S.frp)return;for(const p of S.projects.filter(x=>x.frpRef)){const n=frpNode(p.frpRef.node);if(!n)continue;const files=frpRenderSafe(n,p.frpRef.role),changed=p.cfg.appConfig!==files.toml||p.frpDraftUnit!==files.unit;p.cfg.appConfig=files.toml;p.frpDraftUnit=files.unit;p.cfg.dataDir=S.frp.root;p.cfg.serviceUser=S.frp.user;p.cfg.port=p.frpRef.role==='server'?n.bind_port:0;if(changed)p.draftRev++;p.frpDraftRefs={nodeRevision:n.revision,settingsRevision:S.frp.settingsRev,templateRevisions:clone(S.frp.templateRevisions)};}}
-function frpSaveNode(candidate,old){const previousNodes=clone(S.frp.nodes);if(old)S.frp.nodes[S.frp.nodes.findIndex(n=>n.id===old.id)]=candidate;else S.frp.nodes.push(candidate);const errors=frpValidate();if(errors.length){S.frp.nodes=previousNodes;throw Error(errors.join('；'));}if(old&&old.provider!==candidate.provider&&pr(frpPid(old,'client'))?.life==='installed'){S.frp.nodes=previousNodes;throw Error('已部署客户端的主机不能通过编辑清单偷偷换机；本轮不实现迁移。');}frpEnsure();sr('frp-host-'+candidate.id).arch=candidate.arch;for(const r of Object.keys(frpRoles)){const p=pr(frpPid(candidate,r));if(p&&p.life==='draft'&&r==='client')p.server=candidate.provider;}frpSyncConfigs();persist();}
+function frpSyncConfigs(){if(!S.frp)return;for(const p of S.projects.filter(p=>p.frpInstallation?.role==='server'&&p.frpApplied)){const files=frpRenderSafe(p.frpApplied.node,'server');if(p.cfg.appConfig!==files.toml||p.frpDraftUnit!==files.unit)p.draftRev++;p.cfg.appConfig=files.toml;p.frpDraftUnit=files.unit;p.cfg.dataDir=S.frp.root;p.cfg.serviceUser=S.frp.user;}for(const p of S.projects.filter(x=>x.frpRef)){const n=frpNode(p.frpRef.node);if(!n)continue;const files=frpRenderSafe(n,p.frpRef.role),changed=p.cfg.appConfig!==files.toml||p.frpDraftUnit!==files.unit;p.cfg.appConfig=files.toml;p.frpDraftUnit=files.unit;p.cfg.dataDir=S.frp.root;p.cfg.serviceUser=S.frp.user;p.cfg.port=p.frpRef.role==='server'?n.bind_port:0;if(changed)p.draftRev++;p.frpDraftRefs={nodeRevision:n.revision,settingsRevision:S.frp.settingsRev,templateRevisions:clone(S.frp.templateRevisions)};}}
+function frpSaveNode(candidate,old){if(!old)frpValidateConnectionServers(candidate);const previousNodes=clone(S.frp.nodes);if(old)S.frp.nodes[S.frp.nodes.findIndex(n=>n.id===old.id)]=candidate;else S.frp.nodes.push(candidate);const errors=frpValidate();if(errors.length){S.frp.nodes=previousNodes;throw Error(errors.join('；'));}if(old&&Object.keys(frpRoles).some(r=>(r!=='server'||!old.roleProjects?.server)&&frpHost(old,r)!==frpHost(candidate,r)&&pr(frpPid(old,r))?.life==='installed')){S.frp.nodes=previousNodes;throw Error('已部署客户端的主机不能通过编辑清单偷偷换机；本轮不实现迁移。');}frpEnsure(); for(const r of Object.keys(frpRoles)){const p=pr(frpPid(candidate,r));if(p&&p.life==='draft')p.server=frpHost(candidate,r);}frpSyncConfigs();persist();}

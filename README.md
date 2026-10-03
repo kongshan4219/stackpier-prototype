@@ -28,6 +28,7 @@
 - [部署配置](docs/deployment-configurations.md)：配置正文、文件映射及项目采用规则。
 - [部署项目](docs/project-deployment.md)：部署入口、失败记录、残留清理和同机项目名唯一性。
 - [项目文件与巡检](docs/project-files-and-checks.md)：服务器实际文件读取、检查方式和已移除范围。
+- [FRP 连接与部署](docs/frp-connections.md)：先部署角色、再创建连接的流程与卡片状态。
 
 ## 维护方法
 

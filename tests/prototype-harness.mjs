@@ -101,7 +101,7 @@ export function prototype(saved, { hash = '', missingScript } = {}) {
   document.innerHTML = html;
   document.createElement = tag => new Element(tag);
   document.getElementById = id => document.querySelector('#' + id);
-  document.querySelectorAll = selector => document.children.flatMap(element => [element, ...element.children]).filter(element => matches(element, selector));
+  document.querySelectorAll = selector => document.children.flatMap(function descendants(element) { return [element, ...element.children.flatMap(descendants)]; }).filter(element => matches(element, selector));
   document.body = document.querySelector('body');
   document.head = document.querySelector('head');
   document.activeElement = null;

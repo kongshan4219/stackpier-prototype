@@ -145,20 +145,34 @@ test('FRP 三角色仍生成配对 TOML 与 unit，地址、程序和转义保�
   assert.notEqual(files.visitor.unitPath, files.client.unitPath);
 });
 
-test('FRP 批量操作初始不预选客户端，明确选择全部 visitor 仅包含 STCP 节点', () => {
+test('FRP 角色部署单选服务器，visitor 另选适用连接，不提供批量选择', () => {
   const p = prototype();
   p.click('frp-batch', { role: 'client' });
-  assert.equal(p.run('frpBatchItems().length'), 0);
-  assert.doesNotMatch(p.html('modal'), /默认客户端|client_enabled/);
+  assert.throws(() => p.run('frpBatchItems()'), /请选择部署角色/);
+  assert.doesNotMatch(p.html('modal'), /fb-scope|checkbox-grid/);
   p.click('frp-batchconfirm');
-  assert.equal(p.run('ui.modal.kind'), 'frp-batch');
-  assert.match(p.document.getElementById('modal-error').textContent, /没有适用的选中节点/);
+  assert.match(p.document.getElementById('modal-error').textContent, /请选择服务器/);
   p.document.querySelector('#fb-role').value = 'visitor';
-  p.document.querySelector('#fb-scope').value = 'all';
-  assert.equal(p.run('frpBatchItems().map(item=>item.node+":"+item.role).join(",")'), 'n3:visitor,n4:visitor');
+  p.run('frpSyncBatchSelection()');
+  p.document.querySelector('#fb-server').value = 'frp-host-n4';
+  p.run('frpSyncDeployConnection()');
+  p.document.querySelector('#fb-node').value = 'n4';
+  assert.equal(p.run('frpBatchItems().map(item=>item.node+":"+item.role).join(",")'), 'n4:visitor');
   p.click('frp-batchconfirm');
-  assert.equal(p.run('ui.modal.items.length'), 2);
+  assert.equal(p.run('ui.modal.items.length'), 1);
   assert.equal(p.run('S.operations.filter(operation=>operation.frp).length'), 0);
+});
+
+test('新增连接拒绝未部署服务器，缺少选择不写入草稿', () => {
+  const p = prototype();
+  p.click('frp-nodeedit');
+  const count = p.run('S.frp.nodes.length');
+  p.submit('frp-nodeedit');
+  assert.equal(p.run('S.frp.nodes.length'), count);
+  assert.match(p.document.getElementById('modal-error').textContent, /请选择 frpc 和 frps/);
+  p.submit('frp-nodeedit', {'fn-provider':p.run('S.servers[0].id'),'fn-server':p.run('S.servers[3].id'),'fn-bind':'0.0.0.0','fn-port':'7000'});
+  assert.equal(p.run('S.frp.nodes.length'), count);
+  assert.match(p.document.getElementById('modal-error').textContent, /请选择已部署 frpc/);
 });
 
 test('FRP 零字节占位拒绝部署；普通项目操作也不能绕过专用流程', () => {
