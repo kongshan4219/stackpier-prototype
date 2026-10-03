@@ -13,7 +13,7 @@
 | `assets/features/programs.js`、`assets/features/programs/` | 通用文件列表、内容分析、上传和命名确认；可识别的 ELF 文件额外记录架构。 |
 | `assets/features/deployments.js`、`assets/features/deployments/` | 部署配置列表、编辑及文件到目标路径的映射。 |
 | `assets/features/projects/` | 项目列表、详情、部署、失败记录、残留清理及服务器文件观测。 |
-| `assets/features/frp/` | FRP 数据、模型、文件生成、页面、弹窗和模拟操作。 |
+| `assets/features/frp/` | FRP 参考模板、虚构样例、模型、文件生成、页面、弹窗和模拟操作。 |
 | `assets/features/operations/` | 操作记录界面、模拟执行与结果处理。 |
 | `assets/features/network/` | DNS、防火墙及共用的网络模拟操作。 |
 | `assets/core/` | 状态持久化、工具、导航、交互注册表、事件分发和加载失败提示。 |

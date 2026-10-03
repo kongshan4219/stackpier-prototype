@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { prototype } from './prototype-harness.mjs';
+import { referencePrototype } from './frp-fixtures.mjs';
 
 test('实际入口在组件全部就绪后初始化；组件加载失败保留错误与重载入口', () => {
   const p = prototype();
@@ -139,7 +140,7 @@ test('FRP 三角色仍生成配对 TOML 与 unit，地址、程序和转义保�
   }
   assert.match(files.server.toml, /bindPort = 7000/);
   assert.match(files.client.toml, /\[\[proxies\]\][\s\S]*type = "stcp"/);
-  assert.match(files.visitor.toml, /\[\[visitors\]\][\s\S]*serverName = "example-database"/);
+  assert.match(files.visitor.toml, /\[\[visitors\]\][\s\S]*serverName = "arm-backup-database"/);
   assert.match(files.visitor.toml, /bindAddr = "127.0.0.1"/);
   assert.equal(files.visitor.binaryPath, files.client.binaryPath);
   assert.notEqual(files.visitor.unitPath, files.client.unitPath);
@@ -154,7 +155,7 @@ test('FRP 角色部署单选服务器，visitor 另选适用连接，不提供�
   assert.match(p.document.getElementById('modal-error').textContent, /请选择服务器/);
   p.document.querySelector('#fb-role').value = 'visitor';
   p.run('frpSyncBatchSelection()');
-  p.document.querySelector('#fb-server').value = 'frp-host-n4';
+  p.document.querySelector('#fb-server').value = 's4';
   p.run('frpSyncDeployConnection()');
   p.document.querySelector('#fb-node').value = 'n4';
   assert.equal(p.run('frpBatchItems().map(item=>item.node+":"+item.role).join(",")'), 'n4:visitor');
@@ -164,7 +165,7 @@ test('FRP 角色部署单选服务器，visitor 另选适用连接，不提供�
 });
 
 test('新增连接拒绝未部署服务器，缺少选择不写入草稿', () => {
-  const p = prototype();
+  const p = referencePrototype();
   p.click('frp-nodeedit');
   const count = p.run('S.frp.nodes.length');
   p.submit('frp-nodeedit');
@@ -176,7 +177,7 @@ test('新增连接拒绝未部署服务器，缺少选择不写入草稿', () =>
 });
 
 test('FRP 零字节占位拒绝部署；普通项目操作也不能绕过专用流程', () => {
-  const p = prototype();
+  const p = referencePrototype();
   p.run('frpEnsure();const subject=pr("frp-n4-server");const result=frpRun([{node:"n4",role:"server"}],"deploy",{binary:false,identity:true,impact:true,hold:true}),rejected=S.operations[0];');
   assert.equal(p.run('result'), null);
   assert.equal(p.run('rejected.status'), 'rejected');
@@ -191,7 +192,7 @@ test('FRP 零字节占位拒绝部署；普通项目操作也不能绕过专用�
 
 for (const outcome of ['partial', 'unknown']) {
   test(`FRP ${outcome} 保留先前完成角色、受理快照与独立网络记录`, () => {
-    const p = prototype();
+    const p = referencePrototype();
     p.run('frpEnsure();const networkBefore=JSON.stringify([S.dns,S.firewalls]),items=[{node:"n4",role:"server"},{node:"n4",role:"visitor"}];const operation=frpRun(items,"deploy",{binary:true,identity:true,impact:true,outcome:"success",hold:true});const fixedToml=operation.input.items[0].files.toml;S.frp.token="EXAMPLE_CHANGED_DURING_OPERATION";frpSyncConfigs();');
     p.run(`finishOperation(operation,${JSON.stringify(outcome)});`);
     assert.equal(p.run('operation.status'), outcome);

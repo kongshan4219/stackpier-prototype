@@ -13,7 +13,7 @@ function loadScene(id){if(!scenes.some(scene=>scene.id===id)){toast('此试用�
  case'redeploy':navigate('project','p8');break;
  case'host-changed':sr('s1').state='changed';persist();navigate('servers');break;
  case'access':ui.auth='setup';ui.initialized=false;render();break;
- case'empty':S.servers=[];S.projects=[];S.operations=[];S.dns=[];S.firewalls=[];S.notifications=[];persist();navigate('servers');break;
+ case'empty':S.servers=[];S.projects=[];S.operations=[];S.dns=[];S.firewalls=[];S.notifications=[];S.frp.nodes=[];persist();navigate('servers');break;
  }
  toast('已装载虚构场景；修改意见保留。场景行为尚待审阅。');
 }

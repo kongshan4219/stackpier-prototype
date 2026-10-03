@@ -9,7 +9,7 @@ const frpOldProject=projectPage;projectPage=function(){const p=pr(ui.project);if
 const frpOldModal=renderModal;renderModal=function(){const m=ui.modal;if(m?.kind.startsWith('frp-'))return frpModal(m);if(m?.kind==='newproject'&&m.step>1&&['frpc','frps'].includes(tpl(m.draft?.template)?.software)){frpGo('connections');toast('FRP 使用已还原的角色表单，不套用通用程序的单端口模板。');return;}if(m?.kind==='templateedit'&&['frpc','frps'].includes(tpl(m.id)?.software)){closeModal();FRP.tab='review';navigate('frp');return;}if(m?.kind==='projectop'&&pr(m.id)?.frpRef){const p=pr(m.id);return openModal('frp-op',{node:p.frpRef.node,role:p.frpRef.role,op:m.op==='apply'||m.op==='update'?'deploy':m.op});}return frpOldModal();};
 const frpOldStart=startOperation;startOperation=function(p,kind,...args){if(p?.frpInstallation)return rejectOperation(p,kind,'请通过 FRP 部署入口或对应角色项目详情操作，连接配置另行管理。');if(p?.frpRef)return rejectOperation(p,kind,'请通过 FRP 专用确认执行，避免通用命令、单端口或共享目录假设覆盖真实角色关系。');if(p?.software==='frpc'||p?.software==='frps')return rejectOperation(p,kind,'旧通用 FRP 占位项目未配置正确角色，请进入 FRP 部署方案选择服务端、提供端或 visitor。');return frpOldStart(p,kind,...args);};
 const frpOldFinish=finishOperation;finishOperation=function(o,result='success'){return o?.frpInstallation?frpFinishInstallation(o,result):o?.frp?frpFinish(o,result):frpOldFinish(o,result);};
-const frpOldReset=resetSample;resetSample=function(...a){const x=frpOldReset(...a);frpInit();FRP.tab='connections';FRP.node='n4';return x;};
+const frpOldReset=resetSample;resetSample=function(...a){const x=frpOldReset(...a);frpEnsure();FRP.tab='connections';FRP.node='n4';persist();return x;};
 const frpOldPrograms=programsPage;programsPage=function(){frpEnsure();return `<div class="mb">${notice('FRP 参考包提供的是四个空文件','frpc、frpc-arm64、frps、frps-arm64 都为 0 B。按文件名展示架构约定，不把存在文件或上传元数据当成可执行 / 校验通过。')}</div>`+frpOldPrograms();};
 function frpGo(tab='connections',node=FRP.node,role=FRP.role){frpEnsure();FRP.tab=tab;FRP.node=node;FRP.role=role;closeModal();navigate('frp');persist();}
 if(!navItems.some(x=>x[0]==='frp'))navItems.splice(3,0,['frp','FRP 部署','link','']);
@@ -17,7 +17,8 @@ if(!navItems.some(x=>x[0]==='frp'))navItems.splice(3,0,['frp','FRP 部署','link
 // 所有脚本加载完成后，由入口统一恢复 FRP 状态并首次渲染。
 function initializeFrp(){
  frpInit();
- // 首次升级只添加参考入口，不清空旧演示、反馈或未知操作。FRP 角色在打开该模块时创建。
- if(location.hash==='#frp'){frpEnsure();ui.page='frp';}
+ // 初始化当前虚构样例；已有用户草稿、部署参照与未知操作不被样例替换。
+ if(S.frp.samplePending||location.hash==='#frp')frpEnsure();
+ if(location.hash==='#frp')ui.page='frp';
  persist();render();
 }

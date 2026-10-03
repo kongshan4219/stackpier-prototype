@@ -1,15 +1,16 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { prototype } from './prototype-harness.mjs';
+import { referencePrototype } from './frp-fixtures.mjs';
 
 function installed() {
-  const p = prototype(undefined, { hash: '#frp' });
+  const p = referencePrototype(undefined, { hash: '#frp' });
   p.run('const installation=frpRun(["client","server","visitor"].map(role=>({node:"n4",role})),"deploy",{binary:true,identity:true,impact:true,hold:true});frpFinish(installation,"success");');
   return p;
 }
 
 test('新增连接无已部署角色时提示先部署并禁用选择和保存', () => {
-  const p = prototype();
+  const p = emptyTopology();
   p.click('frp-nodeedit');
   assert.equal(p.document.querySelector('#fn-provider').disabled, true);
   assert.equal(p.document.querySelector('#fn-server').disabled, true);
@@ -49,7 +50,7 @@ test('表单打开后角色被卸载，保存时再次校验并拒绝写入', ()
 
 function emptyTopology() {
   const p = prototype(undefined, { hash: '#frp' });
-  p.run('S.frp.nodes=[];S.projects=S.projects.filter(p=>!p.frpRef);S.operations=[];frpGo("connections");');
+  p.run('S.frp.nodes=[];S.projects=S.projects.filter(p=>!p.frpRef&&!p.frpInstallation);S.operations=[];frpGo("connections");');
   return p;
 }
 

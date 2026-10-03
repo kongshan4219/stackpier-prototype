@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { prototype } from './prototype-harness.mjs';
+import { referencePrototype as prototype } from './frp-fixtures.mjs';
 
 function installed(roles = ['server']) {
   const p = prototype(undefined, { hash: '#frp' });

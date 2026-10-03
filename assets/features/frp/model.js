@@ -9,7 +9,7 @@ const frpPid=(n,r)=>n.roleProjects?.[r]||'frp-'+n.id+'-'+r;
 const frpNode=id=>S.frp.nodes.find(n=>n.id===id);
 const frpLoopback=v=>v==='::1'||(validIPv4(v)&&v.split('.')[0]==='127');
 function frpInit(){
- if(!S.frp){S.frp={schema:2,root:'/srv/services/frp',systemdDir:'/etc/systemd/system',user:'root',token:FRP_SOURCE.config.auth.token,templates:clone(FRP_SOURCE.templates),templateRev:1,naming:'legacy',nodes:FRP_SOURCE.config.servers.map((n,i)=>({...clone(n),id:'n'+(i+1),revision:1,provider:'frp-source',arch:i===3?'aarch64':'x86_64'}))};}
+ if(!S.frp)S.frp=frpSampleState();
  const F=S.frp;F.settingsRev||=1;F.templateRev||=1;F.templateRevisions||=Object.fromEntries(frpTemplateSlots.map(name=>[name,F.templateRev]));
  // 旧节点认证仅转成显式待确认草稿；已应用和在途快照继续保留旧事实。
  for(const n of F.nodes){
@@ -20,23 +20,30 @@ function frpInit(){
   if(n.auth){delete n.auth.token;if(!Object.keys(n.auth).length)delete n.auth;}
  }
  F.schema=3;
+ frpRefreshReferenceSample();
+}
+function frpReferenceProvider(){return {id:'frp-source',name:'FRP 内网执行机（身份待提供）',host:'未在参考包中提供',port:22,user:'待指定',auth:'待登记',os:'Debian（参考说明）',arch:'x86_64',kernel:'未观测',state:'unknown',group:'FRP 参考',cpu:0,mem:0,disk:0,checked:null,fp:'参考记录，不代表已接入或已信任',docker:false};}
+function frpReferenceServer(n){return {id:n.server||'frp-host-'+n.id,name:'FRP 云节点 '+n.ip+'（参考）',host:n.ip,port:22,user:n.ssh_user,auth:'待登记',os:'未核对',arch:n.arch,kernel:'未观测',state:'unknown',group:'FRP 参考',cpu:0,mem:0,disk:0,checked:null,fp:'未提供 host key；架构为试用值，不是真实观测',docker:false};}
+function frpDraftProject(n,r){
+ const F=S.frp,cfg={port:r==='server'?n.bind_port:0,program:r==='server'?'frps':'frpc',version:'零字节占位，未部署',env:'',dataDir:F.root,serviceUser:F.user,appConfig:'',frp:true};
+ return {id:frpPid(n,r),name:n.roleProjects?.server?frpPrefixes[r]+' · '+sname(frpHost(n,r))+' → '+n.ip:frpPrefixes[r]+'-'+n.ip,server:frpHost(n,r),serverName:sname(frpHost(n,r)),template:'frp-template-'+r,type:'systemd',software:r==='server'?'frps':'frpc',frpRef:{node:n.id,role:r},life:'draft',desired:'stopped',runtime:'na',health:'unknown',observed:null,lastCheck:null,cfg,applied:null,draftRev:1,appliedRev:0,components:[],monitorPaused:false,stopVerified:false,dataStatus:'reference-only',monitor:{hours:24,method:'systemd',http:'',channels:[],inherit:true},note:'来自脱敏清单的参考项目；不是已接管、已部署或已健康的真实服务。'};
 }
 function frpEnsure(){
  frpInit(); const F=S.frp;
  // 只清理原型未被用户改动的旧 FRP 程序假样例，不删除用户自行添加的记录。
  S.programs=S.programs.filter(b=>!(b.id==='bin3'&&b.identity==='demo-frpc-a'&&b.filename==='frpc-linux-x86_64'));
- if(!sr('frp-source'))S.servers.push({id:'frp-source',name:'FRP 内网执行机（身份待提供）',host:'未在参考包中提供',port:22,user:'待指定',auth:'待登记',os:'Debian（参考说明）',arch:'x86_64',kernel:'未观测',state:'unknown',group:'FRP 参考',cpu:0,mem:0,disk:0,checked:null,fp:'参考记录，不代表已接入或已信任',docker:false});
+ if(F.nodes.some(n=>n.provider==='frp-source')&&!sr('frp-source'))S.servers.push(frpReferenceProvider());
  for(const role of Object.keys(frpRoles))if(!tpl('frp-template-'+role))S.templates.push({id:'frp-template-'+role,name:frpRoles[role],type:'systemd',software:role==='server'?'frps':'frpc',program:role==='server'?'frps':'frpc',port:role==='server'?7000:'不固定监听',rev:1,version:'待提供真实程序',desc:'来自脱敏部署方案；独立配置、生成预览与逐角色应用',env:'',tpl:'见 FRP 部署 → 模板与审阅',fields:'使用 FRP 结构化表单',frpRole:role});
  const binaries=[['frps','x86_64','frps'],['frps','aarch64','frps-arm64'],['frpc','x86_64','frpc'],['frpc','aarch64','frpc-arm64']];
  for(const [name,arch,filename] of binaries)if(!S.programs.some(b=>b.id==='frp-bin-'+filename))S.programs.push({id:'frp-bin-'+filename,name,arch,filename,size:'0 B · 脱敏占位，不可执行',bytes:0,placeholder:true,time:null,identity:'仅文件名；无版本、架构或完整性验证'});
  for(const n of F.nodes){
-  const hid=n.server||'frp-host-'+n.id;if(!sr(hid))S.servers.push({id:hid,name:'FRP 云节点 '+n.ip+'（参考）',host:n.ip,port:22,user:n.ssh_user,auth:'待登记',os:'未核对',arch:n.arch,kernel:'未观测',state:'unknown',group:'FRP 参考',cpu:0,mem:0,disk:0,checked:null,fp:'未提供 host key；架构为试用值，不是真实观测',docker:false});
+  const hid=n.server||'frp-host-'+n.id;if(!sr(hid))S.servers.push(frpReferenceServer(n));
   for(const r of ['server','client',...(n.proxies.some(x=>x.type==='stcp')?['visitor']:[])]){
    const id=frpPid(n,r);if(pr(id))continue;
-   const cfg={port:r==='server'?n.bind_port:0,program:r==='server'?'frps':'frpc',version:'零字节占位，未部署',env:'',dataDir:F.root,serviceUser:F.user,appConfig:'',frp:true};
-   S.projects.push({id,name:n.roleProjects?.server?frpPrefixes[r]+' · '+sname(frpHost(n,r))+' → '+n.ip:frpPrefixes[r]+'-'+n.ip,server:r==='client'?n.provider:hid,serverName:sname(frpHost(n,r)),template:'frp-template-'+r,type:'systemd',software:r==='server'?'frps':'frpc',frpRef:{node:n.id,role:r},life:'draft',desired:'stopped',runtime:'na',health:'unknown',observed:null,lastCheck:null,cfg,applied:null,draftRev:1,appliedRev:0,components:[],monitorPaused:false,dataStatus:'reference-only',monitor:{hours:24,method:'systemd',http:'',channels:[],inherit:true},note:'来自脱敏清单的参考项目；不是已接管、已部署或已健康的真实服务。'});
+   S.projects.push(frpDraftProject(n,r));
   }
  }
+ if(F.samplePending)frpSeedSampleRoles();
 }
 function frpHost(n,r){return r==='client'?n.provider:(n.server||'frp-host-'+n.id);}
 // 只采用对应角色完整部署的原主机参照，不以草稿或程序名称推断已部署。
