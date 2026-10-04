@@ -24,6 +24,7 @@
 
 ## 交互说明
 
+- [界面规则](docs/interface-guidelines.md)：文字层级、公共组件、响应式与键盘操作。
 - [文件](docs/files.md)：任意类型文件的上传、架构识别、命名、去重与替换规则。
 - [部署配置](docs/deployment-configurations.md)：配置正文、文件映射及项目采用规则。
 - [部署项目](docs/project-deployment.md)：部署入口、失败记录、残留清理和同机项目名唯一性。

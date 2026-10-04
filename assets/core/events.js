@@ -6,7 +6,18 @@ document.addEventListener('change',event=>{const el=event.target;cacheFormInput(
 
 dialog.addEventListener('cancel',event=>{event.preventDefault();closeModal();});
 
-document.addEventListener('keydown',event=>{if(event.key==='Escape'&&ui.nav){ui.nav=false;render();}});
+document.addEventListener('keydown',event=>{
+ if(dialog.open)return;
+ if(!ui.nav||typeof window.matchMedia!=='function'||!window.matchMedia('(max-width:820px)').matches)return;
+ if(event.key==='Escape'){event.preventDefault();toggleNavigation(false);return;}
+ if(event.key!=='Tab')return;
+ const items=Array.from(document.querySelectorAll('#workspace-navigation button:not(:disabled),#workspace-navigation a[href]'));
+ const first=items[0],last=items[items.length-1];
+ if(event.shiftKey&&document.activeElement===first){event.preventDefault();last?.focus();}
+ else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first?.focus();}
+});
+
+if(typeof window.matchMedia==='function')window.matchMedia('(max-width:820px)').addEventListener('change',()=>{ui.nav=false;syncNavigationAccessibility();document.querySelector('.workspace-shell')?.classList.remove('nav-open');});
 
 document.addEventListener('click',event=>{const target=event.target.closest('[data-action]');if(!target||target.disabled)return;const d=target.dataset,a=d.action;
  { const handler = prototypeActions[a]; if (handler) handler(event, target, d, a); else { toast('没有找到对应的演示动作：'+a,'error'); } }

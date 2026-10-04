@@ -1,2 +1,29 @@
-/* 基于仓库 source/styles.css 与 web/src/servers.css 的雾白、墨蓝令牌；仅用于交互审阅。 */
-:root{--canvas:#f5f7fa;--surface:#fff;--ink:#21364e;--text:#243447;--muted:#728091;--line:#e2e7ee;--accent:#243e5b;--accent-hover:#172e48;--focus:#6c8fae;--error:#ac413c;--error-surface:#fff4f2;--success:#427368;--success-surface:#edf4f1;--warning:#8a6939;--warning-surface:#fbf6ec;--mono:SFMono-Regular,Consolas,"Liberation Mono",monospace;--font:-apple-system,BlinkMacSystemFont,"PingFang SC","Noto Sans CJK SC","Microsoft YaHei",sans-serif}
+/* 沿用墨蓝与浅灰视觉体系，公共文字层级与组件尺寸统一维护。 */
+:root {
+  --canvas: #f5f7fa;
+  --surface: #fff;
+  --ink: #21364e;
+  --text: #243447;
+  --muted: #586b80;
+  --line: #dde5ee;
+  --line-soft: #e9eef4;
+  --accent: #243e5b;
+  --accent-hover: #172e48;
+  --focus: #527ca5;
+  --error: #ac413c;
+  --error-surface: #fff4f2;
+  --success: #427368;
+  --success-surface: #edf4f1;
+  --warning: #8a6939;
+  --warning-surface: #fbf6ec;
+  --font-body: 1rem;
+  --font-ui: .875rem;
+  --font-meta: .75rem;
+  --radius-control: 6px;
+  --radius-card: 10px;
+  --control-height: 42px;
+  --review-height: 48px;
+  --sidebar-width: 248px;
+  --mono: SFMono-Regular, Consolas, "Liberation Mono", monospace;
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Noto Sans CJK SC", "Microsoft YaHei", sans-serif;
+}
