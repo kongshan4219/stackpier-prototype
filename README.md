@@ -40,6 +40,8 @@
 
 - [清理与 FRP 五项修复](docs/cleanup-frp-repairs.md)：清理解决关联、交付资源台账、visitor 独占、改绑解除旧配置及浏览器前后截图。
 
+- [FRP 部分应用目标恢复](docs/frp-incomplete-targets.md)：逐次固定目标证据、未解决占用、恢复和迁移及回归截图。
+
 ## 维护方法
 
 `index.html` 直接列出本地 CSS 和原生 JavaScript，按依赖顺序加载，不需要安装依赖或构建。

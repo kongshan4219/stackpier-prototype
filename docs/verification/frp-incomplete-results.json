@@ -1,0 +1,91 @@
+{
+  "baseline": "1192dd10312c3eda00c9823ea2fdc57c2c5194eb",
+  "unit": {
+    "total": 209,
+    "passed": 209,
+    "failed": 0,
+    "skipped": 0,
+    "specialized": 22,
+    "command": "node --test --test-isolation=none tests/*.test.mjs"
+  },
+  "browser": {
+    "total": 323,
+    "specialized": 38,
+    "existing": {
+      "asset": 63,
+      "cloudflare": 54,
+      "frp": 24,
+      "context": 55,
+      "lifecycle": 53,
+      "cleanup": 36
+    },
+    "pageErrors": [],
+    "engine": "Chromium",
+    "viewports": [
+      1440,
+      390
+    ],
+    "realDomInteraction": true,
+    "independentQaState": true
+  },
+  "syntax": {
+    "javascript": 72,
+    "python": 7,
+    "entryResources": 82
+  },
+  "build": "byte-identical static index.html + assets; no package.json or TypeScript",
+  "migration": {
+    "idempotent": true,
+    "wholeStoreReset": false,
+    "legacyPartialReboundRecovered": true,
+    "missingEvidence": "review and block",
+    "pendingOnly": "stable review record",
+    "originalInputPreserved": true,
+    "unrelatedDataPreserved": true
+  },
+  "baselineBrowserReproduction": {
+    "binding": "qa-evidence-client-b",
+    "applied": false,
+    "reserved": 0,
+    "results": [
+      {
+        "projectId": "qa-evidence-client-a",
+        "server": "s2",
+        "path": "/srv/services/frp/projects/qa-evidence-client-a/frpc.toml",
+        "status": "success"
+      },
+      {
+        "projectId": "qa-evidence-server-a",
+        "server": "s4",
+        "path": "/srv/services/frp/projects/qa-evidence-server-a/frps.toml",
+        "status": "success"
+      },
+      {
+        "projectId": "qa-evidence-visitor-a",
+        "server": "s4",
+        "path": "/srv/services/frp/projects/qa-evidence-visitor-a/frpc-visitor.toml",
+        "status": "failed"
+      }
+    ],
+    "programs": [
+      {
+        "bytes": 96,
+        "kind": "elf",
+        "arch": "x86_64",
+        "sha256": "e023015fceae965c09ce23c1969450b668283a0d67cc21b142ed859e92a01dd0"
+      },
+      {
+        "bytes": 96,
+        "kind": "elf",
+        "arch": "x86_64",
+        "sha256": "990a52bf983b2cda1ed9de105e1567da33061121efd6362c120e28000a632ea7"
+      }
+    ]
+  },
+  "notExecuted": [
+    "real SSH/FRP/server/DNS/firewall",
+    "Safari/Firefox",
+    "concurrent browser localStorage writers"
+  ],
+  "publication": "actual release and public interaction evidence are recorded in the draft PR"
+}

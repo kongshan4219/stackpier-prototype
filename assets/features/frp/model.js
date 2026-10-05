@@ -62,10 +62,10 @@ function frpAuthImpact(items){return frpAffectedRoles().filter(x=>items.some(ite
 function frpSyncConfigs(){if(S.frp)frpSyncDrafts();}
 function frpSaveNode(candidate,old){
  const visitorErrors=frpBindingErrors(candidate).filter(e=>e.startsWith('frpc-visitor'));if(visitorErrors.length)throw Error(visitorErrors.join('；'));
- if(old&&frpNeedsDetach(old)&&!frpSameBindings(old.appliedConfiguration?.bindings,candidate.serviceBindings))throw Error('已应用连接改绑前须先明确解除旧配置并核对，旧服务不会卸载。');
+ if(old&&frpNeedsDetach(old)&&(!frpSameBindings(old.serviceBindings,candidate.serviceBindings)||old.appliedConfiguration&&!old.appliedConfiguration.detached&&!frpSameBindings(old.appliedConfiguration.bindings,candidate.serviceBindings)))throw Error('已应用或未解决目标改绑前须先明确解除旧配置并核对，旧服务不会卸载。');
  if(!old||!frpSameBindings(old.serviceBindings,candidate.serviceBindings))frpValidateConnectionServers(candidate);
  const bindings=frpBindingErrors(candidate);if(bindings.length)throw Error(bindings.join('；'));
- const previous=clone(S.frp.nodes);if(old)S.frp.nodes[S.frp.nodes.findIndex(n=>n.id===old.id)]=candidate;else S.frp.nodes.push(candidate);
+ candidate.configurationManaged=true;const previous=clone(S.frp.nodes);if(old)S.frp.nodes[S.frp.nodes.findIndex(n=>n.id===old.id)]=candidate;else S.frp.nodes.push(candidate);
  const errors=frpValidate();if(errors.length){S.frp.nodes=previous;throw Error(errors.join('；'));}
  // 保存连接只更新配置，不采用公共资产、不改项目草稿或已应用状态。
  persist();

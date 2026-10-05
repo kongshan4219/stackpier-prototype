@@ -5,7 +5,7 @@ document.addEventListener('click',event=>{const el=event.target.closest('[data-a
  if(a==='frp-binding-detach'){openModal('frp-binding-detach',{node:d.node});return;}
  if(a==='frp-configapply'||a==='frp-op'){openModal('frp-configapply',{node:d.node||FRP.node});return;}
  if(a==='frp-connection-delete'){const n=frpNode(d.node);openModal('frp-connection-delete',{node:n.id});return;}
- if(a==='frp-connection-delete-confirm'){const n=frpNode(d.node);n.deletedConfig=true;n.proxies=[];n.revision++;persist();closeModal();render();toast('连接配置已标记删除，尚待应用；服务项目保持。');return;}
+ if(a==='frp-connection-delete-confirm'){const n=frpNode(d.node);if(n.evidenceReview||frpUnresolvedTargets(n.id).length)throw Error('旧目标未解决，先核对或清理固定旧配置，不能通过删除连接释放占用。');n.deletedConfig=true;n.proxies=[];n.revision++;persist();closeModal();render();toast('连接配置已标记删除，尚待应用；服务项目保持。');return;}
  if(a==='frp-public-adopt'){const n=frpNode(d.node);openModal('frp-public-adopt',{node:n.id});return;}
  if(a==='frp-public-adopt-confirm'){const n=frpNode(d.node);n.sourceSettings=frpSettingsSnapshot();n.revision++;persist();closeModal();render();return;}
  if(a==='frp-home')frpGo();else if(a==='frp-tab'){FRP.tab=['deploy','review'].includes(d.id)?'connections':d.id;render();}else if(a==='frp-role'){FRP.role=d.id;render();}else if(a==='frp-node')frpGo('node',d.id);else if(a==='frp-openfiles')frpGo('files',d.node,d.role);

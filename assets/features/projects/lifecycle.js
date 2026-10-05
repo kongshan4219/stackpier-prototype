@@ -36,7 +36,7 @@ function migrateServiceProjects(){
   if(n.clientInstallation){n.programInstallationRef??=n.clientInstallation;delete n.clientInstallation;}
   n.sourceSettings||=frpSettingsSnapshot();
   // 旧已应用参照只能从真实保存的完整快照迁移，不能用当前草稿冒充。
-  if(!n.appliedConfiguration){const roles=['client','server',...(n.proxies.some(x=>x.type==='stcp')?['visitor']:[])];if(roles.every(role=>pr(n.serviceBindings[role])?.frpApplied))n.appliedConfiguration={revision:pr(n.serviceBindings.client).frpApplied.node?.revision||n.revision,proxies:clone(pr(n.serviceBindings.client).frpApplied.node?.proxies||[]),serviceIds:roles.map(role=>n.serviceBindings[role]),source:'迁移历史模拟参照',at:pr(n.serviceBindings.client).observed};}
+  if(!n.appliedConfiguration&&!n.configurationManaged&&!n.configurationResult&&!S.operations.some(o=>o.kind==='frp-config'&&o.input?.nodeId===n.id)){const roles=['client','server',...(n.proxies.some(x=>x.type==='stcp')?['visitor']:[])];if(roles.every(role=>pr(n.serviceBindings[role])?.frpApplied))n.appliedConfiguration={revision:pr(n.serviceBindings.client).frpApplied.node?.revision||n.revision,proxies:clone(pr(n.serviceBindings.client).frpApplied.node?.proxies||[]),serviceIds:roles.map(role=>n.serviceBindings[role]),source:'迁移历史模拟参照',at:pr(n.serviceBindings.client).observed};}
  }
  S.serviceSchema=1;
 }

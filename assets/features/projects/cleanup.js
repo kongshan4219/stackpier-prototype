@@ -17,6 +17,7 @@ function projectCleanupPlan(p){
  return {resourceSignature:projectResourceSignature(p),frpConnections,projectId:p.id,name:p.name,server:serverOperationSnapshot(p.server),targets,remaining,preserved,network,completed};
 }
 function projectCleanupError(p,plan){
+ if(p.frpService&&frpUnresolvedTargets().some(t=>t.projectId===p.id))return 'FRP 固定配置目标尚未解决；先核对 / 清理连接旧配置，不通过卸载释放占用。';
  if(p.resourceLedger?.unresolvedScopes?.length)return '历史部分 / 未知交付缺少资源输入，归属清单待核对，不能宣称完整清理。';
  const hostError=serverSnapshotError(plan.server);if(hostError)return hostError;
  if(p.cleanup?.status==='unknown'&&!S.operations.find(o=>o.id===p.cleanup.operation)?.protectionReleased)return '清理结果未知，请先核对原操作是否结束，不重复执行。';

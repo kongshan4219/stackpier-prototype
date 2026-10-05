@@ -14,6 +14,7 @@ if (prototypeLoading.errors.length) {
     initializeResourceLedgers();
     migrateOperationResolutions();
     migrateFrpBindings();
+    migrateFrpEvidence();
     initializeRoutes();
     persist();
     prototypeLoading.ready = true;
