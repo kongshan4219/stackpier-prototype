@@ -55,7 +55,7 @@ function saveProgramFile(m,filename){
  const draft=m.draft,problem=programNameError(filename)||programUploadError(draft);
  if(problem){modalError(problem);return;}
  const analysis=draft.analysis,name=draft.original?.name||filename;
- const collision=S.programs.find(binary=>binary.id!==draft.id&&storedFileArchitecture(binary)===analysis.arch&&(binary.filename===filename||binary.name===name));
+ const collision=S.programs.find(binary=>binary.id!==draft.id&&storedFileArchitecture(binary)===analysis.arch&&(binary.filename===filename||binary.name===name&&(!draft.original?.groupId||binary.groupId===draft.original.groupId)));
  if(collision){modalError(`“${collision.name}”在 ${storedFileArchitectureLabel(analysis)} 范围已有文件，请更换文件名，或从列表选择“替换文件”。`);return;}
  const original=draft.original;
  const binary={id:draft.id||uid('bin'),name,filename,...analysis,time:now(),identity:`sha256:${analysis.sha256}`,revision:Math.max(original?.revision||0,...(original?.revisions||[]).map(item=>item.revision))+1,groupId:original?.groupId||assetGroups().find(group=>group.name===name)?.id||uid('asset')};

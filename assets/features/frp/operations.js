@@ -1,100 +1,40 @@
 'use strict';
 // 模拟操作受理与分项结果核对；保留未知结果和迟到核对保护。
-function frpCompileItems(items,op='deploy'){return items.map(x=>{const n=frpNode(x.node),p=pr(frpPid(n,x.role)),snapshot=op==='deploy'?frpSnapshot(n,x.role):clone(p.frpApplied);if(!snapshot)throw Error('没有已应用运行载体参照，不能猜测启停或卸载目标');return {node:n.id,role:x.role,project:p.id,snapshot,cfg:clone(p.cfg),draftRev:p.draftRev,before:{life:p.life,runtime:p.runtime,desired:p.desired},files:clone(snapshot.files)};});}
+function frpCompileItems(items,op='deploy'){return frpUniqueItems(items).map(x=>{const n=frpNode(x.node),p=pr(frpPid(n,x.role)),snapshot=['deploy','install'].includes(op)?frpDraftSnapshot(n,x.role):clone(p.frpApplied);if(!snapshot)throw Error('没有已应用运行载体参照，不能猜测启停或卸载目标');if(['deploy','install'].includes(op))snapshot.program=clone(frpResolveProgram(snapshot.programRef,snapshot.host).file);return {node:n.id,role:x.role,project:p.id,snapshot,cfg:clone(p.cfg),draftRev:p.draftRev,before:{life:p.life,runtime:p.runtime,desired:p.desired},files:clone(snapshot.files)};});}
 function frpNeedsBinary(items){return items.some(x=>{const n=frpNode(x.node);return !n.roleProjects?.server||x.role==='visitor'||x.role==='client'&&pr(n.clientInstallation)?.life!=='installed'||x.role==='server'&&pr(frpPid(n,'server'))?.life!=='installed';});}
 function frpRun(items,op,conditions){
- frpEnsure();if(!items.length){modalError('没有选中的适用角色。');return;}
+ frpEnsure();items=frpUniqueItems(items);if(!items.length){modalError('没有选中的适用角色。');return;}
  const p=pr(frpPid(frpNode(items[0].node),items[0].role)),errors=frpValidate();
- if(op==='deploy'||op==='start')for(const item of items){const n=frpNode(item.node);if(n.roleProjects?.server)try{frpValidateConnectionServers(n);}catch(error){return rejectOperation(p,'frp-'+op,error.message);}}
- if(op==='deploy')for(const item of items){const n=frpNode(item.node);if(!n.roleProjects?.server)continue;
-  if(item.role!=='server'){if(frpAuthChange(n,'server')&&!items.some(x=>x.node===n.id&&x.role==='server'))return rejectOperation(p,'frp-deploy','frps 仍使用旧认证，请先核对并应用配对服务端配置。');const program=item.role==='client'?pr(n.clientInstallation):null;if(program&&program.frpApplied?.files.binaryPath!==frpFiles(n,item.role).binaryPath)return rejectOperation(p,'frp-deploy','已部署 frpc 程序与连接草稿的运行路径不同，请先核对服务器角色部署。');}
+ if(['deploy','install'].includes(op)){const invalid=frpDeployErrors(items);if(invalid.length)return rejectOperation(p,'frp-'+op,invalid.join('；'));const cleanup=items.map(x=>frpCleanupPreview(frpNode(x.node))).filter(Boolean);if(cleanup.length&&!conditions.cleanup)return rejectOperation(p,'frp-'+op,'删除最后一条 STCP 后须明确确认移除 visitor 配置和 unit。');}
+ if(op==='start'){for(const x of items){const q=pr(frpPid(frpNode(x.node),x.role));if(q.frpApplied?.programRef){const invalid=frpResolveProgram(q.frpApplied.programRef,q.frpApplied.host).errors;if(invalid.length)return rejectOperation(q,'frp-start',invalid.join('；'));}}}
+ if(['deploy','install'].includes(op)||op==='start')for(const item of items){const n=frpNode(item.node);if(n.roleProjects?.server)try{frpValidateConnectionServers(n);}catch(error){return rejectOperation(p,'frp-'+op,error.message);}}
+ if(['deploy','install'].includes(op))for(const item of items){const n=frpNode(item.node);if(!n.roleProjects?.server)continue;
+  if(item.role!=='server'){if(frpAuthChange(n,'server')&&!items.some(x=>x.node===n.id&&x.role==='server'))return rejectOperation(p,'frp-deploy','frps 仍使用旧认证，请先核对并应用配对服务端配置。');const program=item.role==='client'?pr(n.clientInstallation):null;if(program&&program.frpApplied?.files.binaryPath!==pr(frpPid(n,item.role))?.frpDraft?.files.binaryPath)return rejectOperation(p,'frp-deploy','已部署 frpc 程序与连接草稿的运行路径不同，请先核对服务器角色部署。');}
   if(item.role==='server'&&frpAuthChange(n,'server')){const affected=S.frp.nodes.filter(other=>frpPid(other,'server')===frpPid(n,'server')).flatMap(other=>['client','visitor'].filter(role=>pr(frpPid(other,role))?.life==='installed'&&frpAuthChange(other,role)).map(role=>({node:other.id,role})));if(affected.some(x=>!items.some(item=>item.node===x.node&&item.role===x.role)))return rejectOperation(p,'frp-deploy','共用 frps 的其他已部署连接仍使用旧认证，请先审阅所有关联连接的认证变更。');}
  }
  if(conditions.previewBinding&&conditions.previewBinding!==frpPreviewBinding(items,op))return rejectOperation(p,'frp-'+op,'预览后配置或已应用参照已变化，请重新打开预览并确认；不使用新内容替换原确认。');
- if(op==='deploy'&&errors.length)return rejectOperation(p,'frp-deploy',errors.join('；'));
- if((op==='deploy'||op==='start')&&frpNeedsBinary(items)&&!conditions.binary)return rejectOperation(p,'frp-'+op,'附件中的 frpc / frps 均为零字节占位文件：无法执行、无法验证真实架构或 FRP 配置。不下发、不启动。');
+ if(['deploy','install'].includes(op)){const pairing=frpPairErrors(items);if(pairing.length)return rejectOperation(p,'frp-'+op,pairing.join('；'));}
+ if(['deploy','install'].includes(op)&&errors.length)return rejectOperation(p,'frp-deploy',errors.join('；'));
  if(!conditions.identity||!conditions.impact)return rejectOperation(p,'frp-'+op,'主机身份、授权或影响范围未确认。不自动接受 host key，不自动提权。');
  if(op==='uninstall'&&!conditions.remove)return rejectOperation(p,'frp-'+op,'请确认仅卸载所选角色，保留其他角色、共享程序及网络资源。');
- if(op==='deploy'&&frpAuthImpact(items).length){
+ if(['deploy','install'].includes(op)&&frpAuthImpact(items).length){
   if(!conditions.authChange)return rejectOperation(p,'frp-deploy','全局认证与所选角色的旧参照不同，请明确确认认证变化后再应用。');
   const nodes=new Set(items.map(x=>x.node));
   const missing=frpAffectedRoles().filter(x=>nodes.has(x.node.id)&&x.project?.life==='installed'&&frpAuthChange(x.node,x.role)&&!items.some(item=>item.node===x.node.id&&item.role===x.role));
   if(missing.length)return rejectOperation(p,'frp-deploy','同一连接的配对角色仍使用旧认证：'+missing.map(x=>x.node.ip+' '+frpRoles[x.role]).join('、')+'。请明确选择“应用该连接全部角色”，不能形成未确认的认证分叉。');
  }
  for(const item of items){const n=frpNode(item.node),r=item.role,x=pr(frpPid(n,r));
-  if(op!=='deploy'&&x.life!=='installed')return rejectOperation(x,'frp-'+op,'所选角色没有完整部署，不能将生成文件当作已安装服务。');
+  if(!['deploy','install'].includes(op)&&x.life!=='installed')return rejectOperation(x,'frp-'+op,'所选角色没有完整部署，不能将生成文件当作已安装服务。');
   if(op==='uninstall'&&x.frpInstallation)return rejectOperation(x,'frp-uninstall','此服务端由服务器角色共用，请在对应角色项目详情核对关联连接后卸载角色。');
-  if(op==='deploy'&&r==='visitor'&&!n.proxies.some(x=>x.type==='stcp'))return rejectOperation(x,'frp-deploy','已没有 STCP 映射，不再生成新 visitor；已有运行载体需单独确认卸载。');
-  if(op==='deploy'&&!['x86_64','aarch64','arm64'].includes(sr(frpHost(n,r))?.arch))return rejectOperation(x,'frp-deploy','目标架构未确定 / 不支持，不能猜测二进制。');
-  if(op==='deploy'&&x.frpApplied&&x.life!=='uninstalled'&&(x.frpApplied.files.unitPath!==frpFiles(n,r).unitPath||x.frpApplied.root!==S.frp.root||x.frpApplied.host!==frpHost(n,r)))return rejectOperation(x,'frp-deploy','当前修改涉及既有 unit 身份、运行目录或执行主机改变，不能把普通应用当成隐式迁移 / 清理旧服务；本原型保留原部署事实。');
+  if(['deploy','install'].includes(op)&&r==='visitor'&&!n.proxies.some(x=>x.type==='stcp'))return rejectOperation(x,'frp-deploy','已没有 STCP 映射，不再生成新 visitor；已有运行载体需单独确认卸载。');
+  if(['deploy','install'].includes(op)&&!['x86_64','aarch64','arm64'].includes(sr(frpHost(n,r))?.arch))return rejectOperation(x,'frp-deploy','目标架构未确定 / 不支持，不能猜测二进制。');
+  if(['deploy','install'].includes(op)&&x.frpApplied&&x.life!=='uninstalled'&&(x.frpApplied.files.unitPath!==x.frpDraft.files.unitPath||x.frpApplied.root!==x.frpDraft.root||x.frpApplied.host!==x.frpDraft.host))return rejectOperation(x,'frp-deploy','当前修改涉及既有 unit 身份、运行目录或执行主机改变，不能把普通应用当成隐式迁移 / 清理旧服务；本原型保留原部署事实。');
  }
  const fixed=frpCompileItems(items,op),resources=[...new Set(fixed.flatMap(x=>['project:'+x.project,'frp-node:'+x.node,'frp-bin:'+x.snapshot.host+':'+(x.role==='server'?'frps':'frpc')]))];
  const conflict=conflictFor(resources);if(conflict)return rejectOperation(p,'frp-'+op,'与 '+conflict.label+' 冲突；拒绝此次请求，不排队，不取消原操作。');
- const steps=[{title:'固定输入与模拟前置核对',status:'success'}];for(const x of fixed)for(const title of op==='deploy'?[frpNode(x.node).roleProjects?.server&&x.role==='client'?'引用已部署 frpc，交付连接 TOML':'交付程序和 TOML','登记 systemd 运行定义','启动并核对（不等于隧道连通）']:['start','stop','restart'].includes(op)?['执行'+(opLabels[op]||op)+'命令','核对原unit实际状态']:[(opLabels[op]||op)+'所选运行载体'])steps.push({title:frpNode(x.node).ip+' · '+frpRoles[x.role]+' · '+title,status:'pending'});
+ const steps=[{title:'固定输入与模拟前置核对',status:'success'}];for(const x of fixed)for(const title of ['deploy','install'].includes(op)?[frpNode(x.node).roleProjects?.server&&x.role==='client'?'引用已部署 frpc，交付连接 TOML':'交付程序和 TOML','登记 systemd 运行定义',op==='install'?'仅登记安装，不启动':'启动并核对（不等于隧道连通）']:['start','stop','restart'].includes(op)?['执行'+(opLabels[op]||op)+'命令','核对原unit实际状态']:[(opLabels[op]||op)+'所选运行载体'])steps.push({title:frpNode(x.node).ip+' · '+frpRoles[x.role]+' · '+title,status:'pending'});
  if(steps[1])steps[1].status='running';
- const o=record('FRP '+(op==='deploy'?'应用 / 部署':opLabels[op])+' · '+fixed.length+' 个角色','frp-'+op,p.id,'running','输入已固定；仅模拟执行，不连接服务器。',{frp:true,ended:null,input:{items:fixed,requestedState:op==='stop'?'stopped':'running',operation:op,runtimeEvidence:clone(conditions.runtimeEvidence||null),binaryCondition:conditions.binary?'虚构可用条件；附件仍为 0 B':frpNeedsBinary(items)?'不执行程序':'复用已部署角色的模拟程序参照'},resources,steps,outcome:conditions.outcome,hold:conditions.hold});
+ const o=record('FRP '+(op==='install'?'安装（不启动）':op==='deploy'?'应用 / 部署':opLabels[op])+' · '+fixed.length+' 个角色','frp-'+op,p.id,'running','输入已固定；仅模拟执行，不连接服务器。',{frp:true,ended:null,input:{items:fixed,cleanup:conditions.cleanup?[...new Map(items.map(x=>frpCleanupPreview(frpNode(x.node))).filter(Boolean).map(x=>[x.project,x])).values()]:[],targetOutcomes:clone(conditions.targetOutcomes||{}),requestedState:['stop','install'].includes(op)?'stopped':'running',operation:op,runtimeEvidence:clone(conditions.runtimeEvidence||null),binaryCondition:'固定公共文件修订的浏览器模拟交付；不执行二进制'},resources,steps,outcome:conditions.outcome,hold:conditions.hold});
  for(const x of fixed){const q=pr(x.project);q.frpLastOp=o.id;if(['start','stop','restart'].includes(op))q.lastRuntimeOperation=o.id;if(['start','restart'].includes(op))q.stopVerified=false;}
  persist();render();closeModal();openModal('opdetail',{id:o.id});if(!conditions.hold)timers.set(o.id,setTimeout(()=>frpFinish(o,o.outcome),1600));return o;
-}
-function frpFinish(o,result){
- if(o?.frp&&['start','stop','restart'].includes(o.input.operation))return frpFinishRuntime(o,result);
- if(!o||!o.frp||!['running','unknown'].includes(o.status))return;
- clearTimeout(timers.get(o.id));timers.delete(o.id);
- const wasUnknown=o.status==='unknown',at=now(),items=o.input.items,op=o.input.operation;
- o.frpCompleted||=[];
- let failure=items.findIndex(x=>x.role==='visitor');if(failure<0)failure=items.length-1;
- const completedBefore=new Set(o.frpCompleted);
- // 核对失败不能抹掉同一次执行里已经确认完成的角色或步骤。
- const hasEvidence=completedBefore.size>0||o.steps.slice(1).some(s=>s.status==='success');
- const summary=result==='failed'&&hasEvidence?'partial':result;
- o.status=summary;o.ended=result==='unknown'?null:at;o.protectionReleased=false;
- if(!wasUnknown)o.steps[0].status=result==='failed'?'failed':'success';
- items.forEach((x,i)=>{
-  const p=pr(x.project);if(!p)return;
-  if(completedBefore.has(x.project))return;
-  const state=result==='success'||(!wasUnknown&&result!=='failed'&&i<failure)?'success':result==='failed'?'failed':i>failure?'pending':result;
-  const count=op==='deploy'?3:1,offset=1+i*count;
-  let anySuccess=false;
-  for(let k=0;k<count;k++){
-   const st=o.steps[offset+k];
-   if(st.status==='success'){anySuccess=true;continue;}
-   st.status=state==='success'?'success':state==='partial'?(k===0?'success':k===1?'failed':'pending'):state==='unknown'?(k===0?'unknown':'pending'):state==='failed'?(k===0?'failed':'pending'):'pending';
-   st.note=st.status==='success'?'本分项已模拟核对':st.status==='unknown'?'缺少原执行证据，不自动重放':st.status==='failed'?'分项明确失败；保留此前已完成项':'未执行 / 尚无证据';
-   if(st.status==='success')anySuccess=true;
-  }
-  if(state==='success')o.frpCompleted.push(x.project);
-  // 已经有更新的受理操作时，迟到历史核对仅补记录，不覆盖较新的项目信息。
-  if(p.frpLastOp&&p.frpLastOp!==o.id)return;
-  if(state==='success'){
-   if(op==='deploy'){p.life='installed';p.frpApplied=clone(x.snapshot);p.applied={...clone(x.cfg||{}),port:x.role==='server'?x.snapshot.node.bind_port:0,appConfig:x.files.toml,version:'模拟程序条件（非附件二进制）'};p.appliedRev=x.draftRev||x.snapshot.revision;p.runtime='running';p.desired='running';p.runtimeCheckStatus='verified';p.stopVerified=false;p.components=[];const n=frpNode(x.node);if(n.authMigration)n.authMigration.roles=n.authMigration.roles.filter(r=>r!==x.role);}
-   else if(op==='uninstall'){p.life='uninstalled';p.runtime='na';p.monitorPaused=true;p.dataStatus='retained';p.components=[];}
-   p.health='unknown';p.observed=at;p.lastCheck=at;
-  }else if((state==='partial'||state==='failed'&&anySuccess)&&op==='deploy'){
-   p.life=x.before.life==='installed'?'installed':'incomplete';p.components=[{name:'分项结果',result:'程序/TOML 已交付，后续未完整完成；未假定已激活，未自动回退'}];
-  }else if(state==='unknown'){p.components=[{name:'原操作待核对',result:'保留已知事实；本角色的后续远端效果未知'}];}
-  else if(state==='failed'&&wasUnknown){p.components=[{name:'核对结论',result:'原执行已结束，本角色未完成；已完成角色与步骤保持，不重放'}];}
- });
- o.message=summary==='success'?'选定角色均完成模拟；未自动更改网络或初始化数据库。隧道端到端可用性仍未核对。':summary==='partial'?'部分完成：已完成角色与步骤保留；后续分项未完成。未重跑成功部分，未自动回退。':summary==='unknown'?'后续角色结果未知。保留前面已完成项与冲突保护；先核对原执行，不自动重放。':op==='deploy'&&!wasUnknown?'前置明确失败，未交付、未启动；本次请求与实际观测分别保存。':'所选操作明确失败；实际运行观测不因失败而改写，不自动重试。';
- frpSyncConfigs();persist();render();if(ui.modal?.kind==='opdetail'&&ui.modal.id===o.id)renderModal();
-}
-function frpFinishRuntime(o,result){
- if(!o||!['running','unknown','failed','partial'].includes(o.status))return;
- clearTimeout(timers.get(o.id));timers.delete(o.id);const at=now(),op=o.input.operation,alreadyReleased=o.protectionReleased===true;
- const supplied=result&&typeof result==='object'?result:null;o.frpRuntimeResults||=[];o.frpRuntimeChecks||=[];
- const next=o.input.items.map((x,i)=>{
-  const evidence=clone(supplied?.items?.[x.project]||supplied?.commandResult&&supplied||o.input.runtimeEvidence||{}),prior=o.frpRuntimeResults.find(row=>row.project===x.project);
-  if(prior){evidence.commandResult=prior.evidence.commandResult;evidence.executionEnded=prior.evidence.executionEnded===true||evidence.executionEnded;}
-  if(!Object.hasOwn(evidence,'observedAt'))evidence.observedAt=evidence.observedState&&evidence.observedState!=='unknown'?at:null;
-  const latestObserved=o.frpRuntimeChecks.flatMap(check=>check.results).filter(row=>row.project===x.project&&row.assessment.canUpdateObservation).map(row=>row.evidence.observedAt).filter(Boolean).sort().at(-1);
-  const assessment=assessRuntimeEvidence({...evidence,kind:op,requestedState:o.input.requestedState,notBefore:latestObserved&&Date.parse(latestObserved)>Date.parse(o.time)?latestObserved:o.time});
-  o.steps[1+i*2].status=evidence.commandResult==='success'?'success':evidence.commandResult==='error'?'failed':'unknown';
-  o.steps[1+i*2].note='命令返回独立记录；不直接作为操作结论。';
-  o.steps[2+i*2].status=assessment.status;o.steps[2+i*2].note=assessment.reason;
-  const p=pr(x.project);if(p&&(!p.frpLastOp||p.frpLastOp===o.id)){applyRuntimeObservation(p,assessment,{kind:op,operationId:o.id});p.health='unknown';p.components=assessment.status==='success'?[]:[{name:'实际状态核对',result:assessment.reason}];}
-  return {project:x.project,role:x.role,evidence,assessment};
- });
- o.frpRuntimeResults=next;o.frpRuntimeChecks.push({at,results:clone(next)});
- const statuses=next.map(row=>row.assessment.status);o.status=statuses.includes('unknown')?'unknown':statuses.every(x=>x==='success')?'success':statuses.every(x=>x==='failed')?'failed':'partial';
- o.ended=o.status==='unknown'&&!alreadyReleased?null:o.ended||at;o.protectionReleased=alreadyReleased||o.status!=='unknown';o.message='按原unit实际核对判定：'+next.map(x=>frpRoles[x.role]+'：'+x.assessment.reason).join('；')+'。命令返回保留为独立证据，未重新执行命令。';
- persist();render();if(ui.modal?.kind==='opdetail'&&ui.modal.id===o.id)renderModal();return o;
 }

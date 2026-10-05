@@ -1,0 +1,12 @@
+serverAddr = "203.0.113.30"
+serverPort = 7000
+auth.method = "token"
+auth.token = "EXAMPLE_AUTH_TOKEN_NOT_FOR_PRODUCTION"
+
+[[visitors]]
+name = "example-database-visitor"
+type = "stcp"
+serverName = "example-database"
+secretKey = "EXAMPLE_STCP_SECRET_03_NOT_FOR_PRODUCTION"
+bindAddr = "127.0.0.1"
+bindPort = 13307

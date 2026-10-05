@@ -1,0 +1,18 @@
+serverAddr = "198.51.100.20"
+serverPort = 7000
+auth.method = "token"
+auth.token = "EXAMPLE_AUTH_TOKEN_NOT_FOR_PRODUCTION"
+
+[[proxies]]
+name = "http"
+type = "tcp"
+localIP = "127.0.0.1"
+localPort = 80
+remotePort = 18080
+
+[[proxies]]
+name = "https"
+type = "tcp"
+localIP = "127.0.0.1"
+localPort = 443
+remotePort = 18443

@@ -1,0 +1,17 @@
+[Unit]
+Description=frpc client for 203.0.113.30
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/srv/services/frp/bin/frpc -c /srv/services/frp/generated/frpc/203.0.113.30.toml
+WorkingDirectory=/srv/services/frp
+User=root
+Restart=always
+RestartSec=3s
+KillMode=mixed
+TimeoutStopSec=30s
+
+[Install]
+WantedBy=multi-user.target
