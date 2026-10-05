@@ -106,12 +106,15 @@ test('共享配置正文原样保存；显式采用不改变服务器文件或�
   assert.equal(p.run('subject.templateUpdate'), true);
   assert.equal(p.run('JSON.stringify(subject.cfg)===draftBefore&&JSON.stringify(subject.applied)===appliedBefore'), true);
   p.click('adopttemplate', { id: 'p3' });
+  assert.equal(p.run('configText(subject)===configText(subject,subject.applied)'),true);
+  p.click('asset-update-adopt',{id:'p3'});
   assert.equal(p.run('configText(subject)'), source);
   assert.equal(p.run('JSON.stringify(subject.applied)===appliedBefore&&subject.runtime===runtimeBefore&&S.operations.length===opsBefore'), true);
   p.click('project', { id: 'p3' });
   p.click('tab', { id: 'config' });
   assert.doesNotMatch(p.html('app'), /data-form="(?:file)?projectconfig"|保存草稿/);
-  assert.doesNotMatch(p.html('app'), /保留注释与首尾空白/);
+  assert.doesNotMatch(p.run('projectRuntimeFile(subject).content'), /保留注释与首尾空白/);
+  assert.match(p.html('app'), /项目草稿[\s\S]*保留注释与首尾空白/);
   const reloaded = prototype(p.saved());
   assert.equal(reloaded.run('configText(pr("p3"))'), source);
 });

@@ -9,7 +9,7 @@ function storedFileArchitecture(file){return file?.arch||universalFileArchitectu
 function storedFileArchitectureLabel(file){return storedFileArchitecture(file)===universalFileArchitecture?'通用':storedFileArchitecture(file);}
 function storedFileKind(file){return file?.placeholder?'placeholder':file?.kind||(storedFileArchitecture(file)===universalFileArchitecture?'file':'elf');}
 function storedFileTypeLabel(file){return storedFileKind(file)==='placeholder'?'占位文件':storedFileKind(file)==='elf'?'ELF 程序':file?.mediaType||file?.format||'通用文件';}
-function deployableFile(file){return Boolean(file)&&!file.placeholder;}
+function deployableFile(file){return Boolean(file)&&!file.placeholder&&file.bytes!==0&&file.size!=='0 B';}
 function executableFileFor(name,server,files=S.programs){return files.find(file=>deployableFile(file)&&storedFileKind(file)==='elf'&&file.name===name&&storedFileArchitecture(file)===server?.arch)||null;}
 
 // 读取 ELF 标识、字节序和机器类型，不从扩展名或名称猜测架构。
@@ -57,7 +57,9 @@ async function analyzeProgramFile(file){
  let digest;
  try{digest=await crypto.subtle.digest('SHA-256',content);}catch{throw new Error('文件校验失败，请重新选择。');}
  const sha256=Array.from(new Uint8Array(digest),value=>value.toString(16).padStart(2,'0')).join('');
- return {sourceName:file.name,...classification,mediaType:String(file.type||'').slice(0,255),bytes:file.size,size:programFileSize(file.size),sha256};
+ let text;
+ if(classification.kind!=='elf'&&content.byteLength<=65536){try{const decoded=new TextDecoder('utf-8',{fatal:true}).decode(content);if(!/[\u0000-\u0008\u000e-\u001f]/.test(decoded))text=decoded;}catch{}}
+ return {sourceName:file.name,...classification,mediaType:String(file.type||'').slice(0,255),bytes:file.size,size:programFileSize(file.size),sha256,...(text!==undefined?{text}:{}),provenance:'浏览器上传元数据 · 未验证可执行'};
 }
 
 function programAnalysisTimeout(promise){

@@ -1,145 +1,48 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { prototype } from './prototype-harness.mjs';
+import {prototype} from './prototype-harness.mjs';
 
-const source = 'services:\n  app:\n    image: example/app:demo\n';
-
-function createTemplate(p, name = '带文件映射的配置', files = ['catalog-service'], paths = ['/srv/example/bin/catalog']) {
-  p.click('templateedit');
-  p.submit('templateedit', {
-    'tpl-name': name,
-    'tpl-type': 'compose',
-    'tpl-source': source,
-    'tpl-map-file': files,
-    'tpl-map-path': paths,
-  });
-  return JSON.parse(p.run(`JSON.stringify(S.templates.find(template=>template.name===${JSON.stringify(name)}))`));
+const source='services:\n  app:\n    image: example/app:demo\n';
+function createTemplate(p,files=['catalog-service'],paths=['/srv/example/bin/catalog']){
+ p.click('templateedit');p.submit('templateedit',{'tpl-name':'映射配置','tpl-type':'compose','tpl-source':source,'tpl-map-file':files,'tpl-map-path':paths});
+ return JSON.parse(p.run('JSON.stringify(S.templates.find(template=>template.name==="映射配置"))'));
 }
+function error(p){return p.document.getElementById('modal-error').textContent;}
 
-function error(p) { return p.document.getElementById('modal-error').textContent; }
-
-test('新增部署配置底部显示文件映射，同名多架构合并为一个文件选项', () => {
-  const p = prototype();
-  p.click('templateedit');
-  const html = p.html('modal');
-  assert.match(html, /id="template-file-mapping-title">文件映射/);
-  assert.match(html, /name="tpl-map-file"/);
-  assert.match(html, /name="tpl-map-path"/);
-  assert.match(html, /catalog-service · aarch64 \/ x86_64/);
-  assert.equal((html.match(/value="catalog-service"/g) || []).length, 1);
-  assert.match(html, /添加文件映射/);
+test('正文和映射分为两个区域，逻辑文件下的架构变体统一选择并固定修订',()=>{
+ const p=prototype();p.click('templateedit');p.click('template-map-add');const html=p.html('modal');
+ assert.match(html,/附带文件映射/);assert.match(html,/部署正文/);assert.match(html,/catalog-service · x86_64 \/ aarch64/);assert.match(html,/架构选择规则/);assert.match(html,/查看文件/);assert.match(html,/移除引用/);
+ const template=createTemplate(p);assert.equal(template.fileMappings[0].groupId,'asset-bin1');assert.deepEqual(template.fileMappings[0].pins,[{fileId:'bin1',revision:1},{fileId:'bin2',revision:1}]);
 });
-
-test('一个配置可保存多项映射并在编辑弹窗恢复，空白行不进入记录', () => {
-  const p = prototype();
-  const template = createTemplate(p, '多文件配置', ['catalog-service', 'catalog-service', ''], ['/srv/app/bin/api', '/srv/app/bin/worker', '']);
-  assert.deepEqual(template.fileMappings, [
-    { file: 'catalog-service', targetPath: '/srv/app/bin/api' },
-    { file: 'catalog-service', targetPath: '/srv/app/bin/worker' },
-  ]);
-  p.click('navigate', { page: 'templates' });
-  p.click('templateedit', { id: template.id });
-  assert.equal(p.document.getElementById('tpl-map-file-0').value, 'catalog-service');
-  assert.equal(p.document.getElementById('tpl-map-path-0').value, '/srv/app/bin/api');
-  assert.equal(p.document.getElementById('tpl-map-path-1').value, '/srv/app/bin/worker');
-  assert.match(p.html('app'), /文件映射<\/small>2 项/);
+test('多项映射保存稳定 ID 和固定修订，移除引用不删除公共文件',()=>{
+ const p=prototype(),template=createTemplate(p,['catalog-service','catalog-config.yaml',''],['/srv/app/bin/api','/srv/app/app.conf','']);
+ assert.equal(template.fileMappings.length,2);p.click('templateedit',{id:template.id});assert.equal(p.document.getElementById('tpl-map-file-0').value,'asset-bin1');assert.equal(p.document.getElementById('tpl-map-path-1').value,'/srv/app/app.conf');
+ const files=p.run('S.programs.length');p.click('template-map-remove',{index:1});assert.equal(p.run('ui.modal.fileMappings.length'),1);assert.equal(p.run('S.programs.length'),files);
 });
-
-test('文件映射允许为空，半行、未知文件、重复目标和超过上限均拒绝保存', () => {
-  const p = prototype();
-  const empty = createTemplate(p, '无映射配置', [], []);
-  assert.deepEqual(empty.fileMappings, []);
-  const cases = [
-    [['catalog-service'], [''], /同时选择文件并填写目标路径/],
-    [[''], ['/srv/app/bin/api'], /同时选择文件并填写目标路径/],
-    [['missing-program'], ['/srv/app/bin/api'], /不存在或不可部署/],
-    [['catalog-service', 'catalog-service'], ['/srv/app/bin/api', '/srv/app/bin/api'], /目标路径.*重复/],
-    [Array(21).fill('catalog-service'), Array.from({ length: 21 }, (_, index) => `/srv/app/bin/${index}`), /最多 20 项/],
-  ];
-  for (const [files, paths, message] of cases) {
-    p.click('templateedit');
-    const before = p.run('S.templates.length');
-    p.submit('templateedit', { 'tpl-name': '无效映射', 'tpl-type': 'compose', 'tpl-source': source, 'tpl-map-file': files, 'tpl-map-path': paths });
-    assert.match(error(p), message);
-    assert.equal(p.run('S.templates.length'), before);
-    p.click('closemodal');
-  }
+test('空映射允许保存，半行、未知文件、重复目标和超过上限拒绝保存',()=>{
+ assert.deepEqual(createTemplate(prototype(),[],[]).fileMappings,[]);
+ const cases=[[['catalog-service'],[''],/绝对路径|同时选择/],[[''],['/srv/app/file'],/同时选择/],[['missing'],['/srv/app/file'],/不存在或不可部署/],[['catalog-service','catalog-service'],['/srv/app/file','/srv/app/file'],/重复/],[Array(21).fill('catalog-service'),Array.from({length:21},(_,i)=>'/srv/app/'+i),/最多 20/]];
+ for(const [files,paths,message] of cases){const p=prototype(),before=p.run('S.templates.length');p.click('templateedit');p.submit('templateedit',{'tpl-name':'invalid','tpl-type':'compose','tpl-source':source,'tpl-map-file':files,'tpl-map-path':paths});assert.match(error(p),message);assert.equal(p.run('S.templates.length'),before);}
 });
-
-test('目标路径必须是规范绝对文件路径', () => {
-  const p = prototype();
-  const invalid = ['relative/file', '/', '/srv/app/', '/srv//app/file', '/srv/../app/file', '/srv/./app/file', '/srv/app\nfile', '/' + 'a'.repeat(4096)];
-  for (const path of invalid) {
-    p.click('templateedit');
-    p.submit('templateedit', { 'tpl-name': '无效路径', 'tpl-type': 'systemd', 'tpl-source': '[Service]\nExecStart=/srv/app', 'tpl-map-file': ['catalog-service'], 'tpl-map-path': [path] });
-    assert.ok(error(p), path);
-    assert.equal(p.run('S.templates.some(template=>template.name==="无效路径")'), false);
-    p.click('closemodal');
-  }
+test('规范绝对路径、重复主部署路径、缺失文件和占位都阻止执行',()=>{
+ for(const path of ['relative/file','/','/srv/app/','/srv//app/file','/srv/../app/file','/srv/./file','/srv/app\nfile','/'+'a'.repeat(4096)]){const p=prototype();assert.ok(p.run(`targetFilePathError(${JSON.stringify(path)})`));}
+ const p=prototype();p.run('pr("p2").cfg.fileMappings=[pinMapping({file:"catalog-config.yaml",targetPath:"/srv/stackpier-demo/media-web/compose.yaml"})];');assert.match(p.run('deploymentLocation(pr("p2")).errors.join()'),/路径冲突/);assert.equal(p.run('startOperation(pr("p2"),"apply",{},"success",{hold:true})'),null);
+ p.run('frpEnsure();');assert.equal(p.run('deploymentFiles().some(file=>file.name==="frps")'),false);
+ assert.throws(()=>p.run('validateMappings([pinMapping({file:"frps",targetPath:"/srv/app/frps"})])'),/占位/);
+ assert.throws(()=>p.run('validateMappings([{file:"missing",targetPath:"/srv/app/file",pins:[{fileId:"missing",revision:1}]}])'),/不存在/);
 });
-
-test('不可部署的占位文件不进入映射选项，已失效的旧映射不能再次保存', () => {
-  const p = prototype();
-  p.run('frpEnsure();');
-  assert.equal(p.run('deploymentFiles().some(file=>file.name==="frps")'), false);
-  const template = createTemplate(p);
-  p.run(`S.programs=S.programs.filter(binary=>binary.name!=="catalog-service");openModal("templateedit",{id:${JSON.stringify(template.id)}});`);
-  assert.match(p.html('modal'), /已不存在 · catalog-service/);
-  p.submit('templateedit', { 'tpl-name': template.name, 'tpl-type': template.type, 'tpl-source': template.tpl, 'tpl-map-file': ['catalog-service'], 'tpl-map-path': ['/srv/example/bin/catalog'] });
-  assert.match(error(p), /不存在或不可部署/);
+test('x86_64 和 aarch64 选择对应固定修订；缺架构阻塞而不使用其他变体',()=>{
+ const p=prototype();p.run('const mapping=tpl("t1").fileMappings[0];');assert.equal(p.run('pinnedMappingFile(mapping,sr("s2")).id'),'bin1');assert.equal(p.run('pinnedMappingFile(mapping,sr("s3")).id'),'bin2');
+ p.run('pr("p2").server="s3";sr("s3").state="online";pr("p2").cfg.fileMappings=[{...mapping,pins:[{fileId:"bin1",revision:1}],targetPath:"/srv/app/catalog"}];');assert.match(p.run('deploymentLocation(pr("p2")).errors.join()'),/缺少匹配架构 aarch64/);
+ p.run('pr("p2").cfg.fileMappings=[pinMapping({file:"catalog-config.yaml",targetPath:"/srv/app/config"})];');assert.equal(p.run('deploymentLocation(pr("p2")).files[0].binary.arch'),'any');
 });
-
-test('部署项目复制映射，公共配置修改须明确采用后才进入项目草稿', () => {
-  const p = prototype(), template = createTemplate(p);
-  p.click('newproject', { template: template.id });
-  p.submit('newproject', { 'np-template': template.id, 'np-name': 'mapped-project', 'np-server': 's1' });
-  assert.deepEqual(JSON.parse(p.run('JSON.stringify(pr("mapped-project")||S.projects.find(project=>project.name==="mapped-project").cfg.fileMappings)')), template.fileMappings);
-  const projectId = p.run('S.projects.find(project=>project.name==="mapped-project").id');
-  p.click('templateedit', { id: template.id });
-  p.submit('templateedit', { 'tpl-name': template.name, 'tpl-type': template.type, 'tpl-source': template.tpl, 'tpl-map-file': ['catalog-service'], 'tpl-map-path': ['/opt/mapped/catalog'] });
-  assert.equal(p.run(`pr(${JSON.stringify(projectId)}).templateUpdate`), true);
-  assert.equal(p.run(`pr(${JSON.stringify(projectId)}).cfg.fileMappings[0].targetPath`), '/srv/example/bin/catalog');
-  p.click('adopttemplate', { id: projectId });
-  assert.equal(p.run(`pr(${JSON.stringify(projectId)}).cfg.fileMappings[0].targetPath`), '/opt/mapped/catalog');
-  assert.equal(p.run(`pr(${JSON.stringify(projectId)}).applied`), null);
+test('通用文件不能作为 systemd 主程序，架构限定规则不跨服务器匹配',()=>{
+ const p=prototype();p.run('pr("p1").cfg.programRef=pinMapping({file:"catalog-config.yaml"});');assert.equal(p.run('projectProgramFile(pr("p1"))'),null);
+ p.run('const rule={...tpl("t1").fileMappings[0],architectureRule:"x86_64"};');assert.equal(p.run('pinnedMappingFile(rule,sr("s3"))'),null);assert.equal(p.run('pinnedMappingFile(rule,sr("s2")).id'),'bin1');
 });
-
-test('部署按目标架构解析映射并固定文件身份，文件随后替换仍显示可更新', () => {
-  const p = prototype();
-  p.run(`const project=pr("p2");project.cfg.fileMappings=[{file:"catalog-service",targetPath:"/srv/media/bin/catalog"}];const operation=startOperation(project,"apply",{},"success",{hold:true});globalThis.mappedOperation=operation;`);
-  assert.equal(p.run('mappedOperation.input.mappedFiles[0].binary.arch'), 'x86_64');
-  assert.equal(p.run('mappedOperation.input.mappedFiles[0].targetPath'), '/srv/media/bin/catalog');
-  const acceptedIdentity = p.run('mappedOperation.input.mappedFiles[0].binary.identity');
-  p.run('S.programs.find(binary=>binary.id==="bin1").identity="new-content-after-accept";finishOperation(mappedOperation,"success");');
-  assert.equal(acceptedIdentity, 'demo-content-a');
-  assert.equal(p.run('pr("p2").programUpdate'), true);
-  assert.equal(p.run('pr("p2").applied.fileMappings[0].targetPath'), '/srv/media/bin/catalog');
-});
-
-test('通用文件适用于所有架构，同名架构文件在对应服务器上优先', () => {
-  const p = prototype();
-  p.run(`S.programs.push({id:"shared",name:"settings.yaml",filename:"settings.yaml",arch:"any",kind:"file",bytes:0,size:"0 B",identity:"sha256:shared"},{id:"settings-x86",name:"settings.yaml",filename:"settings-x86.yaml",arch:"x86_64",kind:"elf",bytes:96,size:"96 B",identity:"sha256:x86"});`);
-  assert.match(p.run('deploymentFileLabel(deploymentFiles().find(file=>file.name==="settings.yaml"))'), /通用 \/ x86_64/);
-  assert.equal(p.run('deploymentFileFor("settings.yaml",sr("s2")).id'), 'settings-x86');
-  assert.equal(p.run('deploymentFileFor("settings.yaml",sr("s3")).id'), 'shared');
-  assert.equal(p.run('deploymentFiles().some(file=>file.name==="settings.yaml")'), true);
-  p.run('const project=pr("p2");project.server="s3";sr("s3").state="online";project.cfg.fileMappings=[{file:"settings.yaml",targetPath:"/srv/app/settings.yaml"}];globalThis.sharedOperation=startOperation(project,"apply",{},"success",{hold:true});');
-  assert.equal(p.run('sharedOperation.input.mappedFiles[0].binary.id'), 'shared');
-});
-
-test('通用文件不能冒充 systemd 主程序', () => {
-  const p = prototype();
-  p.run('S.programs=S.programs.filter(file=>file.id!=="bin1");S.programs.push({id:"generic-program",name:"catalog-service",filename:"catalog-service",arch:"any",kind:"file",bytes:20,size:"20 B",identity:"sha256:generic"});globalThis.result=startOperation(pr("p1"),"apply",{},"success",{hold:true});');
-  assert.equal(p.run('result'), null);
-  assert.match(p.run('S.operations[0].message'), /对应 x86_64 的 ELF 文件/);
-});
-
-test('目标架构缺少文件或项目草稿路径失效时拒绝部署', () => {
-  for (const kind of ['missing', 'path']) {
-    const p = prototype();
-    p.run(`const project=pr("p2");${kind === 'missing' ? 'project.server="s3";sr("s3").state="online";project.cfg.fileMappings=[{file:"frpc",targetPath:"/srv/app/frpc"}];' : 'project.cfg.fileMappings=[{file:"catalog-service",targetPath:"relative/catalog"}];'}globalThis.result=startOperation(project,"apply",{},"success",{hold:true});`);
-    assert.equal(p.run('result'), null);
-    assert.equal(p.run('S.operations[0].status'), 'rejected');
-    assert.match(p.run('S.operations[0].message'), kind === 'missing' ? /缺少适用于 aarch64 的文件/ : /目标路径无效/);
-  }
+test('预览与公共配置保存不改变项目，确认采用只改变当前项目草稿',()=>{
+ const p=prototype(),template=createTemplate(p);p.click('newproject',{template:template.id});p.submit('newproject',{'np-template':template.id,'np-name':'mapped-project','np-server':'s1'});assert.equal(p.run('S.projects.some(project=>project.name==="mapped-project")'),false);p.click('deployment-preview-execute');const id=p.run('S.projects.find(project=>project.name==="mapped-project").id');p.run('finishOperation(S.operations[0],"success");');
+ const applied=p.run(`JSON.stringify(pr(${JSON.stringify(id)}).appliedSnapshot)`),read=p.run(`JSON.stringify(pr(${JSON.stringify(id)}).serverReadSnapshot)`);
+ p.click('templateedit',{id:template.id});p.submit('templateedit',{'tpl-name':'映射配置','tpl-type':'compose','tpl-source':source,'tpl-map-file':['catalog-service'],'tpl-map-path':['/opt/mapped/catalog']});
+ p.click('adopttemplate',{id});assert.equal(p.run(`pr(${JSON.stringify(id)}).cfg.fileMappings[0].targetPath`),'/srv/example/bin/catalog');p.click('asset-update-adopt',{id});assert.equal(p.run(`pr(${JSON.stringify(id)}).cfg.fileMappings[0].targetPath`),'/opt/mapped/catalog');assert.equal(p.run(`JSON.stringify(pr(${JSON.stringify(id)}).appliedSnapshot)`),applied);assert.equal(p.run(`JSON.stringify(pr(${JSON.stringify(id)}).serverReadSnapshot)`),read);
 });

@@ -15,6 +15,7 @@
   <link rel="stylesheet" href="assets/features/programs/programs.css">
   <link rel="stylesheet" href="assets/features/deployments/file-mappings.css">
   <link rel="stylesheet" href="assets/features/frp/frp.css">
+  <link rel="stylesheet" href="assets/features/assets/assets.css">
   <!-- 按依赖顺序加载独立组件；defer 共用同一份状态，不拼接页面或生成大脚本。 -->
   <script defer src="assets/core/utils.js"></script>
   <script defer src="assets/data/sample.js"></script>
@@ -62,11 +63,15 @@
   <script defer src="assets/features/frp/operations.js"></script>
   <script defer src="assets/features/frp/integration.js"></script>
   <script defer src="assets/features/frp/events.js"></script>
+  <script defer src="assets/features/assets/model.js"></script>
+  <script defer src="assets/features/assets/details.js"></script>
+  <script defer src="assets/features/assets/linkage.js"></script>
   <script defer src="assets/boot.js"></script>
 </head>
 <body>
   <div id="app"><main class="workbench" id="prototype-loading"><h1>栈桥 · 交互原型</h1><p id="boot-status" role="status">正在加载界面组件……</p><button id="reload" class="btn" hidden>重新加载</button></main></div>
   <dialog id="modal" class="dialog" aria-labelledby="dialog-title"></dialog>
+  <dialog id="asset-details" class="dialog asset-drawer" aria-labelledby="asset-detail-title"></dialog>
   <div id="toasts" class="toast-region" aria-live="polite"></div>
   <noscript>此交互原型需要启用 JavaScript；只加载本站静态文件，不连接真实服务器。</noscript>
 </body>

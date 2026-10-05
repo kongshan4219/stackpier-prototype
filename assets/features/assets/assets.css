@@ -1,0 +1,19 @@
+.asset-drawer{margin:0 0 0 auto;height:100dvh;max-height:100dvh;width:min(720px,100%);max-width:100%;border-radius:16px 0 0 16px}
+.asset-drawer .dialog-layout{height:100%;max-height:100dvh}
+.asset-drawer .dialog-body{min-height:0;overflow:auto;overflow-wrap:anywhere}
+.asset-drawer code,.asset-reference code,.landing-preview code{white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word}
+.asset-text{max-height:360px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere}
+.asset-reference,.asset-mapping{padding:16px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+.asset-reference code{display:block;margin-top:8px;font-size:12px}
+.asset-mapping{display:grid;gap:12px}
+.wrap{flex-wrap:wrap;gap:8px}
+.asset-variants{padding:0 16px 16px}
+.asset-list{display:grid;gap:12px}
+.asset-group{padding:20px}
+.asset-group>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.asset-group>summary::-webkit-details-marker{display:none}
+.asset-variant{padding:16px 0;border-top:1px solid var(--line);margin-top:16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.asset-mapping .field-row{grid-template-columns:1.2fr 1fr}
+.landing-preview{display:grid;gap:12px}
+.editor-origin{margin-bottom:12px}
+@media(max-width:600px){.asset-drawer{border-radius:0}.asset-drawer .dialog-header,.asset-drawer .dialog-body,.asset-drawer .dialog-footer{padding:16px}.asset-mapping .field-row{grid-template-columns:1fr}.asset-group{padding:16px}.asset-group summary .grow{min-width:150px}.asset-reference .btn{max-width:100%}.diff-grid{grid-template-columns:1fr}}

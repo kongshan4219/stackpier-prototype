@@ -3,8 +3,10 @@ import test from 'node:test';
 import { prototype } from './prototype-harness.mjs';
 
 function deploy(p, result = 'failed', name = 'failure-demo') {
+  p.run(`tpl('t1').fileMappings=tpl('t1').fileMappings.map(mapping=>({...mapping,targetPath:mapping.targetPath.replace('/catalog-api/', '/'+${JSON.stringify(name)}+'/')}));`);
   p.click('newproject');
   p.submit('newproject', { 'np-template': 't1', 'np-server': 's4', 'np-name': name });
+  p.click('deployment-preview-execute');
   assert.equal(p.run('S.operations[0].status'), 'running');
   p.run(`finishOperation(S.operations[0],${JSON.stringify(result)});`);
   return p.run('S.failedProjects[0].id');
@@ -131,6 +133,7 @@ test('同名重试或其他项目采用相同文件后，旧失败记录不能�
     const id = deploy(p);
     p.click('newproject');
     p.submit('newproject', { 'np-template': 't1', 'np-server': 's4', 'np-name': shared ? 'another-service' : 'failure-demo' });
+    p.click('deployment-preview-execute');
     p.run("finishOperation(S.operations[0],'success');");
     clean(p, id);
     assert.match(p.document.getElementById('modal-error').textContent, /已被项目.*使用/);
@@ -149,6 +152,7 @@ test('清理中的相同资源禁止重新部署；残留未清理禁止删除�
   clean(p, id);
   p.click('newproject');
   p.submit('newproject', { 'np-template': 't1', 'np-server': 's4', 'np-name': 'failure-demo' });
+  p.click('deployment-preview-execute');
   assert.equal(p.run('S.operations[0].status'), 'rejected');
   assert.match(p.run('S.operations[0].message'), /使用相同项目资源/);
   assert.equal(p.run('S.projects.some(project=>project.name==="failure-demo")'), false);
@@ -168,6 +172,7 @@ test('重复部署请求被拒绝时不丢弃正在执行的原部署', () => {
   const p = prototype();
   p.click('newproject');
   p.submit('newproject', { 'np-template': 't1', 'np-server': 's4', 'np-name': 'pending-service' });
+  p.click('deployment-preview-execute');
   p.run('const original=S.operations[0],subject=pr(original.project);startOperation(subject,"deploy",{},"success",{hold:true});');
   assert.equal(p.run('S.operations[0].status'), 'rejected');
   assert.equal(p.run('!!pr(original.project)'), true);

@@ -30,12 +30,13 @@ function frpDraftProject(n,r){
 }
 function frpEnsure(){
  frpInit(); const F=S.frp;
+ const seedPublicAssets=!S.publicAssetsSeeded&&S.programs.length>0&&S.templates.length>0;S.publicAssetsSeeded=true;
  // 只清理原型未被用户改动的旧 FRP 程序假样例，不删除用户自行添加的记录。
  S.programs=S.programs.filter(b=>!(b.id==='bin3'&&b.identity==='demo-frpc-a'&&b.filename==='frpc-linux-x86_64'));
  if(F.nodes.some(n=>n.provider==='frp-source')&&!sr('frp-source'))S.servers.push(frpReferenceProvider());
- for(const role of Object.keys(frpRoles))if(!tpl('frp-template-'+role))S.templates.push({id:'frp-template-'+role,name:frpRoles[role],type:'systemd',software:role==='server'?'frps':'frpc',program:role==='server'?'frps':'frpc',port:role==='server'?7000:'不固定监听',rev:1,version:'待提供真实程序',desc:'来自脱敏部署方案；独立配置、生成预览与逐角色应用',env:'',tpl:'见 FRP 部署 → 模板与审阅',fields:'使用 FRP 结构化表单',frpRole:role});
+ for(const role of seedPublicAssets?Object.keys(frpRoles):[])if(!tpl('frp-template-'+role))S.templates.push({id:'frp-template-'+role,name:frpRoles[role],type:'systemd',software:role==='server'?'frps':'frpc',program:role==='server'?'frps':'frpc',port:role==='server'?7000:'不固定监听',rev:1,version:'待提供真实程序',desc:'来自脱敏部署方案；独立配置、生成预览与逐角色应用',env:'',tpl:'见 FRP 部署 → 模板与审阅',fields:'使用 FRP 结构化表单',frpRole:role});
  const binaries=[['frps','x86_64','frps'],['frps','aarch64','frps-arm64'],['frpc','x86_64','frpc'],['frpc','aarch64','frpc-arm64']];
- for(const [name,arch,filename] of binaries)if(!S.programs.some(b=>b.id==='frp-bin-'+filename))S.programs.push({id:'frp-bin-'+filename,name,arch,filename,size:'0 B · 脱敏占位，不可执行',bytes:0,placeholder:true,time:null,identity:'仅文件名；无版本、架构或完整性验证'});
+ for(const [name,arch,filename] of seedPublicAssets?binaries:[])if(!S.programs.some(b=>b.id==='frp-bin-'+filename))S.programs.push({id:'frp-bin-'+filename,name,arch,filename,size:'0 B · 脱敏占位，不可执行',bytes:0,placeholder:true,time:null,identity:'仅文件名；无版本、架构或完整性验证'});
  for(const n of F.nodes){
   const hid=n.server||'frp-host-'+n.id;if(!sr(hid))S.servers.push(frpReferenceServer(n));
   for(const r of ['server','client',...(n.proxies.some(x=>x.type==='stcp')?['visitor']:[])]){
