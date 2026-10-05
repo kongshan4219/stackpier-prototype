@@ -1,0 +1,143 @@
+"""Chromium 的真实输入/点击回归，仅 localhost 与浏览器模拟。"""
+import json
+import os
+from pathlib import Path
+from playwright.sync_api import sync_playwright
+BASE=os.environ.get('STACKPIER_PREVIEW_URL','http://127.0.0.1:4311')
+OUT=Path(os.environ.get('STACKPIER_SCREENSHOTS','docs/screenshots'));OUT.mkdir(parents=True,exist_ok=True)
+checks=[];errors=[];console_logs=[];requests=[]
+def check(label,ok):
+    assert ok,label
+    checks.append(label)
+def click(p,a,where='',**data):
+    selector='[data-action="'+a+'"]'+(':not([data-id])' if a=='cfconnect' and not data else '')+''.join('[data-'+k+'="'+str(v)+'"]' for k,v in data.items())
+    target=p.locator((where+' ' if where else '')+selector).first
+    if a=='navigate' and val(p,'innerWidth<=820 && !ui.nav'):p.locator('[data-action=navtoggle]').click()
+    target.click()
+def val(p,s):return p.evaluate(s)
+def submit(p):p.locator('#modal button[type=submit]').click()
+def close(p):click(p,'closemodal',where='#modal')
+def fresh(b,width=1440,saved=None):
+    c=b.new_context(viewport={'width':width,'height':1000},device_scale_factor=1)
+    p=c.new_page();p.on('pageerror',lambda e:errors.append(str(e)));p.on('console',lambda m:console_logs.append(m.text));p.on('request',lambda r:requests.append(r.url))
+    if saved:c.add_init_script('localStorage.setItem("stackpier.prototype.review.v1",'+json.dumps(saved)+')')
+    p.goto(BASE);p.wait_for_function('()=>prototypeLoading.ready');return c,p
+
+def connection(p,account='cf-account-extra',profile='normal',id=None,name='Cloudflare · 团队演示'):
+    click(p,'cfconnect',where='#modal',**({'id':id} if id else {}))
+    p.locator('#cf-name').fill(name);p.locator('#cf-target').select_option(account)
+    click(p,'cfdemofill',where='#modal');p.locator('#cf-profile').select_option(profile);submit(p)
+    p.get_by_role('heading',name='核对账号和授权域名',exact=True).wait_for()
+def save(p):p.locator('[name=cf-confirm]').check();submit(p)
+def edit(p,id='dns1',content='203.0.113.17',outcome='success'):
+    click(p,'dnsedit',id=id);p.locator('#dns-content').fill(content)
+    p.locator('#outcome').select_option(outcome);p.locator('[name=network-ack]').check();submit(p)
+    p.locator('[name=dns-confirm]').check()
+    if p.locator('[name=shared-ack]').count():p.locator('[name=shared-ack]').check()
+    submit(p)
+def shot(p,name):p.screenshot(path=str(OUT/name),full_page='mobile' not in name)
+
+with sync_playwright() as pw:
+    b=pw.chromium.launch(executable_path=os.environ.get('CHROMIUM','/usr/bin/chromium'),args=['--no-sandbox','--disable-dev-shm-usage'])
+    c,p=fresh(b);click(p,'navigate',page='dns')
+    check('保留原四条 DNS 示例并补充只读第二账号',val(p,'S.dns.length===5 && ["dns1","dns2","dns3","dns4"].every(id=>S.dns.some(r=>r.id===id))'))
+    check('全部账号每条显示账号与 Zone',p.locator('[data-dns-id=dns1]').inner_text().count('example.com')>=1 and '只读演示账号' in p.locator('[data-dns-id=dns-demo-readonly]').inner_text())
+    shot(p,'dns-accounts-desktop.png')
+    p.locator('[data-filter=cfAccount]').select_option('cf-account-readonly')
+    check('账号隔离及 Zone 联动',p.locator('tbody tr').count()==1 and p.locator('[data-filter=zone] option').count()==2)
+    check('只读记录不可编辑或删除',p.locator('tbody [data-action=dnsedit],tbody [data-action=dnsdelete]').count()==0)
+    click(p,'dnsedit');check('只读账号新增不会偷偷选其他账号','没有可写 Zone' in p.locator('#modal').inner_text());close(p)
+    p.locator('[data-filter=cfAccount]').select_option('all');click(p,'cfaccount');shot(p,'cloudflare-manager-desktop.png')
+    connection(p);check('先检查再明确选择账号并核对权限','demo-account-003' in p.locator('#modal').inner_text() and val(p,'!cfCurrent("cf-account-extra")'))
+    close(p);check('取消核对不保存连接',val(p,'!cfCurrent("cf-account-extra")'))
+    click(p,'cfaccount');click(p,'cfconnect',where='#modal')
+    check('演示 Token 输入默认遮罩且更新不回填',p.locator('#cf-token').get_attribute('type')=='password' and p.locator('#cf-token').input_value()=='')
+    canary='credential-canary-DO-NOT-STORE'
+    p.locator('#cf-token').fill(canary);submit(p)
+    check('任意凭据被拒绝并清空',p.locator('#cf-token').input_value()=='' and '输入已清空' in p.locator('#modal-error').inner_text())
+    check('任意输入不进入存储、历史或导出',not val(p,'JSON.stringify(S)+localStorage.getItem(STORE)+notesText()').__contains__(canary))
+    click(p,'cfdemofill',where='#modal');submit(p);p.get_by_role('heading',name='核对账号和授权域名',exact=True).wait_for();save(p)
+    check('仅保存演示凭据引用',val(p,'!!cfCurrent("cf-account-extra") && !localStorage.getItem(STORE).includes(CF_DEMO_TOKEN)'))
+    extra=val(p,'cfCurrent("cf-account-extra").id');legacy=val(p,'cfCurrent("cf-account-legacy").id')
+    connection(p);check('重复接入引导更新已有连接','此账号已有当前连接' in p.locator('#modal').inner_text() and p.locator('[data-action=cfconnect][data-id="'+extra+'"]').count()==1);close(p)
+    click(p,'cfaccount');click(p,'cfrename',where='#modal',id=extra);p.locator('#cf-name').fill('团队账号 · 已重命名');submit(p);close(p)
+    click(p,'navigate',page='settings');p.locator('#setting-tg').fill('未保存通知草稿');click(p,'cfaccount')
+    check('设置和 DNS 使用同一管理界面','团队账号 · 已重命名' in p.locator('#modal').inner_text());close(p)
+    check('打开管理不丢设置未保存表单',p.locator('#setting-tg').input_value()=='未保存通知草稿')
+    click(p,'navigate',page='dns');p.locator('[data-filter=cfAccount]').select_option('cf-account-extra');click(p,'dnsedit')
+    p.locator('#dns-name').fill('app');p.locator('#dns-content').fill('203.0.113.21');p.locator('[name=dns-project][value=p1]').check();p.locator('[name=dns-project][value=p5]').check();p.locator('[name=network-ack]').check();submit(p)
+    check('提交摘要固定账号、Zone、凭据修订及共享项目','team.example.org' in p.locator('#modal').inner_text() and 'catalog-api' in p.locator('#modal').inner_text() and 'frpc-edge' in p.locator('#modal').inner_text())
+    p.locator('[name=dns-confirm]').check();submit(p);check('共享记录需要额外确认影响','共享项目影响' in p.locator('#modal-error').inner_text());p.locator('[name=shared-ack]').check();submit(p)
+    op=val(p,'S.operations[0].id');readonly_before=val(p,'JSON.stringify(S.dns.find(r=>r.id==="dns-demo-readonly"))');close(p)
+    p.locator('[data-filter=cfAccount]').select_option('cf-account-readonly')
+    p.wait_for_function('(id)=>S.operations.find(o=>o.id===id).status==="success"',arg=op)
+    check('切换账号期间异步返回写入固定目标',val(p,'S.dns.some(r=>r.accountId==="cf-account-extra"&&r.name==="app"&&r.content==="203.0.113.21")') and val(p,'JSON.stringify(S.dns.find(r=>r.id==="dns-demo-readonly"))')==readonly_before and p.locator('tbody tr').count()==1)
+    p.locator('[data-filter=cfAccount]').select_option('cf-account-extra');check('提供商确认与传播分开','公网传播未验证' in p.locator('tbody').inner_text())
+    p.locator('[data-filter=cfAccount]').select_option('cf-account-legacy');click(p,'dnsedit',id='dns1')
+    check('编辑已有记录不能更换账号 Zone',p.locator('#dns-account').is_disabled() and p.locator('#dns-zone').is_disabled());close(p)
+    before=val(p,'JSON.stringify([S.dns,S.projects])');click(p,'cfaccount');connection(p,account='cf-account-legacy',id=legacy,profile='network',name='主账号')
+    check('更新检查失败没有保存按钮','检查未通过' in p.locator('#modal').inner_text() and p.locator('#modal button[type=submit]').count()==0);close(p)
+    check('更新失败保留原凭据与关系',val(p,'cfCurrent("cf-account-legacy").credentialRevision')==1 and val(p,'JSON.stringify([S.dns,S.projects])')==before)
+    click(p,'cfaccount');connection(p,account='cf-account-legacy',id=legacy,profile='limited',name='主账号');save(p);close(p)
+    check('范围缩小保留缓存且禁止写入','缓存 · 不可访问' in p.locator('[data-dns-id=dns3]').inner_text() and p.locator('[data-dns-id=dns3] [data-action=dnsedit]').count()==0 and val(p,'JSON.stringify([S.dns,S.projects])')==before)
+    shot(p,'dns-scope-cache-desktop.png')
+    click(p,'cfaccount');connection(p,account='cf-account-extra',id=legacy);check('另一账号凭据引导新增而不改挂旧记录','属于另一账号' in p.locator('#modal').inner_text());close(p)
+    click(p,'cfaccount');connection(p,account='cf-account-legacy',id=legacy,profile='normal',name='主账号');save(p);close(p)
+    edit(p,outcome='failed');click(p,'finishdemo',where='#modal');check('明确拒绝保留原记录',val(p,'S.dns.find(r=>r.id==="dns1").content')=='198.51.100.20');close(p)
+    edit(p,outcome='unknown');unknown=val(p,'S.operations[0].id');click(p,'finishdemo',where='#modal');close(p)
+    click(p,'cfaccount');click(p,'cfremove',where='#modal',id=legacy);check('未知结果阻止移除并解释原因','当前不能移除' in p.locator('#modal').inner_text());close(p)
+    click(p,'navigate',page='operations');click(p,'opdetail',id=unknown);click(p,'verifyop',where='#modal',id=unknown)
+    count=val(p,'S.operations.length');p.locator('#verify-result').select_option('success');p.locator('[name=verify-evidence]').check();submit(p)
+    check('读取核对未知结果不重放修改',val(p,'S.operations.length')==count and val(p,'S.operations.find(o=>o.id==="'+unknown+'").status')=='success')
+    shot(p,'dns-unknown-reconcile-desktop.png');close(p)
+    click(p,'navigate',page='dns');edit(p,content='203.0.113.33');interrupted=val(p,'S.operations[0].id');p.reload();p.wait_for_function('()=>prototypeLoading.ready')
+    check('刷新将执行中操作转为未知并保留账号身份',val(p,'S.operations.find(o=>o.id==="'+interrupted+'").status')=='unknown' and val(p,'S.operations.find(o=>o.id==="'+interrupted+'").input.cfTarget.accountId')=='cf-account-legacy')
+    click(p,'navigate',page='operations');click(p,'opdetail',id=interrupted);click(p,'verifyop',where='#modal',id=interrupted);p.locator('#verify-result').select_option('ended-unknown');p.locator('[name=verify-evidence]').check();submit(p)
+    check('核对结束但未知时不伪造成功',val(p,'S.operations.find(o=>o.id==="'+interrupted+'").status')=='unknown' and val(p,'S.dns.find(r=>r.id==="dns1").content')=='203.0.113.17');close(p)
+    click(p,'navigate',page='dns');click(p,'cfaccount');click(p,'cfinspect',where='#modal',id=legacy);p.locator('#cf-profile').select_option('invalid');submit(p);close(p)
+    check('失效凭据显示缓存不可访问',p.locator('[data-dns-id=dns1] [data-action=dnsedit]').count()==0 and '缓存' in p.locator('[data-dns-id=dns1]').inner_text())
+    click(p,'cfaccount');click(p,'cfinspect',where='#modal',id=legacy);p.locator('#cf-profile').select_option('dnsdenied');submit(p);check('分别显示 Zone 读取与 DNS 读取能力','Zone 读取' in p.locator('#modal').inner_text() and 'DNS 读取' in p.locator('#modal').inner_text());close(p)
+    cached=val(p,'JSON.stringify([S.dns,S.projects,S.operations])');click(p,'cfaccount');click(p,'cfremove',where='#modal',id=legacy);p.locator('[name=cf-confirm]').check();submit(p);close(p)
+    check('移除只断开连接，缓存项目历史保持',val(p,'JSON.stringify([S.dns,S.projects,S.operations])')==cached and val(p,'!cfCurrent("cf-account-legacy")'))
+    p.reload();p.wait_for_function('()=>prototypeLoading.ready');check('移除连接刷新不重建',val(p,'!cfCurrent("cf-account-legacy")'))
+    click(p,'navigate',page='dns');click(p,'cfaccount');click(p,'cfconnect',where='#modal');click(p,'cfdemofill',where='#modal');submit(p);close(p);p.wait_for_timeout(900)
+    check('检查期间取消后异步回调不重新打开或保存',val(p,'ui.modal===null'))
+    saved=val(p,'JSON.stringify(S)');c.close()
+    c,p=fresh(b);click(p,'navigate',page='dns');click(p,'dnsedit')
+    p.locator('#dns-name').fill('new-draft');p.locator('#dns-content').fill('203.0.113.41');p.locator('#dns-zone').select_option(val(p,'S.dns.find(r=>r.id==="dns3").zoneId'))
+    check('切换 Zone 保留其他未提交字段',p.locator('#dns-name').input_value()=='new-draft' and p.locator('#dns-content').input_value()=='203.0.113.41')
+    close(p);check('取消 DNS 编辑不提交',not val(p,'S.dns.some(r=>r.name==="new-draft")'))
+    # 原有记录类型、TTL、代理与删除继续走真实表单和确认。
+    for typ,content,proxy in [('AAAA','2001:db8::10',True),('CNAME','target.example.org',True),('TXT','virtual text',False)]:
+        click(p,'dnsedit');p.locator('#dns-name').fill('test-'+typ.lower());p.locator('#dns-type').select_option(typ);p.locator('#dns-content').fill(content);p.locator('#dns-ttl').fill('300')
+        if proxy:p.locator('[name=dns-proxy]').check()
+        p.locator('[name=network-ack]').check();submit(p);p.locator('[name=dns-confirm]').check();submit(p);click(p,'finishdemo',where='#modal');close(p)
+        check(typ+' / TTL / 代理语义保持',val(p,'S.dns.some(r=>r.type==='+json.dumps(typ)+'&&r.content==='+json.dumps(content)+'&&r.proxy==='+json.dumps(proxy)+'&&r.ttl==="300")'))
+    txt=val(p,'S.dns.find(r=>r.name==="test-txt").id');click(p,'dnsdelete',id=txt);p.locator('[name=delete-ack]').check();submit(p);click(p,'finishdemo',where='#modal');close(p)
+    check('确认删除仅删除目标账号 Zone 中的选定记录',not val(p,'S.dns.some(r=>r.id==='+json.dumps(txt)+')') and val(p,'S.dns.some(r=>r.id==="dns-demo-readonly")'))
+    click(p,'cfaccount');click(p,'cfinspect',where='#modal',id=val(p,'cfCurrent("cf-account-legacy").id'));p.locator('#cf-profile').select_option('nozones');submit(p);close(p)
+    check('无授权域名状态不宣称 DNS 已删除',val(p,'cfCurrent("cf-account-legacy").check.grants.length')==0 and val(p,'S.dns.some(r=>r.id==="dns1")'))
+    c.close()
+    # 旧存储与其他模块保护：注入旧格式，再通过真实刷新执行迁移。
+    c,p=fresh(b);old=val(p,'JSON.parse(JSON.stringify(S))');old.pop('cloudflare',None);old['version']=99;old['dns']=[r for r in old['dns'] if r['id']!='dns-demo-readonly'];old['dns'][0]['content']='203.0.113.200'
+    preserved=json.dumps({k:old[k] for k in ['servers','projects','programs','templates','frp']},sort_keys=True)
+    p.evaluate('(s)=>localStorage.setItem(STORE,s)',json.dumps(old));p.reload();p.wait_for_function('()=>prototypeLoading.ready')
+    check('版本不匹配不重置旧编辑或其他模块',val(p,'S.version')==99 and val(p,'S.dns[0].content')=='203.0.113.200' and json.dumps(val(p,'Object.fromEntries(["servers","projects","programs","templates","frp"].map(k=>[k,S[k]]))'),sort_keys=True)==preserved)
+    migrated=val(p,'JSON.stringify(S.cloudflare)');p.reload();p.wait_for_function('()=>prototypeLoading.ready');check('迁移重复执行不增加账号 Zone 或凭据',val(p,'JSON.stringify(S.cloudflare)')==migrated)
+    p.evaluate('S.dns=[];S.cloudflare.connections=[];persist()');p.reload();p.wait_for_function('()=>prototypeLoading.ready');click(p,'navigate',page='dns');check('主动清空不恢复示例且无权限不同于没有记录',val(p,'S.dns.length===0 && S.cloudflare.connections.length===0') and '无读取权限' in p.locator('#main').inner_text());c.close()
+    for width in [320,390,820,1440]:
+        c,p=fresh(b,width);click(p,'navigate',page='dns');
+        if width<=820:
+            table=p.locator('.dns-records .table-wrap');table.hover();p.mouse.wheel(1200,0);p.wait_for_timeout(250)
+            check(f'{width}px DNS 表可以横向滚动查看操作',table.evaluate('(el)=>el.scrollLeft>0'))
+        click(p,'cfaccount');
+        check(f'{width}px 页面和账号弹窗无横向溢出',val(p,'document.documentElement.scrollWidth<=innerWidth+1 && document.getElementById("modal").getBoundingClientRect().right<=innerWidth+1'))
+        if width==390:
+            shot(p,'cloudflare-manager-mobile.png');connection(p,profile='readonly');shot(p,'cloudflare-permissions-mobile.png');close(p)
+        else:close(p)
+        c.close()
+    b.close()
+check('浏览器无页面脚本异常',not errors)
+check('任意凭据未出现在控制台日志',all(canary not in line for line in console_logs))
+check('全过程只请求本地静态资源',all(url.startswith(BASE+'/') for url in requests))
+print(json.dumps({'passed':len(checks),'checks':checks,'page_errors':errors},ensure_ascii=False,indent=2))

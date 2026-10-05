@@ -1,6 +1,6 @@
 'use strict';
 
-function resetSample(preserve=true){formDrafts.clear();timers.forEach(clearInterval);timers.clear();const review=preserve?clone(S.review):null;S=initial();if(review)S.review=review;ui.q='';ui.filter='all';ui.server='all';ui.zone='all';ui.tab='overview';ui.projectsTab='list';ui.auth=null;ui.scenario='';ui.nav=false;persist();closeModal();}
+function resetSample(preserve=true){formDrafts.clear();timers.forEach(clearInterval);timers.clear();const review=preserve?clone(S.review):null;S=initial();initializeCloudflare();if(review)S.review=review;ui.q='';ui.filter='all';ui.server='all';ui.zone='all';ui.tab='overview';ui.projectsTab='list';ui.auth=null;ui.scenario='';ui.nav=false;persist();closeModal();}
 
 function loadScene(id){if(!scenes.some(scene=>scene.id===id)){toast('此试用场景当前不提供。');return;}resetSample();ui.scenario=id;const p=pr('p1');let op;
  switch(id){

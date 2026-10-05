@@ -16,7 +16,7 @@
 | `assets/features/projects/` | 项目列表、详情、部署、失败记录、残留清理及服务器文件观测。 |
 | `assets/features/frp/` | FRP 参考模板、虚构样例、模型、文件生成、页面、弹窗和模拟操作。 |
 | `assets/features/operations/` | 操作记录界面、模拟执行与结果处理。 |
-| `assets/features/network/` | DNS、防火墙及共用的网络模拟操作。 |
+| `assets/features/network/` | Cloudflare 账号、逐 Zone DNS 权限、防火墙及网络模拟操作。 |
 | `assets/core/` | 状态持久化、工具、导航、交互注册表、事件分发和加载失败提示。 |
 | `assets/data/` | 虚构初始数据与试用场景。 |
 | `assets/styles/` | 设计变量、公共样式和响应式规则；FRP 专用样式位于对应功能目录。 |
@@ -31,6 +31,7 @@
 - [部署配置](docs/deployment-configurations.md)：配置正文、文件映射及项目采用规则。
 - [部署项目](docs/project-deployment.md)：部署入口、失败记录、残留清理和同机项目名唯一性。
 - [项目文件与巡检](docs/project-files-and-checks.md)：服务器实际文件读取、检查方式和已移除范围。
+- [Cloudflare 账号与 DNS](docs/cloudflare-accounts.md)：统一账号管理、逐 Zone 权限、固定身份提交与旧数据迁移；[验证与截图](docs/cloudflare-validation.md)。
 - [FRP 连接与部署](docs/frp-connections.md)：三角色流程、公共资产引用、独立采用 / 应用；[附件行为对照](docs/frp-reference-behavior.md)与[验收证据](docs/frp-validation.md)。
 
 ## 维护方法
