@@ -7,10 +7,10 @@ function loadScene(id){if(!scenes.some(scene=>scene.id===id)){toast('此试用�
  case'saved':navigate('project','p2');ui.tab='config';render();break;
  case'stop-failed':navigate('project','p1');op=startOperation(p,'stop',{},'failed',{hold:true});finishOperation(op,'failed');break;
  case'update-partial':pr('p2').cfg.version='demo-new-content';pr('p2').draftRev++;navigate('project','p2');op=startOperation(pr('p2'),'update',{},'partial',{hold:true});finishOperation(op,'partial');break;
- case'deploy-failed':case'deploy-partial':case'deploy-unknown':{const outcome=id.slice(7);navigate('project','p9');op=startOperation(pr('p9'),'deploy',{},outcome,{hold:true,newProject:true});finishOperation(op,outcome);break;}
+ case'deploy-failed':case'deploy-partial':case'deploy-unknown':{const outcome=id.slice(7);const draft=newProjectDraft(tpl('t1'),sr('s4'),'qa-failed-service');draft.id=uid('project');draft.creationPending=true;draft.cfg.fileMappings=draft.cfg.fileMappings.map(m=>({...m,targetPath:m.targetPath.replace('/catalog-api/','/qa-failed-service/')}));navigate('projects');op=startOperation(draft,'deploy',{},outcome,{hold:true,newProject:true});finishOperation(op,outcome);break;}
  case'ssh-unknown':navigate('project','p1');op=startOperation(p,'stop',{},'unknown',{hold:true});finishOperation(op,'unknown');break;
  case'uninstall-dns':navigate('project','p1');op=startOperation(p,'uninstall',{deleteData:false,dnsIds:['dns1'],fwIds:[]},'partial',{hold:true});finishOperation(op,'partial');break;
- case'redeploy':navigate('project','p8');break;
+ case'redeploy':navigate('projects');openModal('newproject',{server:'s4'});break;
  case'host-changed':sr('s1').state='changed';persist();navigate('servers');break;
  case'access':ui.auth='setup';ui.initialized=false;render();break;
  case'empty':S.servers=[];S.projects=[];S.operations=[];S.dns=[];S.firewalls=[];S.notifications=[];S.frp.nodes=[];persist();navigate('servers');break;

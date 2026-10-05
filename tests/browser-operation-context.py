@@ -44,8 +44,8 @@ with sync_playwright() as pw:
     ck('返回重新预览保留副本',ev(p,'ui.modal.draft.cfg.source')==body)
     click(p,'deployment-preview-execute',where='#modal');ck('执行记录固定备用节点',ev(p,'S.operations[0].input.serverTarget.id')=='s4')
     click(p,'finishdemo',where='#modal');ck('应用参照是实际确认副本',ev(p,'pr(S.operations[0].project).applied.source')==body);close(p)
-    click(p,'navigate',page='projects');p.locator('[data-filter=server]').select_option('all');click(p,'newproject');ck('全部项目视图必须选择服务器',p.locator('#np-server').input_value()=='');ck('通用选项移除 FRP',p.locator('#np-template option[value^="frp-template-"]').count()==0)
-    p.locator('#np-server').select_option('s4');click(p,'project-frp-entry',where='#modal');ck('FRP 专用入口携带目标',ev(p,'ui.modal.kind')=='frp-batch' and p.locator('#fb-server').input_value()=='s4');close(p)
+    click(p,'navigate',page='projects');p.locator('[data-filter=server]').select_option('all');click(p,'newproject');ck('全部项目视图必须选择服务器',p.locator('#np-server').input_value()=='');ck('通用选项包含 FRP 服务配置',p.locator('#np-template option[value^="frp-template-"]').count()==3)
+    p.locator('#np-template').select_option('frp-template-server');ck('FRP 配置就在统一部署表单',p.locator('#np-frp-port').count()==1 and p.locator('#np-server').input_value()=='');close(p)
     # 2. Firewall target, copy, immutable identity and complete confirmation.
     click(p,'navigate',page='firewall');p.locator('[data-filter=server]').select_option('s4');click(p,'firewalledit');ck('防火墙继承备用节点',p.locator('#fw-server').input_value()=='s4')
     p.locator('#fw-direction').select_option('out');p.locator('#fw-port').fill('8443');p.locator('#fw-address').fill('192.0.2.7/32');p.locator('#fw-scope').select_option('container');p.locator('[name=network-ack]').check();submit(p)
@@ -60,14 +60,7 @@ with sync_playwright() as pw:
     p.locator('[data-filter=server]').select_option('s3');click(p,'firewalledit');ck('待核对节点选择保持且解释阻塞',p.locator('#fw-server').input_value()=='s3' and '待核对' in p.locator('#modal').inner_text());p.locator('#fw-port').fill('9000');p.locator('#fw-address').fill('192.0.2.0/24');p.locator('[name=network-ack]').check();submit(p);ck('待核对防火墙不能进入确认',ev(p,'ui.modal.kind')=='firewalledit');close(p)
     click(p,'navigate',page='projects');p.locator('[data-filter=server]').select_option('s3');click(p,'newproject');p.locator('#np-name').fill('qa-arm-blocked');submit(p);ck('ARM 项目保持目标并阻止继续',ev(p,'ui.modal.draft.server')=='s3' and p.locator('[data-action=deployment-preview-execute]').is_disabled() and '待核对' in p.locator('#modal').inner_text());close(p)
     # 3. FRP identities and 0 B blocking, no placeholder replacement.
-    click(p,'navigate',page='projects');click(p,'project',id='frp-installed-s1-client');ck('FRPC 安装角色不显示连接草稿', '不适用 · 独立安装角色' in p.locator('#main').inner_text() and '当前项目草稿' not in p.locator('#main').inner_text());click(p,'frp-locate',where='#main',project='frp-installed-s1-client');ck('FRPC 定位服务器角色管理',ev(p,'ui.modal.kind==="frp-role-manage"&&ui.modal.server==="s1"'));shot(p,'operation-frp-role-desktop.png');close(p)
-    click(p,'navigate',page='projects');click(p,'project',id='frp-installed-s2-server');click(p,'frp-locate',where='#main',project='frp-installed-s2-server');ck('共享 FRPS 定位服务器角色',ev(p,'ui.modal.role==="server"&&ui.modal.server==="s2"'));close(p)
-    click(p,'navigate',page='projects');click(p,'project',id='frp-n1-client');click(p,'frp-locate',where='#main',project='frp-n1-client');ck('连接服务定位原连接',ev(p,'FRP.node==="n1"&&FRP.role==="client"'))
-    click(p,'navigate',page='projects');click(p,'project',id='frp-n3-visitor');click(p,'frp-locate',where='#main',project='frp-n3-visitor');ck('visitor 定位 STCP 角色',ev(p,'FRP.node==="n3"&&FRP.role==="visitor"'))
-    click(p,'frp-op',node='n3',role='visitor',op='deploy');ck('0 B 程序阻止应用',p.locator('#modal button[type=submit]').is_disabled() and '0 B' in p.locator('#modal').inner_text());ck('架构预览与主机一致','x86_64' in p.locator('#modal').inner_text());close(p)
-    ck('共享 FRPS 按实际角色去重',ev(p,'frpUniqueItems(S.frp.nodes.map(n=>({node:n.id,role:"server"}))).length')==2)
-    click(p,'frp-tab',id='connections');click(p,'frp-node',id='n4');click(p,'frp-proxyremove',node='n4',index=0);click(p,'frp-removesave',where='#modal',node='n4',index=0);click(p,'frp-update',id='frp-n4-client');click(p,'frp-adopt',where='#modal');click(p,'frp-op',node='n4',role='client',op='deploy');ck('最后 STCP 删除展示 visitor 清理', '本次确认将移除 visitor' in p.locator('#modal').inner_text());ck('未确认清理不修改已应用 visitor',ev(p,'pr("frp-n4-visitor").life')=='installed');close(p)
-    ck('待核对 FRP 明确解释主机阻塞',ev(p,'frpLandingBody(frpNode("n4"),"client").includes("待核对")'))
+    click(p,'navigate',page='frp');ck('FRP 只管理配置',p.locator('#main [data-action=frp-batch],#main [data-action=frp-install]').count()==0);click(p,'frp-node',id='n3');click(p,'frp-configapply',node='n3');ck('失效/占位程序阻止应用',p.locator('#modal button[type=submit]').is_disabled());close(p)
     ck('原始四个占位仍 0 B',ev(p,'S.programs.filter(f=>f.id.startsWith("frp-bin-")).every(f=>f.bytes===0&&f.placeholder)'))
     # 4. DNS return/summary/diff/unknown and independent Cloudflare status.
     dns_form(p,'dns1');text=p.locator('#modal').inner_text();ck('DNS 完整确认和前后差异',all(t in text for t in ['目标账号','Zone','记录类型','记录名称','记录内容','TTL','代理状态','关联项目影响']) and p.locator('#modal del').count()>0)

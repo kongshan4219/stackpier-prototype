@@ -4,22 +4,23 @@ const failedDeploymentResults=['failed','partial','unknown','rejected'];
 
 // 清理范围在部署受理时固定，后续配置编辑不能扩大旧部署的清理范围。
 function deploymentCleanupTargets(project,cfg=project.cfg){
+ if(project.frpService&&cfg.frpSnapshot){const f=cfg.frpSnapshot.files;return [...(cfg.dataDir===cfg.frpSnapshot.root+'/projects/'+project.name?[{kind:'directory',path:cfg.dataDir,label:'独立服务配置目录（含专属数据）',ownership:'project'}]:[]),{kind:'runtime',path:'systemd:'+project.name,label:'systemd 服务',ownership:'project'},{kind:'file',path:f.unitPath,label:'服务 unit',ownership:'project'},{kind:'file',path:f.tomlPath,label:'服务 TOML 配置',ownership:'project'},{kind:'file',path:f.binaryPath,label:'共享 FRP 程序',shared:true,ownership:'shared'}];}
  const root=`/srv/stackpier-demo/${project.name}`,targets=[];
- const add=(kind,path,label)=>{if(path&&!targets.some(item=>item.kind===kind&&item.path===path))targets.push({kind,path,label});};
+ const add=(kind,path,label,ownership='project')=>{if(path&&!targets.some(item=>item.kind===kind&&item.path===path))targets.push({kind,path,label,ownership,shared:ownership==='shared'});};
  add('runtime',`${project.type}:${project.name}`,project.type==='compose'?'项目容器与专属网络':'systemd 服务');
  add('file',project.type==='compose'?`${root}/compose.yaml`:`/etc/systemd/system/${project.name}.service`,project.type==='compose'?'Docker Compose 文件':'systemd 服务文件');
  if(project.type==='systemd'&&typeof cfg.source!=='string'){
   if(cfg.program)add('file',`${root}/${cfg.program}`,'程序文件');
   add('file',`${root}/app.conf`,'应用配置');
  }
- for(const mapping of cfg.fileMappings||[])add('file',mapping.targetPath,`映射文件 · ${mapping.file||mapping.program}`);
+ for(const mapping of cfg.fileMappings||[])add('file',mapping.targetPath,`映射文件 · ${mapping.file||mapping.program}`,resourceOwnership(mapping));
  if(cfg.dataDir)add('directory',cfg.dataDir,'项目数据目录');
  return targets;
 }
 
 function deploymentSnapshot(project,cfg=project.cfg){
  const server=sr(project.server);
- return {project:{...clone(project),cfg:clone(cfg)},server:server?{id:server.id,name:server.name,host:server.host,port:server.port,fp:server.fp}:null,templateName:tpl(project.template)?.name||'未保留部署配置名称',targets:deploymentCleanupTargets(project,cfg)};
+ return {project:{...clone(project),cfg:clone(cfg)},server:server?{id:server.id,name:server.name,host:server.host,port:server.port,fp:server.fp}:null,templateName:tpl(project.template)?.name||'未保留部署配置名称',targets:deploymentCleanupTargets(project,cfg).filter(t=>!t.shared)};
 }
 
 function failedProject(id){return (S.failedProjects||[]).find(item=>item.id===id);}

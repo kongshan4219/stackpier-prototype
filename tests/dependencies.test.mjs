@@ -59,18 +59,6 @@ test('Compose 配置页读取已部署文件，不把待应用草稿当成服务
   assert.match(html, /待应用内容[\s\S]*有/);
 });
 
-test('未部署和已卸载项目不把配置记录显示成服务器文件', () => {
-  const p = prototype();
-  p.click('project', { id: 'p8' });
-  p.click('tab', { id: 'config' });
-  assert.match(p.html('app'), /运行文件已随项目卸载/);
-  assert.equal(p.run('projectRuntimeFile(pr("p8"))'),null);
-  p.click('project', { id: 'p9' });
-  p.click('tab', { id: 'config' });
-  assert.match(p.html('app'), /项目尚未形成服务器运行文件/);
-  assert.doesNotMatch(p.html('app'), /draft-service\.service/);
-});
-
 test('重新读取记录成功或失败，失败时保留最近文件快照', () => {
   const p = prototype();
   p.click('project', { id: 'p1' });

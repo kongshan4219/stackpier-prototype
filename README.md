@@ -32,9 +32,13 @@
 - [部署项目](docs/project-deployment.md)：部署入口、失败记录、残留清理和同机项目名唯一性。
 - [项目文件与巡检](docs/project-files-and-checks.md)：服务器实际文件读取、检查方式和已移除范围。
 - [Cloudflare 账号与 DNS](docs/cloudflare-accounts.md)：统一账号管理、逐 Zone 权限、固定身份提交与旧数据迁移；[验证与截图](docs/cloudflare-validation.md)。
-- [FRP 连接与部署](docs/frp-connections.md)：三角色流程、公共资产引用、独立采用 / 应用；[附件行为对照](docs/frp-reference-behavior.md)与[验收证据](docs/frp-validation.md)。
+- [配置 / FRP](docs/frp-connections.md)：连接映射管理、公共资产引用、配置采用 / 应用与统一项目部署；[附件行为对照](docs/frp-reference-behavior.md)与[验收证据](docs/frp-validation.md)。
 
 - [操作上下文与返回修改验收](docs/operation-context-repairs.md)：固定目标、FRP 身份、网络草稿、项目副本与历史路由。
+
+- [项目与 FRP 最新生命周期验收](docs/service-lifecycle-validation.md)：部署成功才建项目、完全卸载、共享引用保护及幂等迁移。
+
+- [清理与 FRP 五项修复](docs/cleanup-frp-repairs.md)：清理解决关联、交付资源台账、visitor 独占、改绑解除旧配置及浏览器前后截图。
 
 ## 维护方法
 

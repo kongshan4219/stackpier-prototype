@@ -24,17 +24,17 @@ for (const result of ['failed', 'partial', 'unknown']) {
     const id = deploy(p, result);
     assert.equal(p.run('S.projects.some(project=>project.name==="failure-demo")'), false);
     p.click('closemodal');
-    assert.equal(p.run('ui.projectsTab'), 'failures');
+    assert.equal(p.run('ui.projectsTab'), 'list');
     assert.match(p.html('app'), /failure-demo|清理残留/);
     p.click('projectstab', { id: 'list' });
-    assert.doesNotMatch(p.html('app'), /failure-demo/);
+    assert.equal(p.run('S.projects.some(p=>p.name==="failure-demo")'),false);
     p.run('tpl("t1").fileMappings=[{file:"catalog-config.yaml",targetPath:"/srv/changed/config.yaml"}];');
     p.click('failedproject', { id });
     assert.match(p.html('modal'), /failure-demo\.service|\/failure-demo\/data/);
     assert.match(p.html('modal'), /\/srv\/example\/settings.yaml/);
     assert.doesNotMatch(p.html('modal'), /\/srv\/changed/);
     const reloaded = prototype(p.saved());
-    assert.equal(reloaded.run('S.failedProjects.length'), 1);
+    assert.equal(reloaded.run('S.failedProjects.filter(f=>!f.migrationProject).length'), 1);
     assert.equal(reloaded.run('S.failedProjects[0].result'), result);
     assert.equal(reloaded.run('S.projects.some(project=>project.name==="failure-demo")'), false);
     assert.deepEqual(JSON.parse(prototype(reloaded.saved()).saved()), JSON.parse(reloaded.saved()));
@@ -57,7 +57,7 @@ test('清理经确认后执行，成功保留记录且重复提交不再产生�
   p.click('failedprojects');
   assert.match(p.html('app'), /failure-demo/);
   assert.match(p.html('app'), /已清理/);
-  assert.doesNotMatch(p.html('app'), /data-action="failedcleanup"/);
+  assert.doesNotMatch(p.html('app'), new RegExp('data-action="failedcleanup" data-id="'+id+'"'));
   const count = p.run('S.operations.length');
   clean(p, id);
   assert.equal(p.run('S.operations.length'), count);
@@ -114,7 +114,7 @@ test('只剩数据目录时再次部分清理仍保留未完成项', () => {
   assert.equal(p.run('S.operations[0].steps.some(step=>step.title.includes("停止并移除"))'), false);
 });
 
-test('未知部署核对成功只补充原操作证据，不自动建立项目', () => {
+test('未知部署核对全部成功后建立唯一项目，保留原失败证据', () => {
   const p = prototype();
   deploy(p, 'unknown');
   const original = p.run('S.failedProjects[0].operation');
@@ -122,9 +122,9 @@ test('未知部署核对成功只补充原操作证据，不自动建立项目',
   p.click('verifyop', { id: original });
   p.submit('verifyop', { 'verify-result': 'success', 'verify-evidence': 'on' });
   assert.equal(p.run('S.operations[0].status'), 'success');
-  assert.equal(p.run('S.failedProjects.length'), 1);
-  assert.equal(p.run('S.projects.some(project=>project.name==="failure-demo")'), false);
-  assert.equal(prototype(p.saved()).run('S.failedProjects.length'), 1);
+  assert.equal(p.run('S.failedProjects.filter(f=>!f.migrationProject).length'), 1);
+  assert.equal(p.run('S.projects.some(project=>project.name==="failure-demo")'), true);
+  assert.equal(prototype(p.saved()).run('S.failedProjects.filter(f=>!f.migrationProject).length'), 1);
 });
 
 test('同名重试或其他项目采用相同文件后，旧失败记录不能清理其资源', () => {
@@ -164,7 +164,7 @@ test('旧失败部署可以归档，缺失服务器身份的记录不猜测清�
   deploy(p);
   p.run('S.failedProjects=[];delete S.operations[0].input.deployment;persist();');
   const reloaded = prototype(p.saved());
-  assert.equal(reloaded.run('S.failedProjects.length'), 1);
+  assert.equal(reloaded.run('S.failedProjects.filter(f=>!f.migrationProject).length'), 1);
   clean(reloaded, reloaded.run('S.failedProjects[0].id'));
   assert.match(reloaded.document.getElementById('modal-error').textContent, /缺少原服务器身份/);
 });
@@ -174,9 +174,9 @@ test('重复部署请求被拒绝时不丢弃正在执行的原部署', () => {
   p.click('newproject');
   p.submit('newproject', { 'np-template': 't1', 'np-server': 's4', 'np-name': 'pending-service' });
   p.click('deployment-preview-execute');
-  p.run('const original=S.operations[0],subject=pr(original.project);startOperation(subject,"deploy",{},"success",{hold:true});');
+  p.run('const original=S.operations[0],subject=clone(original.input.deployment.project);startOperation(subject,"deploy",{},"success",{hold:true});');
   assert.equal(p.run('S.operations[0].status'), 'rejected');
-  assert.equal(p.run('!!pr(original.project)'), true);
+  assert.equal(p.run('!!pr(original.project)'), false);
   p.run('finishOperation(original,"success");');
   assert.equal(p.run('pr(original.project).life'), 'installed');
   assert.equal(p.run('pr(original.project).creationPending'), undefined);

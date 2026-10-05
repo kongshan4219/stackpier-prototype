@@ -10,7 +10,7 @@ function routeURL(){
  if(ui.page==='project'){put('project',ui.project);put('tab',ui.tab);}
  if(['programs','servers','monitor','operations'].includes(ui.page))put('filter',ui.filter);
  if(ui.page==='monitor')put('section',ui.monitorTab);
- if(['projects','firewall','servers'].includes(ui.page))put('server',ui.server);
+ if(['projects','firewall','servers','frp'].includes(ui.page))put('server',ui.server);
  if(ui.page==='projects'){put('view',ui.view);put('section',ui.projectsTab);put('filter',ui.filter);}
  if(ui.page==='templates')put('section',ui.templateTab);
  if(ui.page==='dns'){put('account',ui.cfAccount);put('zone',ui.zone);}
@@ -40,7 +40,7 @@ function restoreRoute(){
  if(ui.page==='projects'){ui.projectsTab=p.get('section')==='failures'?'failures':'list';ui.view=p.get('view')==='cards'?'cards':'table';ui.filter=p.get('filter')||'all';}
  if(ui.page==='templates')ui.templateTab=p.get('section')==='programs'?'programs':'templates';
  if(ui.page==='frp'){
-  FRP.tab=['connections','node','files','deploy','review'].includes(p.get('tab'))?p.get('tab'):'connections';FRP.role=Object.hasOwn(frpRoles,p.get('role'))?p.get('role'):'client';
+  FRP.tab=['connections','node','files'].includes(p.get('tab'))?p.get('tab'):'connections';FRP.role=Object.hasOwn(frpRoles,p.get('role'))?p.get('role'):'client';
   if(p.get('node')){if(frpNode(p.get('node')))FRP.node=p.get('node');else{FRP.tab='connections';ui.routeNotice='FRP 连接关联失效；返回连接清单核对，不替换成其他连接。';}}
  }
  render();

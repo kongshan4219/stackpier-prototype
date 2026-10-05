@@ -1,0 +1,63 @@
+{
+  "verifiedAtUtc": "2026-10-05T13:40:39.114652+00:00",
+  "reviewBaseline": "a6d2694b118a3a55bd356c1aebd2f33d36e83f17",
+  "localOnly": true,
+  "unitTests": {
+    "passed": 187,
+    "failed": 0,
+    "skipped": 0,
+    "newRegressions": 30
+  },
+  "browsers": {
+    "asset-linkage": {
+      "passed": 63,
+      "pageErrors": []
+    },
+    "cloudflare": {
+      "passed": 54,
+      "pageErrors": []
+    },
+    "frp-linkage": {
+      "passed": 24,
+      "pageErrors": []
+    },
+    "operation-context": {
+      "passed": 55,
+      "pageErrors": []
+    },
+    "service-lifecycle": {
+      "passed": 53,
+      "pageErrors": []
+    },
+    "cleanup-frp-repairs": {
+      "passed": 36,
+      "pageErrors": []
+    }
+  },
+  "browserTotal": 285,
+  "syntax": {
+    "javascript": 69,
+    "entryResources": 79,
+    "python": "all tests/browser-*.py"
+  },
+  "build": "byte-identical index.html + assets",
+  "githubCI": "not executed",
+  "publicBrowser": "not executed: CONNECT 403",
+  "screenshots": [
+    "repair-detach-confirm-desktop.png",
+    "repair-detach-mobile.png",
+    "repair-detach-partial-desktop.png",
+    "repair-frp-dialog-after.png",
+    "repair-frp-dialog-before.png",
+    "repair-frp-dialog-mobile.png",
+    "repair-frp-rebound-desktop.png",
+    "repair-legacy-gap-desktop.png",
+    "repair-rebinding-plan-before.png",
+    "repair-resolved-pending-after.png",
+    "repair-resolved-pending-before.png",
+    "repair-resource-list-after.png",
+    "repair-resource-list-before.png",
+    "repair-visitor-conflict-before.png",
+    "repair-visitor-conflict-desktop.png"
+  ]
+}

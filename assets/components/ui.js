@@ -2,7 +2,7 @@
 
 const lifeName={draft:'未部署',incomplete:'部署未完成',installed:'已部署',uninstalling:'卸载未完成',uninstalled:'已卸载'};
 
-const runtimeName={running:'运行中',stopped:'已停止',partial:'部分运行',unknown:'待核对',na:'不适用'};
+const runtimeName={running:'运行中',stopped:'已停止',partial:'部分运行',unknown:'待核对',na:'未取得服务运行观测'};
 
 const statusName={running:'执行中',success:'成功',failed:'明确失败',partial:'部分完成',unknown:'结果待核对',rejected:'已拒绝',skipped:'已跳过',missed:'已错过',pending:'未执行',deleted:'已删除'};
 
@@ -28,7 +28,7 @@ function field(name,label,value='',hint='',type='text',extra=''){return `<div cl
 
 function area(name,label,value='',hint='',rows=4){return `<div class="field"><label for="${h(name)}">${h(label)}</label><textarea id="${h(name)}" name="${h(name)}" rows="${rows}" spellcheck="false">${h(value)}</textarea>${hint?`<small>${h(hint)}</small>`:''}</div>`}
 
-function select(name,label,options,value='',hint='',extra=''){return `<div class="field"><label for="${h(name)}">${h(label)}</label><select id="${h(name)}" name="${h(name)}" ${extra}>${options.map(o=>{const [v,t]=Array.isArray(o)?o:[o,o];return `<option value="${h(v)}" ${String(v)===String(value)?'selected':''}>${h(t)}</option>`}).join('')}</select>${hint?`<small>${h(hint)}</small>`:''}</div>`}
+function select(name,label,options,value='',hint='',extra=''){return `<div class="field"><label for="${h(name)}">${h(label)}</label><select id="${h(name)}" name="${h(name)}" ${extra}>${options.map(o=>{const [v,t,disabled=false]=Array.isArray(o)?o:[o,o];return `<option ${disabled?'disabled':''} value="${h(v)}" ${String(v)===String(value)?'selected':''}>${h(t)}</option>`}).join('')}</select>${hint?`<small>${h(hint)}</small>`:''}</div>`}
 
 function check(name,label,checked=false,hint=''){return `<label class="check"><input name="${h(name)}" type="checkbox" ${checked?'checked':''}><span>${h(label)}${hint?`<small class="muted" style="display:block;margin-top:3px">${h(hint)}</small>`:''}</span></label>`}
 

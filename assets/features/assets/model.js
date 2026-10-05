@@ -38,7 +38,7 @@ function initializeAssets(){
   if(!template.revisions)template.revisions=[clone({...template,revisions:undefined})];
  }
  for(const project of S.projects){
-  if(project.frpRef||project.frpInstallation||['frpc','frps'].includes(project.software))continue;
+  if(project.frpRef||project.frpInstallation||project.frpService||['frpc','frps'].includes(project.software))continue;
   project.cfg.fileMappings=(project.cfg.fileMappings||[]).map(pinMapping);
   if(project.cfg.program&&!project.cfg.programRef)project.cfg.programRef=pinMapping({file:project.cfg.program});
   if(project.applied){
@@ -67,10 +67,11 @@ function templateProjects(id){return S.projects.filter(project=>project.template
 function newerAssetPins(mapping){return {...mapping,file:mappingName(mapping),pins:assetGroups().find(group=>group.id===mapping.groupId)?.files.map(file=>({fileId:file.id,revision:file.revision}))||(mapping.pins||[])};}
 function mappingHasUpdate(mapping,server=null){if(server){const before=pinnedMappingFile(mapping,server),after=pinnedMappingFile(newerAssetPins(mapping),server);return before?.id!==after?.id||before?.revision!==after?.revision;}return (mapping.pins||[]).some(pin=>assetById(pin.fileId)?.revision>pin.revision)||assetGroups().find(group=>group.id===mapping.groupId)?.files.some(file=>!(mapping.pins||[]).some(pin=>pin.fileId===file.id))||false;}
 function markAssetUpdates(){for(const project of S.projects){
-  if(project.frpRef||project.frpInstallation||['frpc','frps'].includes(project.software))continue;project.templateUpdate=(tpl(project.template)?.rev||0)>(project.cfg.templateRev||0);project.programUpdate=(project.cfg.fileMappings||[]).some(mapping=>mappingHasUpdate(mapping,sr(project.server)))||!!project.cfg.programRef&&mappingHasUpdate(project.cfg.programRef,sr(project.server));}}
+  if(project.frpRef||project.frpInstallation||project.frpService||['frpc','frps'].includes(project.software))continue;project.templateUpdate=(tpl(project.template)?.rev||0)>(project.cfg.templateRev||0);project.programUpdate=(project.cfg.fileMappings||[]).some(mapping=>mappingHasUpdate(mapping,sr(project.server)))||!!project.cfg.programRef&&mappingHasUpdate(project.cfg.programRef,sr(project.server));}}
 function projectUpdateCfg(project){const template=tpl(project.template);return {...clone(project.cfg),...(template?{source:template.tpl,templateRev:template.rev}:{}),programRef:template?.programRef?newerAssetPins(template.programRef):project.cfg.programRef,fileMappings:(template?.fileMappings||project.cfg.fileMappings||[]).map(newerAssetPins)};}
 function adoptProjectUpdate(project){project.cfg=projectUpdateCfg(project);project.draftRev++;markAssetUpdates();persist();}
 function deploymentLocation(project){
+ if(project.frpService)return frpServiceLocation(project);
  const server=sr(project.server),mainPath=project.type==='compose'?`/srv/stackpier-demo/${project.name}/compose.yaml`:`/etc/systemd/system/${project.name}.service`;
  const files=resolvedFileMappings(project.cfg.fileMappings,server),errors=[],warnings=[],targets=new Set([mainPath]);
  const targetError=serverOperationError(project.server);if(targetError)errors.push(targetError);

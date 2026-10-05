@@ -13,12 +13,12 @@ function monitorMethodLabel(p,method=monitorMethod(p)){return method==='http'?'H
 function monitorTarget(p,method=monitorMethod(p)){
  if(method==='http')return p.monitor?.http||'尚未填写地址';
  if(method==='compose')return `docker compose -f /srv/stackpier-demo/${p.name}/compose.yaml ps --status running`;
- return `systemctl is-active ${p.name}.service`;
+ return `systemctl is-active ${p.frpApplied?.unit||p.name+'.service'}`;
 }
 
 function monitorMethodResult(p,inactive,stop){
  const method=monitorMethod(p);
- if(inactive)return ['不适用',''];
+ if(inactive)return ['运行事实待核对','warning'];
  if(stop)return ['符合停止基线','success'];
  if(method==='http')return [p.health==='healthy'?'通过':p.health==='unknown'?'待核对':'未通过',p.health==='healthy'?'success':'warning'];
  return [p.runtimeCheckStatus==='unknown'?'当前待核对；上次 '+runtimeName[p.runtime]:runtimeName[p.runtime],p.runtimeCheckStatus==='unknown'?'warning':p.runtime==='running'?'success':'warning'];
@@ -51,7 +51,7 @@ function projectMonitor(p){
 }
 
 function monitorPage(){
- return heading('巡检与通知','每个项目选择 systemd、Docker Compose 或 HTTP 检查；发现异常只通知。',btn('检查适用项目','checkall',{},'primary','refresh'),'OPERATIONS / MONITORING')+tabs([['checks','检查结果'],['notifications','通知记录']],ui.monitorTab,'monitortab')+(ui.monitorTab==='checks'?`<section class="card"><div class="table-wrap"><table><thead><tr><th>项目</th><th>服务器</th><th>检查方式</th><th>最近结果 / 周期</th><th class="right">操作</th></tr></thead><tbody>${S.projects.map(p=>{const result=monitorMethodResult(p,['uninstalled','draft'].includes(p.life),isExpectedStop(p));return `<tr><td><button class="link cell-title" data-action="project" data-id="${p.id}">${h(p.name)}</button><p class="cell-sub">${p.type==='compose'?'Docker Compose':'systemd'}</p></td><td>${badge(sr(p.server)?.state==='online'?'可达':'待核对',sr(p.server)?.state==='online'?'success':'warning')}<p class="cell-sub">${h(sname(p.server))}</p></td><td><strong class="small">${h(monitorMethodLabel(p))}</strong><p class="cell-sub mono monitor-table-target">${h(monitorTarget(p))}</p></td><td>${badge(result[0],result[1])}<p class="cell-sub">${p.monitorPaused?'卸载后已暂停':(p.monitor?.hours||24)+' 小时 / 次（示例）'} · ${fmt(p.lastCheck)}</p></td><td class="right">${btn('设置','projectmonitorsettings',{id:p.id},'small ghost')}${p.monitorPaused&&p.life==='installed'?btn('恢复定时巡检','resumemonitor',{id:p.id},'small'):''}${btn('检查','projectcheck',{id:p.id},'small')}</td></tr>`}).join('')}</tbody></table></div></section><div class="mt">${notice('检查方式按项目运行类型提供','systemd 项目执行对应 systemctl 查询，Compose 项目执行对应 docker compose 查询；也可改为请求指定 HTTP 地址。')}</div>`:`<section class="card"><div class="card-head"><h2>演示通知记录</h2>${btn('通知设置','navigate',{page:'settings'},'small')}</div><div class="table-wrap"><table><thead><tr><th>时间</th><th>项目</th><th>通知内容</th><th>渠道</th><th>模拟交付</th></tr></thead><tbody>${S.notifications.map(n=>`<tr><td>${fmt(n.time)}</td><td>${h(n.project?pname(n.project):'全局')}</td><td>${h(n.text)}</td><td>${h(n.channel)}</td><td>${status(n.status)}</td></tr>`).join('')}</tbody></table></div><div class="card-foot">持续异常：每次检查仍通知；恢复正常：不发送额外恢复通知。这里没有真实发送。</div></section>`);
+ return heading('巡检与通知','每个项目选择 systemd、Docker Compose 或 HTTP 检查；发现异常只通知。',btn('检查适用项目','checkall',{},'primary','refresh'),'OPERATIONS / MONITORING')+tabs([['checks','检查结果'],['notifications','通知记录']],ui.monitorTab,'monitortab')+(ui.monitorTab==='checks'?`<section class="card"><div class="table-wrap"><table><thead><tr><th>项目</th><th>服务器</th><th>检查方式</th><th>最近结果 / 周期</th><th class="right">操作</th></tr></thead><tbody>${S.projects.map(p=>{const result=monitorMethodResult(p,['uninstalled','draft'].includes(p.life),isExpectedStop(p));return `<tr><td><button class="link cell-title" data-action="project" data-id="${p.id}">${h(p.name)}</button><p class="cell-sub">${p.type==='compose'?'Docker Compose':'systemd'}</p></td><td>${badge(sr(p.server)?.state==='online'?'可达':'待核对',sr(p.server)?.state==='online'?'success':'warning')}<p class="cell-sub">${h(sname(p.server))}</p></td><td><strong class="small">${h(monitorMethodLabel(p))}</strong><p class="cell-sub mono monitor-table-target">${h(monitorTarget(p))}</p></td><td>${badge(result[0],result[1])}<p class="cell-sub">${p.monitorPaused?'巡检已暂停':(p.monitor?.hours||24)+' 小时 / 次（示例）'} · ${fmt(p.lastCheck)}</p></td><td class="right">${btn('设置','projectmonitorsettings',{id:p.id},'small ghost')}${p.monitorPaused&&p.life==='installed'?btn('恢复定时巡检','resumemonitor',{id:p.id},'small'):''}${btn('检查','projectcheck',{id:p.id},'small')}</td></tr>`}).join('')}</tbody></table></div></section><div class="mt">${notice('检查方式按项目运行类型提供','systemd 项目执行对应 systemctl 查询，Compose 项目执行对应 docker compose 查询；也可改为请求指定 HTTP 地址。')}</div>`:`<section class="card"><div class="card-head"><h2>演示通知记录</h2>${btn('通知设置','navigate',{page:'settings'},'small')}</div><div class="table-wrap"><table><thead><tr><th>时间</th><th>项目</th><th>通知内容</th><th>渠道</th><th>模拟交付</th></tr></thead><tbody>${S.notifications.map(n=>`<tr><td>${fmt(n.time)}</td><td>${h(n.project?pname(n.project):'全局')}</td><td>${h(n.text)}</td><td>${h(n.channel)}</td><td>${status(n.status)}</td></tr>`).join('')}</tbody></table></div><div class="card-foot">持续异常：每次检查仍通知；恢复正常：不发送额外恢复通知。这里没有真实发送。</div></section>`);
 }
 
 function runProjectCheck(p,observation){
@@ -63,7 +63,7 @@ function runProjectCheck(p,observation){
  }else{
   const current=observation?.runtime||(p.runtimeCheckStatus==='unknown'?'unknown':p.runtime);
   if(server?.state==='online'&&['running','stopped','partial'].includes(current)){
-   p.runtime=current;p.observed=observation?.observedAt||now();p.runtimeCheckStatus='verified';if(current==='running')p.stopVerified=false;p.health=current==='running'?'healthy':isExpectedStop(p)?'na':'unhealthy';
+   p.runtime=current;p.observed=observation?.observedAt||now();p.runtimeCheckStatus='verified';if(current==='running')p.stopVerified=false;p.health=current==='running'?(p.frpService?'unknown':'healthy'):isExpectedStop(p)?'na':'unhealthy';
   }else{p.runtimeCheckStatus='unknown';p.health='unknown';}
  }
  const failures=[];

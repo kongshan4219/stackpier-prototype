@@ -8,7 +8,7 @@ function serverOperationError(id){
  if(server.permission===false||server.authorized===false||server.checkFailed)return sname(id)+'：权限不足或检查失败，不能执行主机操作。';
  return '';
 }
-function serverOperationSnapshot(id){const s=sr(id);return s?{id:s.id,name:s.name,host:s.host,user:s.user,arch:s.arch,state:s.state,checked:s.checked||null}:null;}
+function serverOperationSnapshot(id){const s=sr(id);return s?{id:s.id,name:s.name,host:s.host,user:s.user,arch:s.arch,fp:s.fp,port:s.port,state:s.state,checked:s.checked||null}:null;}
 function selectedServer(explicit){return explicit!==undefined&&explicit!==null?explicit:ui.server!=='all'?ui.server:'';}
 
-function serverSnapshotError(target){if(!target)return '固定服务器参照缺失';const err=serverOperationError(target.id);if(err)return err;const s=sr(target.id);if(['host','user','arch'].some(key=>s[key]!==target[key]))return '服务器身份或架构在确认后发生变化，请重新核对原目标';return '';}
+function serverSnapshotError(target){if(!target)return '固定服务器参照缺失';const err=serverOperationError(target.id);if(err)return err;const s=sr(target.id);if(['host','user','arch',...['fp','port'].filter(key=>Object.hasOwn(target,key))].some(key=>s[key]!==target[key]))return '服务器身份或架构在确认后发生变化，请重新核对原目标';return '';}

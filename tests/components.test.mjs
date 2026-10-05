@@ -17,7 +17,7 @@ test('实际入口在组件全部就绪后初始化；组件加载失败保留�
 
 test('入口组件共同渲染全部导航页面、项目页与内容分类', () => {
   const p = prototype();
-  const pages = ['overview', 'servers', 'projects', 'frp', 'templates', 'programs', 'monitor', 'firewall', 'dns', 'operations', 'settings'];
+  const pages = ['overview', 'servers', 'projects', 'templates', 'frp', 'programs', 'monitor', 'firewall', 'dns', 'operations', 'settings'];
   assert.equal(p.run('navItems.map(item=>item[0]).join(",")'), pages.join(','));
   for (const page of pages) {
     p.click('navigate', { page });
@@ -37,10 +37,10 @@ test('入口组件共同渲染全部导航页面、项目页与内容分类', ()
     assert.match(p.html('app'), /<h1\b/);
   }
   p.click('navigate', { page: 'frp' });
-  for (const id of ['connections', 'node', 'files', 'deploy', 'review']) {
+  for (const id of ['connections', 'node', 'files']) {
     p.click('frp-tab', { id });
     assert.equal(p.run('FRP.tab'), id);
-    assert.match(p.html('app'), /FRP 部署方案/);
+    assert.match(p.html('app'), /CONFIGURATION \/ FRP/);
   }
   p.click('project', { id: 'frp-n4-visitor' });
   assert.match(p.html('app'), /frpc visitor（STCP 访问端）/);
@@ -57,7 +57,7 @@ test('关键弹窗通过共同分发器渲染，FRP 弹窗覆盖仍生效', () =
     ['feedback', {}], ['scenes', {}],
     ['frp-nodeedit', { id: 'n4' }], ['frp-proxyedit', { node: 'n4', index: 0 }],
     ['frp-template', { id: 'frpc.toml.tpl' }], ['frp-settings', {}],
-    ['frp-batch', { role: 'client' }], ['frp-op', { node: 'n4', role: 'visitor', op: 'deploy' }],
+    ['frp-configapply', { node: 'n4' }],
   ];
   for (const [kind, data] of cases) {
     p.document.getElementById('modal').innerHTML = '';
@@ -135,7 +135,7 @@ test('FRP 三角色仍生成配对 TOML 与 unit，地址、程序和转义保�
   assert.equal(p.run('ui.page'), 'frp');
   assert.equal(p.run('frpValidate().length'), 0);
   const token = 'EXAMPLE_quote"_slash\\_line\nnext';
-  p.run(`S.frp.token=${JSON.stringify(token)};`);
+  p.run(`S.frp.token=${JSON.stringify(token)};delete frpNode("n4").sourceSettings;`);
   const files = JSON.parse(p.run('JSON.stringify(Object.fromEntries(Object.keys(frpRoles).map(role=>[role,frpFiles(frpNode("n4"),role)])))'));
   for (const role of ['server', 'client', 'visitor']) {
     assert.ok(files[role].toml.includes('auth.token = ' + JSON.stringify(token)));
@@ -148,73 +148,3 @@ test('FRP 三角色仍生成配对 TOML 与 unit，地址、程序和转义保�
   assert.equal(files.visitor.binaryPath, files.client.binaryPath);
   assert.notEqual(files.visitor.unitPath, files.client.unitPath);
 });
-
-test('FRP 角色部署单选服务器，visitor 另选适用连接，不提供批量选择', () => {
-  const p = prototype();
-  p.click('frp-batch', { role: 'client' });
-  assert.throws(() => p.run('frpBatchItems()'), /请选择部署角色/);
-  assert.doesNotMatch(p.html('modal'), /fb-scope|checkbox-grid/);
-  p.click('frp-batchconfirm');
-  assert.match(p.document.getElementById('modal-error').textContent, /请选择服务器/);
-  p.document.querySelector('#fb-role').value = 'visitor';
-  p.run('frpSyncBatchSelection()');
-  p.document.querySelector('#fb-server').value = 's4';
-  p.run('frpSyncDeployConnection()');
-  p.document.querySelector('#fb-node').value = 'n4';
-  assert.equal(p.run('frpBatchItems().map(item=>item.node+":"+item.role).join(",")'), 'n4:visitor');
-  p.click('frp-batchconfirm');
-  assert.equal(p.run('ui.modal.items.length'), 1);
-  assert.equal(p.run('S.operations.filter(operation=>operation.frp).length'), 0);
-});
-
-test('新增连接拒绝未部署服务器，缺少选择不写入草稿', () => {
-  const p = referencePrototype();
-  p.click('frp-nodeedit');
-  const count = p.run('S.frp.nodes.length');
-  p.submit('frp-nodeedit');
-  assert.equal(p.run('S.frp.nodes.length'), count);
-  assert.match(p.document.getElementById('modal-error').textContent, /请选择 frpc 和 frps/);
-  p.submit('frp-nodeedit', {'fn-provider':p.run('S.servers[0].id'),'fn-server':p.run('S.servers[3].id'),'fn-bind':'0.0.0.0','fn-port':'7000'});
-  assert.equal(p.run('S.frp.nodes.length'), count);
-  assert.match(p.document.getElementById('modal-error').textContent, /请选择已部署 frpc/);
-});
-
-test('FRP 零字节占位拒绝部署；普通项目操作也不能绕过专用流程', () => {
-  const p = referencePrototype(undefined,{mockPrograms:false});
-  p.run('frpEnsure();const subject=pr("frp-n4-server");const result=frpRun([{node:"n4",role:"server"}],"deploy",{binary:false,identity:true,impact:true,hold:true}),rejected=S.operations[0];');
-  assert.equal(p.run('result'), null);
-  assert.equal(p.run('rejected.status'), 'rejected');
-  assert.match(p.run('rejected.message'), /0 B/);
-  assert.equal(p.run('subject.life'), 'draft');
-  assert.equal(p.run('subject.applied'), null);
-  p.run('startOperation(subject,"deploy",{},"success",{hold:true});const bypass=S.operations[0];');
-  assert.equal(p.run('bypass.status'), 'rejected');
-  assert.match(p.run('bypass.message'), /FRP 专用确认/);
-  assert.equal(p.run('S.programs.filter(binary=>binary.placeholder).every(binary=>binary.bytes===0)'), true);
-});
-
-for (const outcome of ['partial', 'unknown']) {
-  test(`FRP ${outcome} 保留先前完成角色、受理快照与独立网络记录`, () => {
-    const p = referencePrototype();
-    p.run('frpEnsure();const networkBefore=JSON.stringify([S.dns,S.firewalls]),items=[{node:"n4",role:"server"},{node:"n4",role:"visitor"}];const operation=frpRun(items,"deploy",{binary:true,identity:true,impact:true,outcome:"success",hold:true});const fixedToml=operation.input.items[0].files.toml;S.frp.token="EXAMPLE_CHANGED_DURING_OPERATION";frpSyncConfigs();');
-    p.run(`finishOperation(operation,${JSON.stringify(outcome)});`);
-    assert.equal(p.run('operation.status'), outcome);
-    assert.equal(p.run('pr("frp-n4-server").frpApplied.files.toml===fixedToml'), true);
-    assert.equal(p.run('pr("frp-n4-server").runtime'), 'running');
-    assert.equal(p.run('pr("frp-n4-visitor").frpApplied'), undefined);
-    assert.equal(p.run('pr("frp-n4-server").frpAvailableUpdate'), true);
-    assert.equal(p.run('JSON.stringify([S.dns,S.firewalls])===networkBefore'), true);
-    if (outcome === 'unknown') {
-      assert.equal(p.run('activeOps(pr("frp-n4-visitor")).length'), 1);
-      const reloaded = prototype(p.saved());
-      reloaded.run('const operation=S.operations.find(operation=>operation.frp),before=S.operations.length;finishOperation(operation,"failed");');
-      assert.equal(reloaded.run('operation.status'), 'partial');
-      assert.equal(reloaded.run('pr("frp-n4-server").life'), 'installed');
-      assert.equal(reloaded.run('operation.frpCompleted.join(",")'), 'frp-n4-server');
-      assert.equal(reloaded.run('operation.steps.slice(1,4).every(step=>step.status==="success")&&S.operations.length===before'), true);
-    } else {
-      assert.equal(p.run('pr("frp-n4-visitor").life'), 'incomplete');
-      assert.ok(p.run('pr("frp-n4-visitor").components.length') > 0);
-    }
-  });
-}
