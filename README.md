@@ -34,6 +34,8 @@
 - [Cloudflare 账号与 DNS](docs/cloudflare-accounts.md)：统一账号管理、逐 Zone 权限、固定身份提交与旧数据迁移；[验证与截图](docs/cloudflare-validation.md)。
 - [FRP 连接与部署](docs/frp-connections.md)：三角色流程、公共资产引用、独立采用 / 应用；[附件行为对照](docs/frp-reference-behavior.md)与[验收证据](docs/frp-validation.md)。
 
+- [操作上下文与返回修改验收](docs/operation-context-repairs.md)：固定目标、FRP 身份、网络草稿、项目副本与历史路由。
+
 ## 维护方法
 
 `index.html` 直接列出本地 CSS 和原生 JavaScript，按依赖顺序加载，不需要安装依赖或构建。

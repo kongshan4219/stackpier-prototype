@@ -60,6 +60,7 @@ function startOperation(p,kind,input={},outcome='success',options={}){
  if(p&&kind==='deploy'&&!p.applied){options={...options,newProject:true};p.creationPending=true;}
  let mappedFiles=[];
  if(p){
+  const targetError=serverOperationError(p.server);if(targetError)return rejectOperation(p,kind,targetError);
   if(['apply','update','start','stop','restart','uninstall'].includes(kind)&&p.life!=='installed')return rejectOperation(p,kind,'当前项目不是完整已部署状态，不能直接执行此操作。请先处理现有部署事实。');
   if(p.unsafe&&['start','restart'].includes(kind))return rejectOperation(p,kind,'已有部分覆盖尚未处理，不能用普通启动掩盖不安全的数据状态。');
   if(kind==='restart'&&p.desired==='stopped')return rejectOperation(p,kind,'项目已主动停止。需要运行请明确提交启动，不通过重启隐式启动。');
@@ -81,6 +82,7 @@ function startOperation(p,kind,input={},outcome='success',options={}){
  }
  const resources=p?[...resourcesFor(p,kind),...(input.extraResources||[])]:input.resources||[];const cf=conflictFor(resources);if(cf)return rejectOperation(p,kind,'与原操作 '+cf.label+' 冲突，本次不受理。');
  const fixed={...clone(input),...(p?{cfg:clone(p.cfg),applied:clone(p.applied),draftRev:p.draftRev,before:{life:p.life,runtime:p.runtime,desired:p.desired,health:p.health}}:{})};
+ if(p)fixed.serverTarget=serverOperationSnapshot(p.server);
  if(p)fixed.deployment=deploymentSnapshot(p,fixed.cfg);
  if(mappedFiles.length)fixed.mappedFiles=clone(mappedFiles);
  if(p?.type==='systemd'&&['deploy','apply','update'].includes(kind)){const binary=projectProgramFile(p);if(binary){fixed.binary=clone(binary);fixed.cfg.contentIdentity=binary.identity;}}

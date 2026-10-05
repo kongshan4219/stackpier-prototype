@@ -4,6 +4,7 @@ function finishRuntimeOperation(o,result='success',{recheck=false}={}){
  if(!o||!isRuntimeAction(o.kind)||!(['running','unknown'].includes(o.status)||recheck&&['failed','partial'].includes(o.status)))return;
  clearInterval(timers.get(o.id));timers.delete(o.id);
  const p=pr(o.project),evidence=simulatedRuntimeEvidence(o,result),at=now();
+ if(o.input.serverTarget&&serverSnapshotError(o.input.serverTarget)){evidence.identityVerified=false;evidence.observedState='unknown';evidence.observedAt=null;}
  if(o.commandResult)evidence.commandResult=o.commandResult;
  if(o.runtimeChecks?.some(entry=>entry.evidence.executionEnded&&entry.evidence.identityVerified))evidence.executionEnded=true;
  const requestedState=o.input.requestedState||(o.kind==='stop'?'stopped':'running');
@@ -30,6 +31,8 @@ function finishRuntimeOperation(o,result='success',{recheck=false}={}){
 }
 
 function finishOperation(o,result='success'){
+ if(o?.input?.netType==='firewall'&&result==='success'&&JSON.stringify(S.firewalls.find(r=>r.id===o.input.targetId)||null)!==JSON.stringify(o.input.before||null))result='unknown';
+ const host=o?.input?.serverTarget?.id;if(host&&result==='success'&&serverSnapshotError(o.input.serverTarget))result='unknown';
  if(o?.kind==='network'&&o.input?.netType==='dns')return finishCloudflareOperation(o,result);
  if(o?.kind==='failed-cleanup')return finishFailedCleanup(o,result);
  if(o&&isRuntimeAction(o.kind))return finishRuntimeOperation(o,result);

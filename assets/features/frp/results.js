@@ -1,6 +1,7 @@
 'use strict';
 // FRP 模拟结果与迟到证据核对，不执行真实命令。
 function frpFinish(o,result){
+ if(o?.frp&&result==='success'&&o.input.items.some(x=>x.serverTarget?serverSnapshotError(x.serverTarget):serverOperationError(x.snapshot.host)))result='unknown';
  if(o?.frp&&['start','stop','restart'].includes(o.input.operation))return frpFinishRuntime(o,result);
  if(!o||!o.frp||!['running','unknown'].includes(o.status))return;
  clearTimeout(timers.get(o.id));timers.delete(o.id);
@@ -50,6 +51,7 @@ function frpFinishRuntime(o,result){
  const supplied=result&&typeof result==='object'?result:null;o.frpRuntimeResults||=[];o.frpRuntimeChecks||=[];
  const next=o.input.items.map((x,i)=>{
   const evidence=clone(supplied?.items?.[x.project]||supplied?.commandResult&&supplied||o.input.runtimeEvidence||{}),prior=o.frpRuntimeResults.find(row=>row.project===x.project);
+  if(x.serverTarget&&serverSnapshotError(x.serverTarget)){evidence.identityVerified=false;evidence.observedState='unknown';evidence.observedAt=null;}
   if(prior){evidence.commandResult=prior.evidence.commandResult;evidence.executionEnded=prior.evidence.executionEnded===true||evidence.executionEnded;}
   if(!Object.hasOwn(evidence,'observedAt'))evidence.observedAt=evidence.observedState&&evidence.observedState!=='unknown'?at:null;
   const latestObserved=o.frpRuntimeChecks.flatMap(check=>check.results).filter(row=>row.project===x.project&&row.assessment.canUpdateObservation).map(row=>row.evidence.observedAt).filter(Boolean).sort().at(-1);

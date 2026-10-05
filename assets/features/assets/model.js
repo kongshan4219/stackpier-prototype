@@ -73,14 +73,14 @@ function adoptProjectUpdate(project){project.cfg=projectUpdateCfg(project);proje
 function deploymentLocation(project){
  const server=sr(project.server),mainPath=project.type==='compose'?`/srv/stackpier-demo/${project.name}/compose.yaml`:`/etc/systemd/system/${project.name}.service`;
  const files=resolvedFileMappings(project.cfg.fileMappings,server),errors=[],warnings=[],targets=new Set([mainPath]);
- if(!server||server.state!=='online')errors.push('目标服务器未核对为在线；仅模拟，不连接服务器。');
+ const targetError=serverOperationError(project.server);if(targetError)errors.push(targetError);
  if(project.type==='systemd'&&project.cfg.program&&!projectProgramFile(project))errors.push('主程序缺少匹配架构 '+(server?.arch||'未知')+'。');
  for(const mapping of files){const error=targetFilePathError(mapping.targetPath);if(error)errors.push(error);if(targets.has(mapping.targetPath))errors.push('路径冲突：'+mapping.targetPath);targets.add(mapping.targetPath);if(!mapping.binary)errors.push(mappingName(mapping)+'：文件无效、占位或缺少匹配架构 '+(server?.arch||'未知'));}
  if(project.type==='compose'&&!server?.docker)errors.push('目标缺少 Docker / Compose（模拟环境状态）。');
  const occupied=S.projects.find(other=>other.id!==project.id&&other.server===project.server&&other.life==='installed'&&project.cfg.port&&Number(other.applied?.port)===Number(project.cfg.port));if(occupied)errors.push('端口已由 '+occupied.name+' 使用。');
  for(const other of S.projects.filter(other=>other.server===project.server&&other.life==='installed')){
   const paths=[other.type==='compose'?`/srv/stackpier-demo/${other.name}/compose.yaml`:`/etc/systemd/system/${other.name}.service`,...(other.appliedSnapshot?.files||[]).map(file=>file.targetPath)];
-  for(const path of targets)if(paths.includes(path))warnings.push('可能覆盖 '+other.name+' 的目标：'+path+'（模拟记录）');
+  for(const path of targets)if(other.id!==project.id&&paths.includes(path)){errors.push('目标路径已由 '+other.name+' 使用：'+path+'；请适配此项目配置。');warnings.push('可能覆盖 '+other.name+' 的目标：'+path+'（模拟记录）');}
  }
  return {mainPath,files,errors:[...new Set(errors)],warnings:[...new Set(warnings)]};
 }

@@ -68,10 +68,10 @@ test('0 B、缺架构与失效固定引用阻塞，binary=true 也不能绕过',
 });
 
 test('文件、FRP 配置、角色项目双向稳定引用，visitor 使用 frpc，文件改名不影响',()=>{
- const p=simulatePrograms(prototype(undefined,{hash:'#frp'}));p.run('const operation=frpRun([{node:"n3",role:"visitor"}],"deploy",'+JSON.stringify(conditions)+');frpFinish(operation,"success");');
- const refs=json(p,'assetReferences("frp-bin-frpc")');assert.equal(refs.configurations.length,2);assert.ok(refs.projects.length>0);
- const arm=json(p,'assetReferences("frp-bin-frpc-arm64")');assert.ok(arm.projects.length>0);
- p.run('assetById("frp-bin-frpc").name="renamed-program";');assert.equal(p.run('frpResolveProgram(pr("frp-n1-client").frpDraft.programRef,"s1").pin.fileId'),'frp-bin-frpc');
+ const p=simulatePrograms(prototype(undefined,{hash:'#frp'}));p.run('const operation=frpRun([{node:"n3",role:"client"},{node:"n3",role:"visitor"}],"deploy",'+JSON.stringify(conditions)+');frpFinish(operation,"success");');
+ const refs=json(p,'assetReferences("qa-frp-bin-frpc")');assert.equal(refs.configurations.length,2);assert.ok(refs.projects.length>0);
+ const arm=json(p,'assetReferences("qa-frp-bin-frpc-arm64")');assert.ok(arm.projects.length>0);
+ p.run('assetById("qa-frp-bin-frpc").name="renamed-program";');assert.equal(p.run('frpResolveProgram(pr("frp-n1-client").frpDraft.programRef,"s1").pin.fileId'),'qa-frp-bin-frpc');
  p.click('asset-template',{id:'frp-template-visitor'});assert.match(p.html('asset-details'),/生成 TOML 与 unit/);assert.match(p.html('asset-details'),/frpc/);
 });
 
@@ -112,8 +112,8 @@ test('失败读取保留内容和成功时间；历史编辑与主动清空刷�
 
 test('实际已应用程序引用只计匹配架构；替换保持公共固定修订、草稿与应用参照',()=>{
  const p=simulatePrograms(prototype(undefined,{hash:'#frp'}));p.run('const op=frpRun([{node:"n1",role:"client"},{node:"n3",role:"client"}],"deploy",'+JSON.stringify(conditions)+');frpFinish(op,"success");');
- assert.ok(p.run('assetReferences("frp-bin-frpc").projects.every(x=>sr(x.project.server).arch==="x86_64")'));assert.ok(p.run('assetReferences("frp-bin-frpc-arm64").projects.every(x=>sr(x.project.server).arch==="aarch64")'));
- p.run('var old=JSON.stringify([pr("frp-n1-client").frpDraft,pr("frp-n1-client").frpApplied]),pins=JSON.stringify(frpProgramRef("client"));const f=assetById("frp-bin-frpc");f.revision++;f.identity="TEST_NEXT_CONTENT";f.revisions.push({...clone(f),revisions:undefined});markAssetUpdates();');
+ assert.ok(p.run('assetReferences("qa-frp-bin-frpc").projects.every(x=>sr(x.project.server).arch==="x86_64")'));assert.ok(p.run('assetReferences("qa-frp-bin-frpc-arm64").projects.every(x=>sr(x.project.server).arch==="aarch64")'));
+ p.run('var old=JSON.stringify([pr("frp-n1-client").frpDraft,pr("frp-n1-client").frpApplied]),pins=JSON.stringify(frpProgramRef("client"));const f=assetById("qa-frp-bin-frpc");f.revision++;f.identity="TEST_NEXT_CONTENT";f.revisions.push({...clone(f),revisions:undefined});markAssetUpdates();');
  assert.equal(p.run('JSON.stringify([pr("frp-n1-client").frpDraft,pr("frp-n1-client").frpApplied])'),p.run('old'));assert.equal(p.run('JSON.stringify(frpProgramRef("client"))'),p.run('pins'));assert.equal(p.run('pr("frp-n1-client").frpAvailableUpdate'),true);
 });
 

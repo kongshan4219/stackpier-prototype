@@ -19,15 +19,16 @@ def submit(p):p.locator('#modal button[type=submit]').click()
 def finish(p):click(p,'finishdemo',where='#modal');close(p)
 def elf(arch,tag):
     b=bytearray(128);b[:7]=b'\x7fELF\x02\x01\x01';struct.pack_into('<HHI',b,16,2,62 if arch=='x86_64' else 183,1);struct.pack_into('<H',b,52,64);b[64:64+len(tag)]=tag.encode();return bytes(b)
+qa_files={}
 def upload(p,id,arch,tag):
-    click(p,'navigate',page='programs')
-    button=p.locator('[data-action=programupload][data-id="'+id+'"]')
-    if not button.is_visible():button.locator('xpath=ancestor::details').locator('summary').click(position={'x':10,'y':10})
-    click(p,'programupload',id=id)
-    check('替换前影响清单 '+tag,'替换影响范围' in p.locator('#modal').inner_text())
-    p.locator('#bin-file').set_input_files({'name':'demo-'+tag+'.elf','mimeType':'application/octet-stream','buffer':elf(arch,tag)})
-    p.wait_for_function('()=>ui.modal?.analysis&&!ui.modal?.busy')
-    submit(p);submit(p);p.wait_for_function('()=>ui.modal===null')
+    # 新建独立 QA 逻辑文件，不替换附件的 0 B 占位。
+    click(p,'navigate',page='programs');p.locator('[data-action=programupload]:not([data-id])').first.click()
+    logical='qa-frps.elf' if id.startswith('frp-bin-frps') else 'qa-frpc.elf'
+    p.locator('#bin-file').set_input_files({'name':logical,'mimeType':'application/octet-stream','buffer':elf(arch,tag)})
+    p.wait_for_function('()=>ui.modal?.analysis&&!ui.modal?.busy');submit(p);submit(p);p.wait_for_function('()=>ui.modal===null')
+    qa_files[id]=p.evaluate('(v)=>S.programs.find(f=>f.filename===v.name&&f.arch===v.arch).id',{'name':logical,'arch':arch})
+    check('新增独立 QA 程序资产 '+tag,qa_files[id]!=id)
+    p.evaluate("""()=>{for(const role of Object.keys(frpRoles)){const name=role==='server'?'qa-frps.elf':'qa-frpc.elf',files=S.programs.filter(f=>f.filename===name);if(files.length){const t=tpl('frp-template-'+role);t.programRef={groupId:files[0].groupId,architectureRule:'auto',pins:files.map(f=>({fileId:f.id,revision:f.revision}))};}}markAssetUpdates();persist();}""")
 def adopt(p,id):
     if not p.locator('[data-action=frp-update][data-id="'+id+'"]').count():
         click(p,'navigate',page='projects');click(p,'project',id=id)
@@ -51,7 +52,7 @@ with sync_playwright() as pw:
     check('配置定位对应 FRP 角色',ev(p,'FRP.node')=='n1' and ev(p,'FRP.role')=='client')
     click(p,'frp-return');check('返回保留文件筛选',p.locator('[data-filter=q]').input_value()=='frpc');click(p,'asset-close',where='#asset-details')
     click(p,'navigate',page='frp');click(p,'frp-nodeedit',id='n2');p.locator('[name=fn-default]').uncheck();close(p);click(p,'frp-nodeedit',id='n2')
-    check('连接未保存复开不丢编辑',not p.locator('[name=fn-default]').is_checked());p.reload();p.wait_for_function('()=>prototypeLoading.ready');click(p,'navigate',page='frp');click(p,'frp-nodeedit',id='n2');check('连接未保存刷新仍保留编辑',not p.locator('[name=fn-default]').is_checked());close(p)
+    check('连接未保存复开不丢编辑',not p.locator('[name=fn-default]').is_checked());p.reload();p.wait_for_function('()=>prototypeLoading.ready');close(p) if p.locator('#modal[open]').count() else None;click(p,'navigate',page='frp');click(p,'frp-nodeedit',id='n2');check('连接未保存刷新仍保留编辑',not p.locator('[name=fn-default]').is_checked());close(p)
     click(p,'frp-reference-load');click(p,'frp-reference-confirmload',where='#modal')
     check('附件四节点六 TCP 两 STCP',ev(p,'S.frp.nodes.length')==4 and ev(p,'S.frp.nodes.flatMap(n=>n.proxies).filter(x=>x.type==="tcp").length')==6 and ev(p,'S.frp.nodes.flatMap(n=>n.proxies).filter(x=>x.type==="stcp").length')==2)
     check('附件默认客户端目标两项',ev(p,'frpSelectTargets("client").length')==2);check('参考不覆盖工作清单',ev(p,'S.frpProfiles.workspace.nodes.length')==4)
@@ -74,7 +75,14 @@ with sync_playwright() as pw:
     click(p,'frp-proxyedit',node='ref-n3',index=2);check('STCP 未保存错误编辑保留',p.locator('#fp-vaddr').input_value()=='0.0.0.0');close(p)
     before=ev(p,'JSON.stringify(S.projects.filter(p=>p.frpApplied).map(p=>p.frpApplied))')
     for id,arch,tag in [('frp-bin-frpc','x86_64','frpc-x86'),('frp-bin-frpc-arm64','aarch64','frpc-arm'),('frp-bin-frps','x86_64','frps-x86'),('frp-bin-frps-arm64','aarch64','frps-arm')]:upload(p,id,arch,tag)
-    check('替换程序不篡改任何已有应用',ev(p,'JSON.stringify(S.projects.filter(p=>p.frpApplied).map(p=>p.frpApplied))')==before)
+    check('新增 QA 资产不篡改任何已有应用',ev(p,'JSON.stringify(S.projects.filter(p=>p.frpApplied).map(p=>p.frpApplied))')==before)
+    check('原始四个占位保持 0 B',ev(p,'S.programs.filter(f=>f.id.startsWith("frp-bin-")).every(f=>f.bytes===0&&f.placeholder)'))
+    # 只为本测试的虚构目标提供地址；通过真实界面注入模拟检查事实。
+    ev(p,"sr('frp-source').host='192.0.2.230';sr('frp-source').user='qa'")
+    click(p,'navigate',page='servers')
+    for host in ev(p,'S.servers.map(s=>s.id)'):
+        click(p,'servercheck',id=host);p.locator('#check-result').select_option('online');submit(p)
+    check('虚构目标模拟检查记录时间',ev(p,'S.servers.every(s=>s.state==="online"&&s.checked)'))
     click(p,'navigate',page='frp');click(p,'frp-tab',id='connections');click(p,'frp-node',id='ref-n4')
     for role in ['client','server','visitor']:adopt(p,'frp-ref-n4-'+role)
     check('ARM 服务器实际选 ARM 程序',ev(p,'frpResolveProgram(pr("frp-ref-n4-server").frpDraft.programRef,"frp-host-ref-n4").file.arch')=='aarch64')
@@ -93,7 +101,7 @@ with sync_playwright() as pw:
     saved=ev(p,'JSON.stringify([pr("frp-ref-n4-client").frpApplied,pr("frp-ref-n4-client").frpReadSnapshot])');draft=ev(p,'JSON.stringify(pr("frp-ref-n4-client").frpDraft)')
     click(p,'frp-tab',id='review');click(p,'frp-template',id='frpc.toml.tpl');source=p.locator('#ft-source').input_value()+'\n# browser public revision';p.locator('#ft-source').fill(source)
     # 从专用编辑器打开同一公共文件抽屉，底层 DOM 不被替换。
-    click(p,'asset-file',id='frp-bin-frpc',where='#modal');click(p,'asset-close',where='#asset-details')
+    click(p,'asset-file',id=qa_files['frp-bin-frpc'],where='#modal');click(p,'asset-close',where='#asset-details')
     check('查看文件关闭后保留模板未保存正文',p.locator('#ft-source').input_value()==source)
     close(p);click(p,'frp-template',id='frpc.toml.tpl');check('模板取消重复打开保留正文',p.locator('#ft-source').input_value()==source);submit(p)
     check('保存模板不改当前草稿',ev(p,'JSON.stringify(pr("frp-ref-n4-client").frpDraft)')==draft)
@@ -117,7 +125,7 @@ with sync_playwright() as pw:
     p.evaluate('(token)=>{S.frp.token=token;frpNode("ref-n3").proxies[2].secret_key=token;}',credential)
     for role in ['client','server','visitor']:
         text=p.evaluate('(r)=>frpFiles(frpNode("ref-n3"),r).toml',role);parsed=tomllib.loads(text);check('可靠 TOML 转义 '+role,parsed['auth']['token']==credential)
-    p.reload();p.wait_for_function('()=>prototypeLoading.ready');click(p,'navigate',page='frp');click(p,'frp-profile-toggle');check('刷新和返回保留原工作连接',ev(p,'S.frp.nodes[0].id')=='n1')
+    p.reload();p.wait_for_function('()=>prototypeLoading.ready');close(p) if p.locator('#modal[open]').count() else None;click(p,'navigate',page='frp');click(p,'frp-tab',id='connections');click(p,'frp-profile-toggle');check('刷新和返回保留原工作连接',ev(p,'S.frp.nodes[0].id')=='n1')
     # 公共设置恢复，当前清单与参考清单是独立模拟场景。
     for node in ['n1','n2','n3','n4']:adopt(p,'frp-'+node+'-client')
     click(p,'navigate',page='frp');click(p,'frp-tab',id='connections');click(p,'frp-targets');p.locator('#targets-scope').select_option('all');p.locator('#targets-op').select_option('deploy');click(p,'frp-target-preview',where='#modal');p.locator('#outcome').select_option('partial');p.locator('[name=fo-identity]').check();p.locator('[name=fo-impact]').check();p.locator('[name=fo-hold]').check();submit(p);finish(p)

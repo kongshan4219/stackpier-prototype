@@ -5,12 +5,13 @@ function frpServerDeployment(server,role){
  const matches=p=>p.life==='installed'&&(p.frpInstallation?.role||p.frpRef?.role)===role&&p.frpApplied?.role===role&&p.frpApplied.host===server;
  return S.projects.find(p=>p.frpInstallation&&matches(p))||S.projects.find(matches);
 }
-function frpInstallationPlan(serverId,role){
+function frpInstallationPlan(serverId,role,useDraft=true){
  const server=sr(serverId);if(!server||!['client','server'].includes(role))throw Error('请选择服务器和 frpc / frps 部署角色。');
  if(!validIPv4(server.host)&&!validIPv6(server.host))throw Error('服务器地址尚未登记，请先完善服务器信息。');
  if(!['x86_64','aarch64','arm64'].includes(server.arch))throw Error('服务器架构未确定或不支持，不能部署 FRP。');
  if(!/^[A-Za-z0-9_.-]+$/.test(server.user))throw Error('服务器 SSH 用户名尚未正确登记。');
- const id=frpInstallationId(serverId,role);
+ const id=frpInstallationId(serverId,role),project=pr(id);
+ if(useDraft&&project?.frpInstallation&&project.frpDraft){const d=project.frpDraft;return {id,server:serverId,role,node:clone(d.node),files:clone(d.files),programRef:clone(d.programRef),root:d.root,user:d.settings.user,systemdDir:d.settings.systemdDir,settingsRevision:d.settingsRevision,templates:role==='server'?Object.fromEntries(['frps.toml.tpl','frps.service.tpl'].map(name=>[name,d.settings.templates[name]])):{},sourceDraft:{projectId:id,revision:project.draftRev}};}
  // 监听参数沿用服务器配置，首次部署取参考配置；部署表单不覆盖配置值。
  const config=pr(id)?.frpApplied?.node||S.frp.nodes.find(n=>frpHost(n,'server')===serverId)||FRP_SOURCE.config.servers.find(n=>n.ip===server.host)||{bind_addr:'0.0.0.0',bind_port:7000};
  const node={id,ip:server.host,ssh_user:server.user,arch:server.arch,provider:serverId,server:serverId,bind_addr:config.bind_addr,bind_port:Number(config.bind_port),proxies:[],revision:1,serverUnit:'frps-'+serverId+'.service'};
@@ -22,7 +23,8 @@ function frpReadInstallationPlan(){return frpInstallationPlan(document.querySele
 function frpRunInstallation(plan,conditions,operation='deploy'){
  frpEnsure();const p=pr(plan.id),label=(operation==='deploy'?'部署 ':'卸载 ')+frpRoles[plan.role]+' · '+sname(plan.server);
  const reject=message=>rejectOperation(p||{id:plan.id,name:label},'frp-install',message);
- let current;if(operation==='deploy'){try{current=frpInstallationPlan(plan.server,plan.role);}catch(error){return reject(error.message);}}
+ const targetError=serverOperationError(plan.server);if(targetError)return reject(targetError);
+ let current;if(operation==='deploy'){try{current=frpInstallationPlan(plan.server,plan.role,!!plan.sourceDraft);}catch(error){return reject(error.message);}}
  if(operation==='deploy'&&JSON.stringify(current)!==JSON.stringify(plan))return reject('预览后的服务器或公共配置已变化，请重新打开部署确认。');
  if(operation==='deploy'){const errors=frpValidate();if(errors.length)return reject(errors.join('；'));}
  if(operation==='deploy'){const errors=frpResolveProgram(plan.programRef,plan.server).errors;if(errors.length)return reject(errors.join('；'));}
@@ -41,11 +43,12 @@ function frpRunInstallation(plan,conditions,operation='deploy'){
  const resources=['project:'+plan.id,'frp-install:'+plan.server+':'+plan.role,'frp-bin:'+plan.server+':'+(plan.role==='server'?'frps':'frpc')];
  const conflict=conflictFor(resources);if(conflict)return reject('与 '+conflict.label+' 冲突，请先核对原操作。');
  if(!p){const cfg={frp:true,port:plan.role==='server'?plan.node.bind_port:0,program:plan.role==='server'?'frps':'frpc',version:'模拟程序条件',dataDir:plan.root,serviceUser:plan.user,appConfig:plan.files.toml,env:''};S.projects.push({id:plan.id,name:(plan.role==='server'?'frps':'frpc')+' · '+sname(plan.server),server:plan.server,serverName:sname(plan.server),template:'frp-template-'+plan.role,type:'systemd',software:cfg.program,frpInstallation:{role:plan.role},life:'draft',runtime:'na',desired:'stopped',health:'unknown',cfg,applied:null,draftRev:1,appliedRev:0,components:[],monitorPaused:true,monitor:{hours:24,method:'systemd',channels:[],inherit:true},dataStatus:'reference-only',observed:null,lastCheck:null});}
- const o=record(label,'frp-install',plan.id,'running','服务器角色输入已固定；仅浏览器模拟。',{frpInstallation:true,ended:null,resources,input:{plan:clone(plan),operation,draftRev:pr(plan.id).draftRev,before:{life:p?.life||'draft',runtime:p?.runtime||'na'}},steps:(operation==='deploy'?['固定服务器与角色','交付角色程序',plan.role==='server'?'交付 frps 配置与 unit':'登记 frpc 程序就绪，等待连接配置','核对部署结果']:['固定角色与关联连接范围','卸载所选角色']).map((title,i)=>({title,status:i===0?'success':i===1?'running':'pending'})),outcome:conditions.outcome||'success'});
+ const o=record(label,'frp-install',plan.id,'running','服务器角色输入已固定；仅浏览器模拟。',{frpInstallation:true,ended:null,resources,input:{plan:clone(plan),serverTarget:serverOperationSnapshot(plan.server),operation,draftRev:pr(plan.id).draftRev,before:{life:p?.life||'draft',runtime:p?.runtime||'na'}},steps:(operation==='deploy'?['固定服务器与角色','交付角色程序',plan.role==='server'?'交付 frps 配置与 unit':'登记 frpc 程序就绪，等待连接配置','核对部署结果']:['固定角色与关联连接范围','卸载所选角色']).map((title,i)=>({title,status:i===0?'success':i===1?'running':'pending'})),outcome:conditions.outcome||'success'});
  pr(plan.id).frpLastOp=o.id;FRP.tab='connections';persist();render();closeModal();openModal('opdetail',{id:o.id});if(!conditions.hold)timers.set(o.id,setTimeout(()=>frpFinishInstallation(o,o.outcome),1600));return o;
 }
 function frpFinishInstallation(o,result){
  if(!o?.frpInstallation||!['running','unknown'].includes(o.status)||!['success','failed','partial','unknown'].includes(result))return;
+ if(result==='success'&&(o.input.serverTarget?serverSnapshotError(o.input.serverTarget):serverOperationError(o.input.plan.server)))result='unknown';
  clearTimeout(timers.get(o.id));timers.delete(o.id);const p=pr(o.project),plan=o.input.plan,at=now();o.status=result;o.ended=result==='unknown'?null:at;o.protectionReleased=result!=='unknown';
  o.steps.forEach((step,index)=>{if(step.status==='success')return;step.status=result==='success'?'success':index===1?result==='partial'?'success':result:index===2&&result==='partial'?'failed':'pending';});
  if(p?.frpLastOp===o.id){

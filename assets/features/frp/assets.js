@@ -23,6 +23,7 @@ function frpResolveProgram(ref,host){
 }
 function frpPublicCandidate(n,role){
  const t=tpl('frp-template-'+role),base=frpSnapshot(n,role),ref=newerAssetPins(frpProgramRef(role));
+ if(role==='client'&&pr(n.id)?.frpInstallation){base.files={binaryPath:S.frp.root+'/bin/frpc',toml:'',unit:'',tomlPath:'',unitPath:''};base.installationOnly=true;}
  return {...base,programRef:clone(ref),templateId:t?.id||'frp-template-'+role,configurationRevision:t?.rev||1,settings:frpSettingsSnapshot(),program:clone(frpResolveProgram(ref,base.host).file||null)};
 }
 function frpSettingsSnapshot(){const F=S.frp;return clone({root:F.root,systemdDir:F.systemdDir,user:F.user,token:F.token,naming:F.naming,settingsRev:F.settingsRev,templateRev:F.templateRev,templateRevisions:F.templateRevisions,templates:F.templates});}

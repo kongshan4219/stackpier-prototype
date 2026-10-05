@@ -28,7 +28,9 @@ def fresh(browser,width=1440):
 
 def value(page,expression):return page.evaluate(expression)
 def snapshot(page,id='p1'):return value(page,f'JSON.stringify([pr("{id}").appliedSnapshot,pr("{id}").serverReadSnapshot])')
-def editor(page):click(page,'navigate',page='templates');click(page,'templateedit',id='t1')
+def editor(page):
+    if value(page,'ui.modal?.kind==="templateedit"&&ui.modal.id==="t1"'):return
+    click(page,'navigate',page='templates');click(page,'templateedit',id='t1')
 def finish(page):click(page,'finishdemo',where='#modal');click(page,'closemodal',where='#modal')
 def shot(page,name):page.screenshot(path=str(OUT/name),full_page=name.startswith('project-read'))
 

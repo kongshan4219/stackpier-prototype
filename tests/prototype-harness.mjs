@@ -113,9 +113,13 @@ export function prototype(saved, { hash = '', missingScript } = {}) {
   let stored = saved;
   let timerId = 0;
   const schedule = callback => { scheduled.set(++timerId, callback); return timerId; };
+  const location = { hash, reload() {} };
+  const historyEntries=[hash||'#overview'];let historyIndex=0;
+  window.history={pushState(_state,_title,url){historyEntries.splice(++historyIndex);historyEntries.push(String(url));location.hash=String(url);},replaceState(_state,_title,url){historyEntries[historyIndex]=String(url);location.hash=String(url);}};
+  function travel(delta){const next=historyIndex+delta;if(next<0||next>=historyEntries.length)return;historyIndex=next;location.hash=historyEntries[historyIndex];dispatch('popstate',window,{},window);}
   const context = vm.createContext({
     document, FormData, URL, console, crypto: webcrypto, TextEncoder, TextDecoder,
-    location: { hash, reload() {} }, window, navigator: {},
+    location, window, navigator: {},
     localStorage: { getItem: () => stored || null, setItem: (_, value) => { stored = value; } },
     setTimeout: schedule, setInterval: schedule,
     clearTimeout: id => scheduled.delete(id), clearInterval: id => scheduled.delete(id),
@@ -140,7 +144,7 @@ export function prototype(saved, { hash = '', missingScript } = {}) {
     return Promise.all(results);
   }
   return {
-    run, document, saved: () => stored,
+    run, document, back:()=>travel(-1),forward:()=>travel(1),history:()=>[...historyEntries], saved: () => stored,
     html: id => document.getElementById(id).innerHTML,
     changeFiles(files) {
       const input = document.getElementById('bin-file');
@@ -153,6 +157,7 @@ export function prototype(saved, { hash = '', missingScript } = {}) {
     submit(kind, values, { id, submitter } = {}) {
       const form = new Element('form', { 'data-form': kind, ...(id ? { 'data-id': id } : {}) });
       form.values = values;
+      for(const [name,value] of Object.entries(values||{})){for(const field of document.querySelectorAll('[name="'+name+'"]')){if(field.type==='checkbox'||field.type==='radio')field.checked=(Array.isArray(value)?value:[value]).includes(field.value);else field.value=String(value);}}
       dispatch('submit', form, { submitter: submitter ? { value: submitter } : undefined });
     },
   };

@@ -5,11 +5,12 @@ function frpSyncDrafts(){
  frpLinkAssets();
  for(const p of S.projects.filter(p=>p.frpRef||p.frpInstallation)){
   const role=p.frpRef?.role||p.frpInstallation.role,n=p.frpRef?frpNode(p.frpRef.node):p.frpApplied?.node;if(!n)continue;
+  if(p.frpInstallation?.role==='client'&&p.frpDraft&&!p.frpDraft.installationOnly){p.frpLegacyConnectionDraft||=clone(p.frpDraft);p.frpDraft=clone(frpPublicCandidate(n,role));}
   if(!p.frpDraft){
    const fresh=frpPublicCandidate(n,role);p.frpDraft=clone(fresh);
    // 旧用户正文优先于公共生成内容；从未有正文的新草稿才初始化。
-   if(p.cfg.appConfig){p.frpDraft.files.toml=p.cfg.appConfig;p.frpDraft.files.unit=p.frpDraftUnit||p.frpApplied?.files.unit||fresh.files.unit;}
-   else {p.cfg.appConfig=fresh.files.toml;p.frpDraftUnit=fresh.files.unit;}
+   if(p.cfg.appConfig&&!fresh.installationOnly){p.frpDraft.files.toml=p.cfg.appConfig;p.frpDraft.files.unit=p.frpDraftUnit||p.frpApplied?.files.unit||fresh.files.unit;}
+   else if(!fresh.installationOnly){p.cfg.appConfig=fresh.files.toml;p.frpDraftUnit=fresh.files.unit;}
    p.frpDraftRefs={nodeRevision:n.revision,settingsRevision:p.frpDraft.settingsRevision,templateRevisions:clone(p.frpDraft.templateRevisions)};
   }
   if(p.frpApplied&&!p.frpApplied.programRef&&!p.frpAppliedProgramRef)p.frpAppliedProgramRef=frpLegacyProgram(p,role);
@@ -27,7 +28,7 @@ function frpAdoptProject(p,next){
 function frpDraftSnapshot(n,role){const p=pr(frpPid(n,role));if(!p?.frpDraft)frpSyncConfigs();return clone(p?.frpDraft);}
 function frpUniqueItems(items){return [...new Map(items.map(x=>[frpPid(frpNode(x.node),x.role),x])).values()];}
 function frpDeployErrors(items){
- return frpUniqueItems(items).flatMap(x=>{const n=frpNode(x.node),p=pr(frpPid(n,x.role)),snapshot=p?.frpDraft,program=frpResolveProgram(snapshot?.programRef,snapshot?.host);return program.errors.map(e=>p.name+'：'+e);});
+ return frpUniqueItems(items).flatMap(x=>{const n=frpNode(x.node),p=pr(frpPid(n,x.role)),snapshot=p?.frpDraft,program=frpResolveProgram(snapshot?.programRef,snapshot?.host);return [...program.errors,...(serverOperationError(snapshot?.host)?[serverOperationError(snapshot?.host)]:[])].map(e=>p.name+'：'+e);});
 }
 function frpNormalizeIP(value){try{const text=String(value).trim();if(!validIPv4(text)&&!validIPv6(text))return text.toLowerCase();return text.includes(':')?new URL('http://['+text+']/').hostname.slice(1,-1):text.split('.').map(part=>String(Number(part))).join('.');}catch{return String(value).trim().toLowerCase();}}
 function frpListenerHost(id){return frpNormalizeIP(sr(id)?.host||id);}

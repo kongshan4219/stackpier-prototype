@@ -118,6 +118,7 @@ test('未知部署核对成功只补充原操作证据，不自动建立项目',
   const p = prototype();
   deploy(p, 'unknown');
   const original = p.run('S.failedProjects[0].operation');
+  p.run('sr(S.operations[0].input.serverTarget.id).state="online";sr(S.operations[0].input.serverTarget.id).checked=now();persist();');
   p.click('verifyop', { id: original });
   p.submit('verifyop', { 'verify-result': 'success', 'verify-evidence': 'on' });
   assert.equal(p.run('S.operations[0].status'), 'success');
