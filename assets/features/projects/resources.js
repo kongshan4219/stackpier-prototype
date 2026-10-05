@@ -8,7 +8,8 @@ function projectResourceLedger(p){
  const ledger=p.resourceLedger;
  const add=(targets,source,presence)=>{for(const t of targets||[]){const key=resourceKey(t);let entry=ledger.entries.find(e=>e.key===key);if(!entry){entry={...clone(t),id:uid('resource'),key,ownership:resourceOwnership(t),presence,sources:[source]};ledger.entries.push(entry);}else {if(!entry.sources.includes(source))entry.sources.push(source);if(entry.ownership!==resourceOwnership(t))entry.ownership='unknown';}}
  };
- add(p.ownedResources,'历史归属登记','present');
+ // ownedResources 是台账导出的兼容副本；重复导入不能给已知资源追加虚假的历史来源。
+ add((p.ownedResources||[]).filter(t=>{const e=ledger.entries.find(e=>e.key===resourceKey(t));return !e||e.ownership!==resourceOwnership(t);}), '历史归属登记','present');
  if(!ledger.initialized){
   if(p.applied)add(deploymentCleanupTargets(p,p.applied),'已应用参照','present');
   if(!p.frpService)add([{kind:'directory',path:'/srv/stackpier-demo/'+p.name,label:'独立部署目录（含专属数据）',ownership:'project'}],'已部署项目独立目录','possible');
