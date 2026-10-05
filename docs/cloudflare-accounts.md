@@ -2,6 +2,8 @@
 
 仅浏览器前端和 localStorage 模拟，不调用 Cloudflare API，不创建真实账号或 Token，不修改真实 DNS。网络状态、检查与提交结果均为虚构演示。
 
+DNS 确认、账号检查的返回修改与草稿恢复，以及凭据变化后的显式重新核对见[操作修复](operation-context-repairs.md)。
+
 ## 统一入口与关系
 
 “工作空间 / DNS 记录”的“管理 Cloudflare 账号”和“设置 / Cloudflare 账号”打开同一个管理界面，使用同一份 `S.cloudflare` 状态。关闭后保留来源页面和筛选；设置的未保存通知字段继续由现有表单缓存保留。

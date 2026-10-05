@@ -10,6 +10,7 @@ if (prototypeLoading.errors.length) {
     initializeFailedDeployments();
     initializeFrp();
     initializeAssets();
+    initializeRoutes();
     persist();
     prototypeLoading.ready = true;
   } catch (error) {

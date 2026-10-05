@@ -30,7 +30,9 @@ def connection(p,account='cf-account-extra',profile='normal',id=None,name='Cloud
     p.get_by_role('heading',name='核对账号和授权域名',exact=True).wait_for()
 def save(p):p.locator('[name=cf-confirm]').check();submit(p)
 def edit(p,id='dns1',content='203.0.113.17',outcome='success'):
-    click(p,'dnsedit',id=id);p.locator('#dns-content').fill(content)
+    click(p,'dnsedit',id=id)
+    if p.locator('[data-action=dns-refresh-target]').count():click(p,'dns-refresh-target',where='#modal')
+    p.locator('#dns-content').fill(content)
     p.locator('#outcome').select_option(outcome);p.locator('[name=network-ack]').check();submit(p)
     p.locator('[name=dns-confirm]').check()
     if p.locator('[name=shared-ack]').count():p.locator('[name=shared-ack]').check()
@@ -92,6 +94,7 @@ with sync_playwright() as pw:
     shot(p,'dns-unknown-reconcile-desktop.png');close(p)
     click(p,'navigate',page='dns');edit(p,content='203.0.113.33');interrupted=val(p,'S.operations[0].id');p.reload();p.wait_for_function('()=>prototypeLoading.ready')
     check('刷新将执行中操作转为未知并保留账号身份',val(p,'S.operations.find(o=>o.id==="'+interrupted+'").status')=='unknown' and val(p,'S.operations.find(o=>o.id==="'+interrupted+'").input.cfTarget.accountId')=='cf-account-legacy')
+    check('刷新恢复原操作详情',val(p,'ui.modal?.kind')=='opdetail' and val(p,'ui.modal?.id')==interrupted);close(p)
     click(p,'navigate',page='operations');click(p,'opdetail',id=interrupted);click(p,'verifyop',where='#modal',id=interrupted);p.locator('#verify-result').select_option('ended-unknown');p.locator('[name=verify-evidence]').check();submit(p)
     check('核对结束但未知时不伪造成功',val(p,'S.operations.find(o=>o.id==="'+interrupted+'").status')=='unknown' and val(p,'S.dns.find(r=>r.id==="dns1").content')=='203.0.113.17');close(p)
     click(p,'navigate',page='dns');click(p,'cfaccount');click(p,'cfinspect',where='#modal',id=legacy);p.locator('#cf-profile').select_option('invalid');submit(p);close(p)

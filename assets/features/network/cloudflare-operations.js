@@ -4,7 +4,7 @@ function cloudflareNetworkOperation(action,r,outcome,target){
  const error=cfTargetError(target)||(!r||r.accountId!==target.accountId||r.zoneId!==target.zoneId?'记录与确认目标不一致':'');
  if(error){modalError(error);return null;}
  const current=S.dns.find(x=>x.id===r.id);if(current&&(current.accountId!==target.accountId||current.zoneId!==target.zoneId)){modalError('不能跨账号 / Zone 修改已有记录');return null;}
- const input={label:(action==='delete'?'删除':'修改')+' DNS '+dnsRecordLabel(r),netType:'dns',action,record:clone(r),targetId:r.id,baseRevision:S.cloudflare.recordVersions[r.id]||0,cfTarget:clone(target),resources:['dns:'+r.id,'cf-connection:'+target.connectionId]};
+ const input={label:(action==='delete'?'删除':'修改')+' DNS '+dnsRecordLabel(r),netType:'dns',action,record:clone(r),before:clone(current||null),targetId:r.id,baseRevision:S.cloudflare.recordVersions[r.id]||0,cfTarget:clone(target),resources:['dns:'+r.id,'cf-connection:'+target.connectionId]};
  return startOperation(null,'network',input,['success','failed','unknown'].includes(outcome)?outcome:'unknown');
 }
 function applyCloudflareRecord(input){
@@ -27,7 +27,7 @@ function finishCloudflareOperation(o,result,{reconcile=false}={}){
  if(reconcile){o.cfChecks||=[];o.cfChecks.push({at:now(),accountId:o.input.cfTarget.accountId,zoneId:o.input.cfTarget.zoneId,result});}
  persist();render();if(ui.modal?.kind==='opdetail'&&ui.modal.id===o.id)renderModal();toast(o.message,result==='failed'?'error':'');
 }
-function cfOperationSummary(o){if(o.input?.netType!=='dns')return '';return `<div class="stack">${dnsTargetSummary(o.input.cfTarget)}${detail([['本次记录',h(o.input.record?dnsRecordLabel(o.input.record):'待核对')],['关联项目影响',h((o.input.record?.projects||[]).map(pname).join('、')||'未关联')],['公网传播','未验证，模拟成功不代表全球生效']])}${o.input.cfNeedsReview?notice('历史归属待核对','保留原历史，不按名称分配账号。','warning'):''}</div>`;}
+function cfOperationSummary(o){if(o.input?.netType!=='dns')return '';return `<div class="stack">${dnsTargetSummary(o.input.cfTarget)}${o.input.record?dnsRecordSummary(o.input.record,o.input.before):''}${detail([['公网传播','未验证，模拟成功不代表全球生效']])}${o.input.cfNeedsReview?notice('历史归属待核对','保留原历史，不按名称分配账号。','warning'):''}</div>`;}
 function cfVerifyModal(m,o){layout('读取核对原 DNS 操作','只核对固定账号、Zone 与记录，不重新提交修改。',`<div class="stack">${cfOperationSummary(o)}${notice('核对证据（模拟）','未读取到结果时保留未知；确定不会继续写入但无法证明历史结果时，仅释放保护。','warning')}${select('verify-result','模拟读取证据',[['working','仍未知 / 仍可能写入'],['success','读取确认本次目标结果'],['failed','确认原操作明确拒绝，未修改'],['ended-unknown','执行已结束，历史结果仍无法证明']])}${check('verify-evidence','已核对原账号、Zone、记录及原执行结束证据',false)}</div>`,btn('取消','closemodal')+'<button class="btn primary" type="submit">记录模拟核对</button>',false,'verifyop');}
 function cfVerifySubmit(o,get,has){const v=get('verify-result');if(v==='working'){o.message='仍未取得充分证据，保留未知和保护。';persist();openModal('opdetail',{id:o.id});return;}
  if(!has('verify-evidence')){modalError('请确认原目标身份与执行结束证据');return;}

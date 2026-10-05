@@ -2,7 +2,7 @@
 
 function toast(text,tone=''){const r=document.getElementById('toasts'),d=document.createElement('div');d.className='toast '+tone;d.setAttribute('role',tone==='error'?'alert':'status');d.innerHTML=I(tone==='error'?'alert':'check')+`<span>${h(text)}</span>`;r.appendChild(d);setTimeout(()=>d.remove(),5200);}
 
-function navigate(page,id){ui.page=page==='project'||navItems.some(item=>item[0]===page)?page:'overview';if(id)ui.project=id;ui.q='';ui.filter='all';ui.server='all';ui.zone='all';ui.cfAccount='all';ui.tab='overview';ui.nav=false;persist();render();window.scrollTo({top:0});document.querySelector('.page-heading h1')?.focus({preventScroll:true});}
+function navigate(page,id){ui.page=page==='project'||navItems.some(item=>item[0]===page)?page:'overview';if(id)ui.project=id;ui.q='';ui.filter='all';ui.server='all';ui.zone='all';ui.cfAccount='all';ui.tab='overview';ui.nav=false;ui.routeNotice='';persist();render();window.scrollTo({top:0});document.querySelector('.page-heading h1')?.focus({preventScroll:true});}
 
 // 收起的移动导航退出键盘焦点顺序，打开时将焦点限制在抽屉中。
 function syncNavigationAccessibility(){
@@ -38,6 +38,7 @@ case'navclose':toggleNavigation(false);break;
 case'tab':ui.tab=['overview','config','monitor','logs','history'].includes(d.id)?d.id:'overview';ui.q='';render();break;
 case'closemodal':closeModal();break;
 case'projectmore':case'opdetail':case'verifyop':openModal(a,{id:d.id});break;
-case'templateedit':case'programupload':case'dnsedit':case'dnsdelete':case'firewalledit':case'firewalldelete':openModal(a,{id:d.id});break;
+case'firewalledit':openModal(a,{id:d.id,...(!d.id?{server:selectedServer(),freshTarget:true}:{})});break;
+case'templateedit':case'programupload':case'dnsedit':case'dnsdelete':case'firewalldelete':openModal(a,{id:d.id});break;
   }
 });
