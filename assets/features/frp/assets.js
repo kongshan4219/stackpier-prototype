@@ -40,10 +40,10 @@ const frpAssetBaseReferences=assetReferences;
 assetReferences=function(id,revision=null){
  const refs=frpAssetBaseReferences(id,revision),match=ref=>ref?.pins?.some(pin=>pin.fileId===id&&(revision===null||pin.revision===Number(revision)));
  for(const t of S.templates.filter(t=>t.frpRole&&match(t.programRef)))refs.configurations.push({template:t,mapping:{...t.programRef,targetPath:(t.frpSource?.root||S.frp.root)+'/bin/'+frpProgramName(t.frpRole)}});
- for(const p of S.projects.filter(p=>(p.frpRef||p.frpInstallation)&&p.life!=='uninstalled')){
+ for(const p of S.projects.filter(p=>(p.frpRef||p.frpInstallation||p.frpService)&&p.life!=='uninstalled')){
   const ref=p.frpApplied?.programRef||p.frpAppliedProgramRef;
   if(!p.frpApplied||!match(ref)||p.frpApplied.program&&p.frpApplied.program.id!==id)continue;
-  const role=p.frpRef?.role||p.frpInstallation.role,selected=ref.pins.find(pin=>pin.fileId===id),binary=p.frpApplied.program||assetRevision(id,selected.revision);
+  const role=p.frpService?.role||p.frpRef?.role||p.frpInstallation?.role,selected=ref.pins.find(pin=>pin.fileId===id),binary=p.frpApplied.program||assetRevision(id,selected.revision);
   refs.projects.push({project:p,mapping:{...ref,targetPath:p.frpApplied.files.binaryPath,binary:{...clone(binary||{}),id,revision:selected.revision,identity:binary?.identity||'历史模拟程序，真实内容身份未知'}}});
  }
  return refs;

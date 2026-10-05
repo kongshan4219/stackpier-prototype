@@ -48,7 +48,7 @@ test('旧持久状态仅迁出暂停功能，项目草稿、FRP、通知和其�
     frpEnsure();
     pr('p1').name='保留名称';pr('p1').cfg.appConfig='保留草稿';
     pr('p1').backup={path:'/example/retired'};pr('p1').temporary=true;
-    delete pr('p8').monitorPaused;pr('p8').plansPaused=true;
+    delete pr('p7').monitorPaused;pr('p7').plansPaused=true;
     S.backups=[{id:'legacy-backup'}];S.policies=[{id:'legacy-policy'}];
     S.plans=[{id:'legacy-plan',kind:'backup',name:'历史保护计划'}];
     S.review.p2=true;S.review.p3=true;S.review.notes=[{text:'保留反馈'}];
@@ -64,7 +64,7 @@ test('旧持久状态仅迁出暂停功能，项目草稿、FRP、通知和其�
   const after = JSON.parse(reloaded.saved());
   assert.equal(after.projects.find(project => project.id === 'p1').name, '保留名称');
   assert.equal(after.projects.find(project => project.id === 'p1').cfg.appConfig, '保留草稿');
-  assert.equal(after.projects.find(project => project.id === 'p8').monitorPaused, true);
+  assert.equal(after.projects.find(project => project.id === 'p7').monitorPaused, true);
   assert.deepEqual(after.servers, before.servers);
   assert.deepEqual(after.templates, before.templates);
   assert.deepEqual(after.frp, before.frp);
@@ -81,24 +81,6 @@ test('旧持久状态仅迁出暂停功能，项目草稿、FRP、通知和其�
   assert.equal(reloaded.run('activeOps(pr("p1")).length'), 0);
   assert.equal(reloaded.run('activeOps(pr("p2")).length'), 1);
   assert.deepEqual(JSON.parse(prototype(reloaded.saved()).saved()), after);
-});
-
-test('卸载暂停定时巡检，重新部署后保持暂停并可明确恢复', () => {
-  const p = prototype();
-  p.run(`const subject=pr('p2');const uninstall=startOperation(subject,'uninstall',{},'success',{hold:true});finishOperation(uninstall,'success');`);
-  assert.equal(p.run('subject.monitorPaused'), true);
-  p.click('resumemonitor', { id: 'p2' });
-  assert.equal(p.run('subject.monitorPaused'), true);
-  p.run(`const deploy=startOperation(subject,'deploy',{},'success',{hold:true});finishOperation(deploy,'success');`);
-  assert.equal(p.run('subject.life'), 'installed');
-  assert.equal(p.run('subject.monitorPaused'), true);
-  p.click('project', { id: 'p2' });
-  p.click('tab', { id: 'monitor' });
-  assert.match(p.html('app'), /恢复定时巡检/);
-  p.click('resumemonitor', { id: 'p2' });
-  assert.equal(p.run('subject.monitorPaused'), false);
-  p.click('projectcheck', { id: 'p2' });
-  assert.equal(p.run('S.operations[0].kind'), 'check');
 });
 
 test('全部剩余场景可装载，已移除的复制场景不再出现', () => {

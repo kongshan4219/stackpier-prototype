@@ -19,7 +19,7 @@ function frpValidateTemplate(name,text){
 }
 function frpUnit(n,r,settings=S.frp){if(r==='server'&&n.serverUnit)return n.serverUnit;if(n.roleProjects?.server&&r!=='server')return frpPrefixes[r]+'-'+n.id+'.service';const ip=n.ip;return settings.naming==='role'?frpPrefixes[r]+'-'+ip+'.service':ip+(r==='visitor'?'-visitor':'')+'.service';}
 function frpFiles(n,r,settings=S.frp){
- const F=settings,prefix=frpPrefixes[r],esc=v=>frpQuote(v).slice(1,-1);
+ const F=n.sourceSettings&&settings===S.frp?n.sourceSettings:settings,prefix=frpPrefixes[r],esc=v=>frpQuote(v).slice(1,-1);
  const proxy=n.proxies.map(x=>['[[proxies]]','name = '+frpQuote(x.name),'type = '+frpQuote(x.type),'localIP = '+frpQuote(x.local_ip),'localPort = '+x.local_port,x.type==='tcp'?'remotePort = '+x.remote_port:'secretKey = '+frpQuote(x.secret_key)].join('\n')).join('\n\n');
  const visitor=n.proxies.filter(x=>x.type==='stcp').map(x=>['[[visitors]]','name = '+frpQuote(x.name+'-visitor'),'type = "stcp"','serverName = '+frpQuote(x.name),'secretKey = '+frpQuote(x.secret_key),'bindAddr = '+frpQuote(x.visitor_bind_addr),'bindPort = '+x.visitor_bind_port].join('\n')).join('\n\n');
  const vars={server_ip:esc(n.ip),bind_addr:esc(n.bind_addr),bind_port:n.bind_port,auth_method:'token',auth_token:esc(F.token),proxies:proxy,visitors:visitor};
@@ -31,7 +31,7 @@ function frpFiles(n,r,settings=S.frp){
  return {toml:substitute(F.templates[prefix+'.toml.tpl']),unit,tomlPath,unitPath:F.systemdDir+'/'+frpUnit(n,r,F),generatedToml:'generated/'+prefix+'/'+(n.roleProjects?.server&&r!=='server'?n.id:n.ip)+'.toml',generatedUnit:'generated/'+prefix+'/'+(n.roleProjects?.server&&r!=='server'?n.id:n.ip)+'.service',binaryPath:F.root+'/bin/'+(r==='server'?'frps':'frpc')};
 }
 function frpRenderSafe(n,r){try{return frpFiles(n,r)}catch(e){return {toml:'无法生成：'+e.message,unit:'无法生成：'+e.message,tomlPath:'—',unitPath:'—',binaryPath:'—'}}}
-function frpSnapshot(n,r){const names=['.toml.tpl','.service.tpl'].map(suffix=>frpPrefixes[r]+suffix);return {files:frpFiles(n,r),node:clone(n),role:r,revision:n.revision,settingsRevision:S.frp.settingsRev,templateRev:S.frp.templateRev,templateRevisions:Object.fromEntries(names.map(name=>[name,S.frp.templateRevisions[name]])),templateSources:Object.fromEntries(names.map(name=>[name,S.frp.templates[name]])),root:S.frp.root,naming:S.frp.naming,host:frpHost(n,r),unit:frpUnit(n,r)};}
+function frpSnapshot(n,r){const names=['.toml.tpl','.service.tpl'].map(suffix=>frpPrefixes[r]+suffix);return {files:frpFiles(n,r,clone(S.frp)),node:clone(n),role:r,revision:n.revision,settingsRevision:S.frp.settingsRev,templateRev:S.frp.templateRev,templateRevisions:Object.fromEntries(names.map(name=>[name,S.frp.templateRevisions[name]])),templateSources:Object.fromEntries(names.map(name=>[name,S.frp.templates[name]])),root:S.frp.root,naming:S.frp.naming,host:frpHost(n,r),unit:frpUnit(n,r)};}
 function frpPreviewBinding(items,op){return JSON.stringify(items.map(x=>{const n=frpNode(x.node),p=pr(frpPid(n,x.role));return ['deploy','install'].includes(op)?{node:n.id,role:x.role,snapshot:frpDraftSnapshot(n,x.role)}:{project:p.id,applied:p.frpApplied};}));}
 function frpValidate(nodes=S.frp.nodes){
  const errors=[],F=S.frp,pairs=new Set(),servers=new Set(),proxyNames=new Map(),listeners=[];

@@ -76,6 +76,6 @@ function sr(id){return S.servers.find(s=>s.id===id)}
 
 function tpl(id){return S.templates.find(t=>t.id===id)}
 
-function pname(id){return pr(id)?.name||'已删除的演示项目'}
+function pname(id){return pr(id)?.name||S.serviceMigration?.evidence.find(e=>e.projectId===id)?.name||S.operations.find(o=>o.project===id)?.input?.deployment?.project?.name||'历史关联（已移除或待核对）'}
 
 function sname(id){return sr(id)?.name||S.projects.find(p=>p.server===id)?.serverName||'已移除连接记录'}

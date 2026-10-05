@@ -1,5 +1,7 @@
 # 操作上下文、返回修改与路由验收
 
+最新产品规则已将角色服务部署并入项目，FRP 只管理配置；本文保留前轮修复背景，当前流程与证据以[生命周期验收](service-lifecycle-validation.md)为准。
+
 本轮从 `62924ca5ba5ae09e581260b88980514ba80cc081` 起修复，保留 Cloudflare 多账号、公共文件联动及 FRP 三角色实现。未改主仓库落后的子模块指针。范围为前端与 localStorage 模拟；不执行真实服务器、Docker、SSH、防火墙或 Cloudflare 请求。
 
 ## 行为与实现

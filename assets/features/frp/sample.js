@@ -16,7 +16,7 @@ function frpSampleState(){
 }
 function frpSeedSampleRoles(){
  const at=now();
- for(const [server,role] of [['s1','client'],['s3','client'],['s2','server'],['s4','server']]){
+ for(const [server,role] of [['s2','server'],['s4','server']]){
   const plan=frpInstallationPlan(server,role),p=pr(plan.id)||frpDraftProject(plan.node,role);
   if(!pr(plan.id))S.projects.push(p);
   Object.assign(p,{id:plan.id,name:frpPrefixes[role]+' · '+sname(server),frpInstallation:{role},life:'installed',runtime:role==='server'?'running':'na',desired:role==='server'?'running':'stopped',monitorPaused:role==='client',runtimeCheckStatus:'verified',observed:at,lastCheck:at,dataStatus:'in-place',note:'虚构服务器角色部署参照，仅用于浏览器模拟。'});
@@ -28,7 +28,7 @@ function frpSeedSampleRoles(){
  }
  frpSyncConfigs();
  for(const n of S.frp.nodes)for(const role of ['client',...(n.proxies.some(x=>x.type==='stcp')?['visitor']:[])]){
-  const p=pr(frpPid(n,role));p.note='虚构连接样例，服务状态不代表隧道或代理连通。';
+  if(n.id==='n2')continue;const p=pr(frpPid(n,role))||frpDraftProject(n,role);if(!pr(p.id))S.projects.push(p);p.note='虚构连接样例，服务状态不代表隧道或代理连通。';
   if(n.id==='n2')continue;
   p.life='installed';p.runtime=n.id==='n4'?'stopped':'running';p.desired=p.runtime;p.runtimeCheckStatus='verified';p.stopVerified=p.runtime==='stopped';p.observed=at;p.lastCheck=at;p.dataStatus='in-place';
   p.cfg.version='模拟程序条件（非附件二进制）';p.applied=clone(p.cfg);p.appliedRev=p.draftRev;p.frpApplied=frpSnapshot(n,role);

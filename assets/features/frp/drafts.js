@@ -3,8 +3,8 @@
 // 公共来源、角色草稿、完整应用参照及读取快照相互独立。
 function frpSyncDrafts(){
  frpLinkAssets();
- for(const p of S.projects.filter(p=>p.frpRef||p.frpInstallation)){
-  const role=p.frpRef?.role||p.frpInstallation.role,n=p.frpRef?frpNode(p.frpRef.node):p.frpApplied?.node;if(!n)continue;
+ for(const p of S.projects.filter(p=>p.frpRef||p.frpInstallation||p.frpService)){
+  const role=p.frpService?.role||p.frpRef?.role||p.frpInstallation?.role,n=p.frpRef?frpNode(p.frpRef.node):p.frpApplied?.node;if(!n)continue;
   if(p.frpInstallation?.role==='client'&&p.frpDraft&&!p.frpDraft.installationOnly){p.frpLegacyConnectionDraft||=clone(p.frpDraft);p.frpDraft=clone(frpPublicCandidate(n,role));}
   if(!p.frpDraft){
    const fresh=frpPublicCandidate(n,role);p.frpDraft=clone(fresh);
@@ -17,12 +17,12 @@ function frpSyncDrafts(){
   if(p.frpApplied&&!p.frpReadSnapshot)p.frpReadSnapshot={files:clone(p.frpApplied.files),program:clone(p.frpApplied.program||null),at:p.lastCheck||p.observed||null,source:'旧模拟应用参照，非实时远端读取'};
   // 非当前清单的项目保留归档的草稿与更新提示，不套用另一个参考清单。
   if(p.frpRef&&!S.frp.nodes.some(x=>x.id===n.id))continue;
-  const latest=frpPublicCandidate(n,role);
+  const latest=frpProjectCandidate(p);
   p.frpAvailableUpdate=JSON.stringify([latest.files,latest.programRef,latest.settingsRevision,latest.templateRevisions,n.revision])!==JSON.stringify([p.frpDraft.files,p.frpDraft.programRef,p.frpDraft.settingsRevision,p.frpDraft.templateRevisions,p.frpDraft.node.revision]);
  }
 }
 function frpAdoptProject(p,next){
- if(!p||!next)throw Error('目标项目或更新已缺失');p.frpDraft=clone(next);p.cfg.appConfig=next.files.toml;p.frpDraftUnit=next.files.unit;p.cfg.dataDir=next.root;p.cfg.serviceUser=next.settings.user;p.cfg.port=next.role==='server'?next.node.bind_port:0;const program=frpResolveProgram(next.programRef,next.host).file;p.cfg.version=program?'内容 R'+program.revision+' · 元数据，未验证运行':'程序无效 / 架构缺失';p.draftRev++;
+ if(!p||!next)throw Error('目标项目或更新已缺失');p.frpDraft=clone(next);p.cfg.appConfig=next.files.toml;p.frpDraftUnit=next.files.unit;p.cfg.dataDir=next.root;p.cfg.serviceUser=next.settings.user;p.cfg.port=next.role==='server'?next.node.bind_port:0;if(p.frpService){const files=clone(next.files),previous=p.frpApplied?.files;if(previous){files.tomlPath=previous.tomlPath;files.unitPath=previous.unitPath;files.unit=files.unit.replace(/^ExecStart=.*$/m,'ExecStart='+files.binaryPath+' -c '+files.tomlPath);}p.frpDraft.files=files;p.cfg.frpSnapshot=clone(p.frpDraft);p.cfg.source=files.unit;p.cfg.dataDir=p.applied?.dataDir||next.root;}const program=frpResolveProgram(next.programRef,next.host).file;p.cfg.version=program?'内容 R'+program.revision+' · 元数据，未验证运行':'程序无效 / 架构缺失';p.draftRev++;
  p.frpDraftRefs={nodeRevision:next.node.revision,settingsRevision:next.settingsRevision,templateRevisions:clone(next.templateRevisions)};frpSyncConfigs();persist();
 }
 function frpDraftSnapshot(n,role){const p=pr(frpPid(n,role));if(!p?.frpDraft)frpSyncConfigs();return clone(p?.frpDraft);}
@@ -60,4 +60,13 @@ function frpPairErrors(items){
   }
  }
  return [...new Set(errors)];
+}
+
+function frpProjectCandidate(p){
+ const role=p.frpService?.role||p.frpRef?.role||p.frpInstallation?.role,n=p.frpRef?frpNode(p.frpRef.node):p.frpApplied?.node;if(!n)return null;
+ const linked=S.frp.nodes.find(x=>Object.values(x.serviceBindings||{}).includes(p.id));
+ const fixed=linked?.appliedConfiguration?{...clone(n),proxies:clone(linked.appliedConfiguration.proxies),revision:linked.appliedConfiguration.revision}:n;
+ const next=frpPublicCandidate(fixed,role),previous=p.frpApplied?.files;
+ if(p.frpService&&previous){next.files.tomlPath=previous.tomlPath;next.files.unitPath=previous.unitPath;next.files.generatedToml=previous.generatedToml||next.files.generatedToml;next.files.generatedUnit=previous.generatedUnit||next.files.generatedUnit;next.files.unit=next.files.unit.replace(/^ExecStart=.*$/m,'ExecStart='+next.files.binaryPath+' -c '+next.files.tomlPath);next.unit=p.frpApplied.unit;}
+ return next;
 }
