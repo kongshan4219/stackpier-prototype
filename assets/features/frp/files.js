@@ -34,7 +34,7 @@ function frpRenderSafe(n,r){try{return frpFiles(n,r)}catch(e){return {toml:'无�
 function frpSnapshot(n,r){const names=['.toml.tpl','.service.tpl'].map(suffix=>frpPrefixes[r]+suffix);return {files:frpFiles(n,r,clone(S.frp)),node:clone(n),role:r,revision:n.revision,settingsRevision:S.frp.settingsRev,templateRev:S.frp.templateRev,templateRevisions:Object.fromEntries(names.map(name=>[name,S.frp.templateRevisions[name]])),templateSources:Object.fromEntries(names.map(name=>[name,S.frp.templates[name]])),root:S.frp.root,naming:S.frp.naming,host:frpHost(n,r),unit:frpUnit(n,r)};}
 function frpPreviewBinding(items,op){return JSON.stringify(items.map(x=>{const n=frpNode(x.node),p=pr(frpPid(n,x.role));return ['deploy','install'].includes(op)?{node:n.id,role:x.role,snapshot:frpDraftSnapshot(n,x.role)}:{project:p.id,applied:p.frpApplied};}));}
 function frpValidate(nodes=S.frp.nodes){
- const errors=[],F=S.frp,pairs=new Set(),servers=new Set(),proxyNames=new Map(),listeners=[];
+ const errors=nodes.flatMap(n=>frpBindingErrors(n,nodes)),F=S.frp,pairs=new Set(),servers=new Set(),proxyNames=new Map(),listeners=[];
  const port=(p,where)=>{if(!Number.isInteger(p)||p<1||p>65535)errors.push(where+'：端口必须是 1–65535 的整数');};
  const ip=(v,where)=>{if(!validIPv4(v)&&!validIPv6(v))errors.push(where+'：地址必须是 IP');};
  if(!/^\/[A-Za-z0-9_./-]+$/.test(F.root)||F.root.includes('..'))errors.push('运行根目录必须为不含上跳的绝对路径');

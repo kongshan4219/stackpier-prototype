@@ -84,6 +84,8 @@ function startOperation(p,kind,input={},outcome='success',options={}){
  const fixed={...clone(input),...(p?{cfg:clone(p.cfg),applied:clone(p.applied),draftRev:p.draftRev,before:{life:p.life,runtime:p.runtime,desired:p.desired,health:p.health}}:{})};
  if(p)fixed.serverTarget=serverOperationSnapshot(p.server);
  if(p)fixed.deployment=deploymentSnapshot(p,fixed.cfg);
+ if(p&&['deploy','apply','update'].includes(kind)){projectResourceLedger(p);fixed.resourceTargets=clone(deploymentCleanupTargets(p,fixed.cfg));}
+ if(p&&kind==='uninstall')fixed.cleanupOf=S.operations.filter(o=>o.project===p.id&&o.kind==='uninstall'&&!o.resolved).map(o=>o.id);
  if(mappedFiles.length)fixed.mappedFiles=clone(mappedFiles);
  if(p?.type==='systemd'&&['deploy','apply','update'].includes(kind)){const binary=p.frpService?frpResolveProgram(p.cfg.frpSnapshot.programRef,p.server).file:projectProgramFile(p);if(binary){fixed.binary=clone(binary);fixed.cfg.contentIdentity=binary.identity;}}
  if(p&&isRuntimeAction(kind))fixed.requestedState=kind==='stop'?'stopped':'running';

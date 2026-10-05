@@ -2,6 +2,7 @@
 // FRP 点击、选项变化和表单事件；在工作台及扩展挂钩之后注册。
 document.addEventListener('click',event=>{const el=event.target.closest('[data-action]');if(!el)return;const a=el.dataset.action;if(!a.startsWith('frp-'))return;event.preventDefault();event.stopImmediatePropagation();frpEnsure();const d=el.dataset;try{
  if(['frp-install','frp-install-remove','frp-batch','frp-batchconfirm','frp-batchpreview','frp-cloud','frp-group','frp-targets'].includes(a)){closeModal();openModal('newproject',{template:'frp-template-'+(d.role||'client'),server:d.server||selectedServer()});return;}
+ if(a==='frp-binding-detach'){openModal('frp-binding-detach',{node:d.node});return;}
  if(a==='frp-configapply'||a==='frp-op'){openModal('frp-configapply',{node:d.node||FRP.node});return;}
  if(a==='frp-connection-delete'){const n=frpNode(d.node);openModal('frp-connection-delete',{node:n.id});return;}
  if(a==='frp-connection-delete-confirm'){const n=frpNode(d.node);n.deletedConfig=true;n.proxies=[];n.revision++;persist();closeModal();render();toast('连接配置已标记删除，尚待应用；服务项目保持。');return;}

@@ -61,7 +61,10 @@ function frpAffectedRoles(role){return S.frp.nodes.flatMap(n=>Object.keys(frpRol
 function frpAuthImpact(items){return frpAffectedRoles().filter(x=>items.some(item=>item.node===x.node.id)&&(x.project?.life==='installed'||items.some(item=>item.node===x.node.id&&item.role===x.role))&&frpAuthChange(x.node,x.role));}
 function frpSyncConfigs(){if(S.frp)frpSyncDrafts();}
 function frpSaveNode(candidate,old){
- if(!old||JSON.stringify(old.serviceBindings)!==JSON.stringify(candidate.serviceBindings))frpValidateConnectionServers(candidate);
+ const visitorErrors=frpBindingErrors(candidate).filter(e=>e.startsWith('frpc-visitor'));if(visitorErrors.length)throw Error(visitorErrors.join('；'));
+ if(old&&frpNeedsDetach(old)&&!frpSameBindings(old.appliedConfiguration?.bindings,candidate.serviceBindings))throw Error('已应用连接改绑前须先明确解除旧配置并核对，旧服务不会卸载。');
+ if(!old||!frpSameBindings(old.serviceBindings,candidate.serviceBindings))frpValidateConnectionServers(candidate);
+ const bindings=frpBindingErrors(candidate);if(bindings.length)throw Error(bindings.join('；'));
  const previous=clone(S.frp.nodes);if(old)S.frp.nodes[S.frp.nodes.findIndex(n=>n.id===old.id)]=candidate;else S.frp.nodes.push(candidate);
  const errors=frpValidate();if(errors.length){S.frp.nodes=previous;throw Error(errors.join('；'));}
  // 保存连接只更新配置，不采用公共资产、不改项目草稿或已应用状态。

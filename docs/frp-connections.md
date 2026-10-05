@@ -8,11 +8,13 @@ FRP 移到配置分组，仅管理已有服务的连接、TCP / STCP 映射、�
 
 连接通过稳定 projectId 绑定已部署 FRPC、共享 FRPS 和可选 visitor，选择器显示服务器及服务运行观测。缺少服务显示“尚无可用服务”和项目部署入口。保存连接或映射不自动建立项目；只安装二进制不建立项目。
 
-一个 FRPS 可供多个连接使用，执行计划按真实服务 ID 去重。单个 FRPC 服务不能隐式改接另一连接。已停止服务仍是已部署实例，应用配置保持停止；服务进程运行不代表隧道可达或业务健康，两页同用运行事实。
+一个 FRPS 可供多个连接使用，执行计划按真实服务 ID 去重。单个 FRPC 服务不能隐式改接另一连接；visitor 采用独占绑定，一个 visitor 服务只允许一条连接。选择器显示占用并禁选，保存、应用及旧状态核对使用同一约束；共享 FRPS 不受此限制。已停止服务仍是已部署实例，应用配置保持停止；服务进程运行不代表隧道可达或业务健康，两页同用运行事实。
 
 STCP 没有 remotePort；visitor 位于对应 FRPS 主机、使用 frpc、绑定回环。serverName / secretKey 来自同一映射。缺 visitor 可以保存配置但不能应用，不偷偷部署服务。
 
 删除映射只改变配置。最后 STCP 删除时，应用预览说明清空 visitor 映射，保留其服务 / unit；完全卸载另到项目确认。删除连接也先标记配置删除、再应用空配置，不卸载任何服务或删除共享 FRPS。
+
+已应用连接改绑采用两步确认：先「改绑前解除旧配置」，列明旧客户端 / visitor 映射清空及重载，旧 FRPS 仅核对并保留。全部成功后才能保存新绑定，再单独确认新服务应用。任何旧角色离线、失败 / 部分 / 未知均保留原应用绑定、占用和恢复入口，不卸载服务。旧应用绑定缺证据、visitor 冲突保守阻断，不静默解绑。
 
 ## 保存、采用与应用
 
@@ -34,4 +36,4 @@ FRPS 使用 frps，FRPC / visitor 使用 frpc；稳定 fileId / templateId / pro
 
 历史 frpc · 内网连接、7400 与 frpc-edge 继续作为历史自定义服务 / 配置保留，不混作新三角色连接。概览遮挡示例凭据，localStorage 不是生产密钥库。
 
-行为对照见[附件说明](frp-reference-behavior.md)，当前验收见[项目与 FRP 验证](service-lifecycle-validation.md)。仅前端与本地模拟，没有真实 SSH、FRP、服务器或端口验证。
+行为对照见[附件说明](frp-reference-behavior.md)，当前生命周期验收见[项目与 FRP 验证](service-lifecycle-validation.md)，五项缺陷修复与截图见[专项回归](cleanup-frp-repairs.md)。仅前端与本地模拟，没有真实 SSH、FRP、服务器或端口验证。

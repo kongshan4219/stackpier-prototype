@@ -3,7 +3,7 @@
 function frpServiceProject(id,role){const p=pr(id);return p&&p.frpService?.role===role&&p.life==='installed'?p:null;}
 function frpServices(role){return S.projects.filter(p=>p.frpService?.role===role&&p.life==='installed'&&!p.cleanup);}
 function frpBoundService(n,role){return frpServiceProject(n?.serviceBindings?.[role]||n?.roleProjects?.[role],role);}
-function frpServiceOptions(role){return [['','请选择服务实例'],...frpServices(role).map(p=>[p.id,p.name+' · '+sname(p.server)+' · '+runtimeName[p.runtime]])];}
+function frpServiceOptions(role,node=''){return [['','请选择服务实例'],...frpServices(role).map(p=>{const owners=role==='server'?[]:frpReservationOwners(role,p.id,node);return [p.id,p.name+' · '+sname(p.server)+' · '+runtimeName[p.runtime]+(owners.length?' · 已被连接 '+owners.map(n=>n.id).join('、')+' 占用':''),owners.length>0];})];}
 function syncNewFrpFields(m=ui.modal){
  const target=document.getElementById('np-frp-fields'),t=tpl(document.getElementById('np-template')?.value);if(!target||!t)return;
  const v=m.frpValues||m.projectConfig?.frpInputs||{};
@@ -36,7 +36,7 @@ function configureFrpServiceDraft(draft,fd,m){
 function frpServiceLocation(p){
  const snapshot=p.cfg.frpSnapshot,server=sr(p.server),errors=[],warnings=[],files=[];
  if(!snapshot)return {mainPath:'未知',files,errors:['FRP 服务配置快照缺失'],warnings};
- const linked=S.frp.nodes.filter(n=>Object.values(n.serviceBindings||{}).includes(p.id));
+ const linked=frpAllConnections().filter(n=>Object.values(n.serviceBindings||{}).includes(p.id)||Object.values(n.appliedConfiguration?.bindings||{}).includes(p.id)||(n.bindingHistory||[]).some(e=>Object.values(e.applied?.bindings||{}).includes(p.id)));
  if(p.frpApplied&&linked.length){const old=p.frpApplied,token=f=>f.toml.match(/^\s*auth\.token\s*=.*$/m)?.[0]?.trim();if(token(old.files)!==token(snapshot.files)||JSON.stringify(old.node.proxies)!==JSON.stringify(snapshot.node.proxies))errors.push('认证或映射变更影响关联连接；请在配置 / FRP 明确采用并协调应用，不从单个项目改写配对配置。');}
  errors.push(...frpResolveProgram(snapshot.programRef,p.server).errors);const block=serverOperationError(p.server);if(block)errors.push(block);
  const f=snapshot.files;
@@ -56,4 +56,4 @@ function frpServiceLocation(p){
 const servicePid=frpPid;
 // frpPid 为旧 const，调用方改为服务绑定优先，旧 ID 仅用于迁移。
 function frpServiceBindings(n){return Object.keys(frpRoles).map(role=>({role,project:frpBoundService(n,role),id:n.serviceBindings?.[role]}));}
-const serviceProjectTab=projectTab;projectTab=function(p){if(!p.frpService||ui.tab!=='config')return serviceProjectTab(p);const read=p.frpReadSnapshot;return `<div class="toolbar">${btn('查看公共部署配置','asset-template',{id:p.template,project:p.id})}${btn('查看公共更新差异','frp-update',{id:p.id})}${btn('应用项目配置草稿','projectop',{id:p.id,kind:'apply'},'primary')}${btn('模拟读取成功','frp-read',{id:p.id})}${btn('模拟读取失败','frp-read',{id:p.id,fail:'true'})}</div>${S.frp.nodes.filter(n=>Object.values(n.serviceBindings||{}).includes(p.id)).map(n=>btn('连接与映射 · '+n.ip,'frp-locate',{node:n.id,project:p.id})).join('')}<div class="grid2 mt">${card('服务器上次成功读取 · 只读',read?`<p>${h(read.at||'历史时间未知')} · ${p.frpReadError?'旧结果，模拟读取失败':'浏览器模拟'}</p><pre class="code asset-text">${h(frpMask(read.files.toml))}</pre>`:empty('没有成功读取','不会用草稿代替服务器内容。'))}${card('已应用参照',`<pre class="code asset-text">${h(frpMask(p.frpApplied?.files.toml||''))}</pre>`)}</div><details class="mt"><summary>项目配置草稿与全部落点</summary>${landingPreviewBody(p)}</details>`;};
+const serviceProjectTab=projectTab;projectTab=function(p){if(!p.frpService||ui.tab!=='config')return serviceProjectTab(p);const read=p.frpReadSnapshot;return `${p.frpWritePending?notice('服务配置写入待核对','保留此前完整应用与读取参照；查看固定目标及逐服务结果。','warning')+btn('查看配置操作','opdetail',{id:p.frpWritePending.operationId}):''}<div class="toolbar">${btn('查看公共部署配置','asset-template',{id:p.template,project:p.id})}${btn('查看公共更新差异','frp-update',{id:p.id})}${btn('应用项目配置草稿','projectop',{id:p.id,kind:'apply'},'primary')}${btn('模拟读取成功','frp-read',{id:p.id})}${btn('模拟读取失败','frp-read',{id:p.id,fail:'true'})}</div>${S.frp.nodes.filter(n=>Object.values(n.serviceBindings||{}).includes(p.id)).map(n=>btn('连接与映射 · '+n.ip,'frp-locate',{node:n.id,project:p.id})).join('')}<div class="grid2 mt">${card('服务器上次成功读取 · 只读',read?`<p>${h(read.at||'历史时间未知')} · ${p.frpReadError?'旧结果，模拟读取失败':'浏览器模拟'}</p><pre class="code asset-text">${h(frpMask(read.files.toml))}</pre>`:empty('没有成功读取','不会用草稿代替服务器内容。'))}${card('已应用参照',`<pre class="code asset-text">${h(frpMask(p.frpApplied?.files.toml||''))}</pre>`)}</div><details class="mt"><summary>项目配置草稿与全部落点</summary>${landingPreviewBody(p)}</details>`;};

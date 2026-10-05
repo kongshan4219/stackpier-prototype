@@ -11,6 +11,9 @@ if (prototypeLoading.errors.length) {
     initializeFrp();
     initializeAssets();
     migrateServiceProjects();
+    initializeResourceLedgers();
+    migrateOperationResolutions();
+    migrateFrpBindings();
     initializeRoutes();
     persist();
     prototypeLoading.ready = true;
