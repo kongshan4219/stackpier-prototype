@@ -43,7 +43,7 @@ test('配置页只读展示服务器 systemd 文件和已映射实际文件', ()
   const html = p.html('app');
   assert.match(html, /\/etc\/systemd\/system\/catalog-api\.service/);
   assert.match(html, /\/srv\/stackpier-demo\/catalog-api\/app\.conf/);
-  assert.match(html, /demo-config-content-a/);
+  assert.match(html, /SHA-256/);
   assert.doesNotMatch(html, /new-upload-not-on-server|DRAFT_ONLY=1|保存草稿|cfg-port/);
 });
 
@@ -54,7 +54,8 @@ test('Compose 配置页读取已部署文件，不把待应用草稿当成服务
   const html = p.html('app');
   assert.match(html, /\/srv\/stackpier-demo\/media-web\/compose\.yaml/);
   assert.match(html, /8090:80/);
-  assert.doesNotMatch(html, /8091:80/);
+  assert.doesNotMatch(p.run('projectRuntimeFile(pr("p2")).content'), /8091:80/);
+  assert.match(html,/项目草稿[\s\S]*8091:80/);
   assert.match(html, /待应用内容[\s\S]*有/);
 });
 
@@ -63,7 +64,7 @@ test('未部署和已卸载项目不把配置记录显示成服务器文件', ()
   p.click('project', { id: 'p8' });
   p.click('tab', { id: 'config' });
   assert.match(p.html('app'), /运行文件已随项目卸载/);
-  assert.doesNotMatch(p.html('app'), /legacy-web\/compose\.yaml|example\/web:demo-1\.0/);
+  assert.equal(p.run('projectRuntimeFile(pr("p8"))'),null);
   p.click('project', { id: 'p9' });
   p.click('tab', { id: 'config' });
   assert.match(p.html('app'), /项目尚未形成服务器运行文件/);
@@ -82,7 +83,7 @@ test('重新读取记录成功或失败，失败时保留最近文件快照', ()
   assert.equal(p.run('pr("p1").configurationReadStatus'), 'unknown');
   assert.equal(p.run('pr("p1").configurationReadAt'), previous);
   assert.ok(p.run('pr("p1").configurationReadAttemptAt') >= previous);
-  assert.match(p.html('app'), /当前无法读取目标服务器[\s\S]*最近一次可确认的文件快照/);
+  assert.match(p.html('app'), /本次未取得新内容[\s\S]*上次成功读取快照/);
   assert.match(p.html('app'), /读取失败/);
   assert.match(p.html('app'), /catalog-api\.service/);
 });

@@ -68,7 +68,8 @@ function startOperation(p,kind,input={},outcome='success',options={}){
    const deploymentConflict=activeDeploymentConflict(deploymentSnapshot(p));if(deploymentConflict)return rejectOperation(p,kind,`与“${deploymentConflict.label}”使用相同项目资源，请先核对原操作。`);
    const server=sr(p.server);if(!server||server.state!=='online')return rejectOperation(p,kind,'主机身份或连接尚未核对，不能执行部署变更。');
    if(p.type==='compose'&&!server.docker)return rejectOperation(p,kind,'缺少 Docker / Compose。请在服务器详情中明确执行环境准备；巡检不会自动安装。');
-   if(p.type==='systemd'&&!executableFileFor(p.cfg.program,server))return rejectOperation(p,kind,`未找到程序 ${p.cfg.program} 对应 ${server.arch} 的 ELF 文件，请先在“文件”页面提供。`);
+   if(p.type==='systemd'&&p.cfg.program&&!projectProgramFile(p))return rejectOperation(p,kind,`未找到程序 ${p.cfg.program} 对应 ${server.arch} 的 ELF 文件，请先在“文件”页面提供。`);
+   const preview=deploymentLocation(p);if(preview.errors.length)return rejectOperation(p,kind,preview.errors.join('；'));
    mappedFiles=resolvedFileMappings(p.cfg.fileMappings,server);
    const invalidMapping=mappedFiles.find(mapping=>targetFilePathError(mapping.targetPath));if(invalidMapping)return rejectOperation(p,kind,`文件映射 ${invalidMapping.file} 的目标路径无效，请先修正部署配置。`);
    const missingMapping=mappedFiles.find(mapping=>!mapping.binary);if(missingMapping)return rejectOperation(p,kind,`文件映射 ${missingMapping.file} 缺少适用于 ${server.arch} 的文件，请先在“文件”页面提供通用或对应架构版本。`);
@@ -81,7 +82,7 @@ function startOperation(p,kind,input={},outcome='success',options={}){
  const fixed={...clone(input),...(p?{cfg:clone(p.cfg),applied:clone(p.applied),draftRev:p.draftRev,before:{life:p.life,runtime:p.runtime,desired:p.desired,health:p.health}}:{})};
  if(p)fixed.deployment=deploymentSnapshot(p,fixed.cfg);
  if(mappedFiles.length)fixed.mappedFiles=clone(mappedFiles);
- if(p?.type==='systemd'&&['deploy','update'].includes(kind)){const binary=executableFileFor(p.cfg.program,sr(p.server));if(binary){fixed.binary=clone(binary);fixed.cfg.contentIdentity=binary.identity;}}
+ if(p?.type==='systemd'&&['deploy','apply','update'].includes(kind)){const binary=projectProgramFile(p);if(binary){fixed.binary=clone(binary);fixed.cfg.contentIdentity=binary.identity;}}
  if(p&&isRuntimeAction(kind))fixed.requestedState=kind==='stop'?'stopped':'running';
  if(p&&kind==='deploy'){delete fixed.desired;fixed.requestedState='running';}
  const o={id:uid('op'),kind,project:p?.id,label:input.label||`${opLabels[kind]||'修改网络'} ${p?.name||''}`,status:'running',time:now(),input:fixed,resources,outcome,steps:stepsFor(kind,fixed),message:'已受理并固定输入；这里仅执行浏览器模拟。',hold:!!options.hold,newProject:options.newProject===true};o.steps[0].status='running';S.operations.unshift(o);

@@ -71,6 +71,7 @@ test('普通文件与空文件均按通用范围保存，并显示文件类型',
   assert.match(p.html('app'), /通用/);
   assert.match(p.html('app'), /text\/yaml/);
   p.click('templateedit');
+  p.click('template-map-add');
   assert.match(p.html('modal'), /settings\.yaml · 通用/);
 });
 
@@ -148,12 +149,13 @@ test('替换拒绝适用范围不符、跨记录重复内容及目标记录变�
 
 test('通用文件替换只提醒实际使用该记录的项目，架构专用版本优先', async () => {
   const p = prototype(), shared = await save(p, genericFile());
-  p.run(`pr("p1").cfg.fileMappings=[{file:"settings.yaml",targetPath:"/srv/app/settings.yaml"}];pr("p6").cfg.fileMappings=[{file:"settings.yaml",targetPath:"/srv/app/settings.yaml"}];`);
+  p.run(`pr("p1").cfg.fileMappings=[pinMapping({file:"settings.yaml",targetPath:"/srv/app/settings.yaml"})];pr("p6").cfg.fileMappings=[pinMapping({file:"settings.yaml",targetPath:"/srv/app/settings.yaml"})];`);
   await save(p, elfFile('settings.yaml'));
   p.run('pr("p1").programUpdate=false;pr("p6").programUpdate=false;');
   await save(p, genericFile('settings-v2.yaml', 'example: changed\n'), 'settings-v2.yaml', shared.id);
-  assert.equal(p.run('pr("p1").programUpdate'), false);
+  assert.equal(p.run('pr("p1").programUpdate'), true);
   assert.equal(p.run('pr("p6").programUpdate'), true);
+  assert.equal(p.run('pr("p1").cfg.fileMappings[0].pins[0].revision'),1);
 });
 
 test('命名返回保留分析结果，取消和关闭均不保存', async () => {

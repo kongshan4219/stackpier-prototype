@@ -5,8 +5,11 @@ if (prototypeLoading.errors.length) {
   showPrototypeLoadError();
 } else {
   try {
+    initializeAssets();
     initializeFailedDeployments();
     initializeFrp();
+    initializeAssets();
+    persist();
     prototypeLoading.ready = true;
   } catch (error) {
     prototypeLoading.errors.push(error.message);

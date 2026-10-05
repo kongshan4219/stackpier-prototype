@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { prototype } from './prototype-harness.mjs';
-import { referencePrototype } from './frp-fixtures.mjs';
+import { referencePrototype, simulatePrograms } from './frp-fixtures.mjs';
 
 function installed() {
   const p = referencePrototype(undefined, { hash: '#frp' });
@@ -51,6 +51,7 @@ test('表单打开后角色被卸载，保存时再次校验并拒绝写入', ()
 function emptyTopology() {
   const p = prototype(undefined, { hash: '#frp' });
   p.run('S.frp.nodes=[];S.projects=S.projects.filter(p=>!p.frpRef&&!p.frpInstallation);S.operations=[];frpGo("connections");');
+  simulatePrograms(p);
   return p;
 }
 
@@ -189,7 +190,8 @@ test('部署预览固定输入；公共配置变化拒绝旧确认，受理后�
   p.run('S.frp.token="DEMO_LATER_AUTH";S.frp.settingsRev++;frpSyncConfigs();');
   p.click('finishdemo', { id });
   assert.match(p.run('frpServerDeployment("s2","server").frpApplied.files.toml'), /DEMO_NEW_AUTH/);
-  assert.match(p.run('frpServerDeployment("s2","server").cfg.appConfig'), /DEMO_LATER_AUTH/);
+  assert.match(p.run('frpServerDeployment("s2","server").cfg.appConfig'), /DEMO_NEW_AUTH/);
+  assert.equal(p.run('frpServerDeployment("s2","server").frpAvailableUpdate'),true);
 });
 
 test('角色卸载先核对关联连接，已安装连接阻止卸载，草稿可保留但不能再应用', () => {
@@ -221,7 +223,7 @@ test('共用 frps 的认证变更不能只更新一条连接，未确认的服�
   deployRole(p, 's2', 'server');
   const first = connect(p, 's1', 's2');
   const second = connect(p, 's3', 's2');
-  p.run(`for(const id of [${JSON.stringify(first)},${JSON.stringify(second)}]){const o=frpRun([{node:id,role:"client"}],"deploy",{identity:true,impact:true,hold:true});frpFinish(o,"success");}S.frp.token="DEMO_UPDATED_AUTH";S.frp.settingsRev++;frpSyncConfigs();`);
+  p.run(`for(const id of [${JSON.stringify(first)},${JSON.stringify(second)}]){const o=frpRun([{node:id,role:"client"}],"deploy",{identity:true,impact:true,hold:true});frpFinish(o,"success");}S.frp.token="DEMO_UPDATED_AUTH";S.frp.settingsRev++;frpSyncConfigs();for(const p of S.projects.filter(p=>p.frpRef||p.frpInstallation)){const n=p.frpRef?frpNode(p.frpRef.node):p.frpApplied.node;frpAdoptProject(p,frpPublicCandidate(n,p.frpRef?.role||p.frpInstallation.role));}`);
   const applied = p.run('JSON.stringify(S.projects.filter(p=>p.frpApplied).map(p=>p.frpApplied))');
   p.run(`frpRun([{node:${JSON.stringify(first)},role:"server"},{node:${JSON.stringify(first)},role:"client"}],"deploy",{authChange:true,identity:true,impact:true,hold:true});`);
   assert.equal(p.run('S.operations[0].status'), 'rejected');

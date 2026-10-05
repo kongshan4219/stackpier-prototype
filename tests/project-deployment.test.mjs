@@ -14,13 +14,14 @@ test('项目入口和弹窗统一使用部署项目，表单只保留三个字�
   assert.match(html, /<h2 id="dialog-title">部署项目<\/h2>/);
   assert.deepEqual([...html.matchAll(/name="(np-[^"]+)"/g)].map(match => match[1]), ['np-template', 'np-server', 'np-name']);
   assert.doesNotMatch(html, /np-port|np-env|np-desired|outcome|stepper|文件映射|配置文件预览/);
-  assert.match(html, /type="submit">部署项目<\/button>/);
+  assert.match(html, /type="submit">预览部署落点<\/button>/);
 });
 
-test('部署项目采用配置默认值并立即发起启动部署', () => {
+test('部署项目采用配置默认值，明确执行预览后发起启动部署', () => {
   const p = prototype();
   p.click('newproject', { template: 't1' });
   p.submit('newproject', { 'np-template': 't1', 'np-server': 's4', 'np-name': 'new-service' });
+  p.click('deployment-preview-execute');
   const project = JSON.parse(p.run('JSON.stringify(S.projects.find(project=>project.name==="new-service"))'));
   assert.equal(project.server, 's4');
   assert.equal(project.template, 't1');
@@ -39,26 +40,22 @@ test('部署项目采用配置默认值并立即发起启动部署', () => {
   assert.equal(p.run('S.projects.find(project=>project.name==="new-service").creationPending'), undefined);
 });
 
-test('新项目在部署前置检查被拒绝时进入失败记录，无需清理', () => {
-  const p = prototype(), before = p.run('S.projects.length');
-  p.click('newproject', { template: 't1' });
-  p.submit('newproject', { 'np-template': 't1', 'np-server': 's3', 'np-name': 'rejected-service' });
-  assert.equal(p.run('S.operations[0].status'), 'rejected');
-  assert.equal(p.run('S.projects.length'), before);
-  assert.equal(p.run('ui.page'), 'projects');
-  assert.match(p.html('modal'), /归入失败记录/);
-  assert.doesNotMatch(p.html('modal'), /查看项目/);
-  p.click('closemodal');
-  assert.equal(p.run('S.failedProjects[0].cleanup.status'), 'none');
-  p.click('projectstab', { id: 'list' });
-  assert.doesNotMatch(p.html('app'), /rejected-service/);
-  assert.equal(prototype(p.saved()).run('S.projects.some(project=>project.name==="rejected-service")'), false);
+test('部署预览阻止无效服务器，尚未执行不会建立项目或失败记录', () => {
+  const p=prototype(),before=p.run('S.projects.length'),ops=p.run('S.operations.length');
+  p.click('newproject',{template:'t1'});
+  p.submit('newproject',{'np-template':'t1','np-server':'s3','np-name':'blocked-service'});
+  assert.match(p.html('modal'),/阻止执行/);
+  p.click('deployment-preview-execute');
+  assert.equal(p.run('S.projects.length'),before);
+  assert.equal(p.run('S.operations.length'),ops);
+  assert.equal(p.run('S.failedProjects.length'),0);
 });
 
 test('刷新后未确认的部署归入失败记录，项目列表不显示', () => {
   const p = prototype();
   p.click('newproject', { template: 't1' });
   p.submit('newproject', { 'np-template': 't1', 'np-server': 's4', 'np-name': 'unresolved-service' });
+  p.click('deployment-preview-execute');
   const reloaded = prototype(p.saved());
   assert.equal(reloaded.run('S.operations[0].status'), 'unknown');
   assert.equal(reloaded.run('S.projects.some(project=>project.name==="unresolved-service")'), false);
@@ -73,6 +70,7 @@ test('新项目明确部署失败后不留在列表，原项目再次部署失�
   const p = prototype();
   p.click('newproject', { template: 't1' });
   p.submit('newproject', { 'np-template': 't1', 'np-server': 's4', 'np-name': 'failed-service' });
+  p.click('deployment-preview-execute');
   assert.equal(p.run('S.operations[0].status'), 'running');
   p.run("finishOperation(S.operations[0],'failed');");
   assert.equal(p.run('S.projects.some(project=>project.name==="failed-service")'), false);
@@ -87,6 +85,7 @@ test('新项目明确部署失败后不留在列表，原项目再次部署失�
   p.click('navigate', { page: 'projects' });
   p.click('newproject', { template: 't1' });
   p.submit('newproject', { 'np-template': 't1', 'np-server': 's4', 'np-name': 'failed-service' });
+  p.click('deployment-preview-execute');
   assert.equal(p.run('S.projects.filter(project=>project.name==="failed-service").length'), 1);
   assert.equal(p.run('S.operations[0].status'), 'running');
   p.run("const existing=pr('p2');const removed=startOperation(existing,'uninstall',{},'success',{hold:true});finishOperation(removed,'success');const retry=startOperation(existing,'deploy',{},'failed',{hold:true});finishOperation(retry,'failed');");
@@ -117,6 +116,7 @@ test('同一服务器拒绝重复项目名，不同服务器允许同名', () =>
   p.click('closemodal');
   p.click('newproject');
   p.submit('newproject', { 'np-template': 't1', 'np-server': 's1', 'np-name': 'catalog-api' });
+  p.click('deployment-preview-execute');
   assert.equal(p.run('S.projects.filter(project=>project.name==="catalog-api").length'), 2);
 });
 

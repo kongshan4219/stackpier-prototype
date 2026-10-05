@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { prototype } from './prototype-harness.mjs';
-import { referencePrototype } from './frp-fixtures.mjs';
+import { referencePrototype, simulatePrograms } from './frp-fixtures.mjs';
 
 function oldDefault(mutation = '') {
   const p = referencePrototype(undefined, { hash: '#frp' });
@@ -49,8 +49,8 @@ test('当前 FRP 样例展示已登记服务器关系和四条连接配置，复
   assert.deepEqual(JSON.parse(prototype(p.saved(), { hash: '#frp' }).saved()), state, '刷新不重放样例部署或改变完整参照');
 });
 
-test('样例连接仍通过应用配置流程启动，停止的完整参照支持原 unit 启动', () => {
-  const p = prototype(undefined, { hash: '#frp' });
+test('提供有效模拟程序元数据后应用配置才启动，停止的完整参照支持原 unit 启动', () => {
+  const p = simulatePrograms(prototype(undefined, { hash: '#frp' }));
   p.click('frp-op', { node: 'n2', role: 'client', op: 'deploy' });
   assert.equal(p.document.querySelector('#fo-binary'), null);
   p.submit('frp-op', { 'fo-identity': 'on', 'fo-impact': 'on', 'fo-hold': 'on', outcome: 'success' });
@@ -62,18 +62,13 @@ test('样例连接仍通过应用配置流程启动，停止的完整参照支�
   assert.equal(p.run('pr(frpPid(frpNode("n4"),"visitor")).runtime'), 'stopped');
 });
 
-test('刷新未修改的旧默认样例，保留非 FRP 草稿、意见与既有数据', () => {
-  const saved = oldDefault(earlyFileCache+'pr("p1").name="保留项目";pr("p1").cfg.appConfig="保留草稿";sr("s3").name="数据副本节点";S.review.notes=[{text:"保留意见"}];S.projects.filter(p=>p.frpRef).forEach(p=>delete p.stopVerified);');
-  const before = JSON.parse(saved);
-  const p = prototype(saved, { hash: '#frp' });
-  const after = JSON.parse(p.saved());
-  assert.equal(after.frp.sampleVersion, 1);
-  assert.equal(p.run('frpInstalledServers("client").length'), 2);
-  assert.equal(p.run('frpInstalledServers("server").length'), 2);
-  assert.deepEqual(after.projects.filter(project => !project.frpRef && !project.frpInstallation), before.projects.filter(project => !project.frpRef));
-  for (const key of ['operations', 'dns', 'firewalls', 'notifications', 'settings', 'review']) assert.deepEqual(after[key], before[key], key);
-  assert.deepEqual(after.servers, before.servers.filter(server => !server.id.startsWith('frp-')));
-  assert.deepEqual(JSON.parse(prototype(p.saved(), { hash: '#frp' }).saved()), after);
+test('旧参考清单保持原样，附件和多客户端示例只通过显式操作切换', () => {
+  const saved=oldDefault(earlyFileCache+'pr("p1").name="保留项目";pr("p1").cfg.appConfig="保留草稿";');
+  const p=prototype(saved,{hash:'#frp'});
+  assert.equal(p.run('S.frp.sampleVersion'),undefined);
+  assert.equal(p.run('frpInstalledServers("client").length'),0);
+  assert.equal(p.run('pr("p1").cfg.appConfig'),'保留草稿');
+  assert.equal(p.run('S.frp.nodes.length'),4);
 });
 
 test('编辑、关联或部署过的旧 FRP 数据不会被默认样例替换', () => {
@@ -93,6 +88,7 @@ test('编辑、关联或部署过的旧 FRP 数据不会被默认样例替换', 
     const saved = oldDefault(mutation), before = JSON.parse(saved);
     const after = JSON.parse(prototype(saved).saved());
     assert.deepEqual(after.frp, before.frp, mutation);
+    for(const project of after.projects)delete project.frpAvailableUpdate;for(const project of before.projects)delete project.frpAvailableUpdate;
     assert.deepEqual(after.projects, before.projects, mutation);
     assert.deepEqual(after.servers, before.servers, mutation);
     assert.equal(after.frp.sampleVersion, undefined, mutation);

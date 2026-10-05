@@ -10,7 +10,7 @@ function frpSampleState(){
  const nodes=pairs.map(([provider,server,prefix,offset],index)=>{
   const host=sr(server),id='n'+(index+1),proxies=clone(FRP_SOURCE.config.servers[index].proxies);
   for(const x of proxies){x.name=prefix+'-'+x.name.replace('example-','');if(x.type==='tcp')x.remote_port+=offset;}
-  return {id,ip:host.host,ssh_user:host.user,arch:host.arch,provider,server,bind_addr:'0.0.0.0',bind_port:7000,proxies,revision:1,clientInstallation:frpInstallationId(provider,'client'),roleProjects:{server:frpInstallationId(server,'server')},serverUnit:'frps-'+server+'.service'};
+  return {id,ip:host.host,ssh_user:host.user,arch:host.arch,provider,server,bind_addr:'0.0.0.0',bind_port:7000,proxies,revision:1,client_enabled:FRP_SOURCE.config.servers[index].client_enabled,clientInstallation:frpInstallationId(provider,'client'),roleProjects:{server:frpInstallationId(server,'server')},serverUnit:'frps-'+server+'.service'};
  });
  return {...frpSampleSettings(nodes),sampleVersion:1,samplePending:true};
 }
@@ -34,38 +34,4 @@ function frpSeedSampleRoles(){
   p.cfg.version='模拟程序条件（非附件二进制）';p.applied=clone(p.cfg);p.appliedRev=p.draftRev;p.frpApplied=frpSnapshot(n,role);
  }
  delete S.frp.samplePending;
-}
-function frpRefreshReferenceSample(){
- // 仅刷新完全未修改的旧默认清单；有草稿、部署、操作或关联数据的用户状态保持原样。
- if(S.frp.sampleVersion!==undefined)return;
- const same=frpSampleEqual,reference=frpReferenceSample();
- if(!same(S.frp,reference))return;
- const defaults=initial().servers;
- if(!defaults.every(base=>{const server=sr(base.id);return server&&['host','port','user','arch'].every(key=>server[key]===base[key]);}))return;
- const hosts=[frpReferenceProvider(),...reference.nodes.map(frpReferenceServer)],hostIds=new Set(hosts.map(server=>server.id));
- if(hosts.some(base=>sr(base.id)&&!same(sr(base.id),base)))return;
- const projects=reference.nodes.flatMap(n=>['server','client',...(n.proxies.some(x=>x.type==='stcp')?['visitor']:[])].map(role=>frpDraftProject(n,role))),projectIds=new Set(projects.map(p=>p.id));
- const existing=S.projects.filter(p=>p.frpRef||p.frpInstallation);
- if(existing.length&&existing.length!==projects.length||!existing.length&&hosts.some(base=>sr(base.id)))return;
- if(existing.some(p=>!projectIds.has(p.id)||!frpReferenceProjectMatches(p,projects.find(base=>base.id===p.id))))return;
- if(S.operations.some(o=>o.frp||o.frpInstallation||projectIds.has(o.project)||hostIds.has(o.server)||o.resources?.some(resource=>resource.startsWith('project:')&&projectIds.has(resource.slice(8))||resource.startsWith('server:')&&hostIds.has(resource.slice(7)))))return;
- if([...S.projects,...S.dns,...S.firewalls,...S.notifications,...(S.failedProjects||[])].some(row=>!projectIds.has(row.id)&&(hostIds.has(row.server)||projectIds.has(row.project)||row.projects?.some(id=>projectIds.has(id)))))return;
- S.servers=S.servers.filter(server=>!hostIds.has(server.id));S.projects=S.projects.filter(p=>!projectIds.has(p.id));S.frp=frpSampleState();
-}
-function frpReferenceProjectMatches(project,base){
- const p=clone(project),n=frpNode(base.frpRef.node),role=base.frpRef.role;
- // 早期样例保留了派生的旧名称与文件缓存；仅接受默认生成内容，不忽略用户正文。
- if(![base.serverName,role==='client'?'FRP 内网执行机（待核对）':'FRP 云节点 '+n.ip].includes(p.serverName))return false;
- p.serverName=base.serverName;
- if(Object.hasOwn(p.cfg,'textDeployment')){
-  const f=frpFiles(n,role),expected={type:'systemd',serverId:base.server,fileName:frpUnit(n,role),workingDir:S.frp.root,content:f.unit,files:[{path:f.tomlPath,content:f.toml}],program:base.cfg.program,binaryPath:f.binaryPath};
-  if(!frpSampleEqual(p.cfg.textDeployment,expected))return false;
-  delete p.cfg.textDeployment;
- }
- return frpSampleEqual(p,base);
-}
-function frpSampleEqual(a,b){
- if(a===b)return true;
- if(!a||!b||typeof a!=='object'||typeof b!=='object'||Array.isArray(a)!==Array.isArray(b))return false;
- const keys=Object.keys(a);return keys.length===Object.keys(b).length&&keys.every(key=>Object.hasOwn(b,key)&&frpSampleEqual(a[key],b[key]));
 }

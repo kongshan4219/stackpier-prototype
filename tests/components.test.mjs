@@ -92,9 +92,9 @@ test('演示访问流程保留错误提示、首次设置与登录，密码不�
 test('共享配置跳转到 FRP 页面后不会重新打开已经关闭的弹窗', () => {
   const p = prototype();
   p.run('frpEnsure();openModal("templateedit",{id:"frp-template-client"});');
-  assert.equal(p.run('ui.page'), 'frp');
-  assert.equal(p.run('ui.modal'), null);
-  assert.equal(p.document.getElementById('modal').open, false);
+  assert.equal(p.run('ui.modal.kind'), 'frp-template');
+  assert.equal(p.run('ui.modal.id'), 'frpc.toml.tpl');
+  assert.equal(p.document.getElementById('modal').open, true);
 });
 
 test('共享配置正文原样保存；显式采用不改变服务器文件或运行状态', () => {
@@ -106,12 +106,15 @@ test('共享配置正文原样保存；显式采用不改变服务器文件或�
   assert.equal(p.run('subject.templateUpdate'), true);
   assert.equal(p.run('JSON.stringify(subject.cfg)===draftBefore&&JSON.stringify(subject.applied)===appliedBefore'), true);
   p.click('adopttemplate', { id: 'p3' });
+  assert.equal(p.run('configText(subject)===configText(subject,subject.applied)'),true);
+  p.click('asset-update-adopt',{id:'p3'});
   assert.equal(p.run('configText(subject)'), source);
   assert.equal(p.run('JSON.stringify(subject.applied)===appliedBefore&&subject.runtime===runtimeBefore&&S.operations.length===opsBefore'), true);
   p.click('project', { id: 'p3' });
   p.click('tab', { id: 'config' });
   assert.doesNotMatch(p.html('app'), /data-form="(?:file)?projectconfig"|保存草稿/);
-  assert.doesNotMatch(p.html('app'), /保留注释与首尾空白/);
+  assert.doesNotMatch(p.run('projectRuntimeFile(subject).content'), /保留注释与首尾空白/);
+  assert.match(p.html('app'), /项目草稿[\s\S]*保留注释与首尾空白/);
   const reloaded = prototype(p.saved());
   assert.equal(reloaded.run('configText(pr("p3"))'), source);
 });
@@ -177,11 +180,11 @@ test('新增连接拒绝未部署服务器，缺少选择不写入草稿', () =>
 });
 
 test('FRP 零字节占位拒绝部署；普通项目操作也不能绕过专用流程', () => {
-  const p = referencePrototype();
+  const p = referencePrototype(undefined,{mockPrograms:false});
   p.run('frpEnsure();const subject=pr("frp-n4-server");const result=frpRun([{node:"n4",role:"server"}],"deploy",{binary:false,identity:true,impact:true,hold:true}),rejected=S.operations[0];');
   assert.equal(p.run('result'), null);
   assert.equal(p.run('rejected.status'), 'rejected');
-  assert.match(p.run('rejected.message'), /零字节/);
+  assert.match(p.run('rejected.message'), /0 B/);
   assert.equal(p.run('subject.life'), 'draft');
   assert.equal(p.run('subject.applied'), null);
   p.run('startOperation(subject,"deploy",{},"success",{hold:true});const bypass=S.operations[0];');
@@ -199,7 +202,7 @@ for (const outcome of ['partial', 'unknown']) {
     assert.equal(p.run('pr("frp-n4-server").frpApplied.files.toml===fixedToml'), true);
     assert.equal(p.run('pr("frp-n4-server").runtime'), 'running');
     assert.equal(p.run('pr("frp-n4-visitor").frpApplied'), undefined);
-    assert.equal(p.run('frpPending(frpNode("n4"),"server")'), true);
+    assert.equal(p.run('pr("frp-n4-server").frpAvailableUpdate'), true);
     assert.equal(p.run('JSON.stringify([S.dns,S.firewalls])===networkBefore'), true);
     if (outcome === 'unknown') {
       assert.equal(p.run('activeOps(pr("frp-n4-visitor")).length'), 1);

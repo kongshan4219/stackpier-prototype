@@ -6,21 +6,21 @@ const frpPrefixes={server:'frps',client:'frpc',visitor:'frpc-visitor'};
 const frpTemplateSlots=Object.values(frpPrefixes).flatMap(prefix=>[prefix+'.toml.tpl',prefix+'.service.tpl']);
 const frpTemplateRole=name=>Object.keys(frpPrefixes).find(role=>name.startsWith(frpPrefixes[role]+'.'));
 const frpPid=(n,r)=>n.roleProjects?.[r]||'frp-'+n.id+'-'+r;
-const frpNode=id=>S.frp.nodes.find(n=>n.id===id);
+const frpNode=id=>S.frp.nodes.find(n=>n.id===id)||Object.values(S.frpProfiles||{}).flatMap(F=>F.nodes).find(n=>n.id===id);
 const frpLoopback=v=>v==='::1'||(validIPv4(v)&&v.split('.')[0]==='127');
 function frpInit(){
  if(!S.frp)S.frp=frpSampleState();
  const F=S.frp;F.settingsRev||=1;F.templateRev||=1;F.templateRevisions||=Object.fromEntries(frpTemplateSlots.map(name=>[name,F.templateRev]));
  // 旧节点认证仅转成显式待确认草稿；已应用和在途快照继续保留旧事实。
  for(const n of F.nodes){
-  delete n.client_enabled;
+  if(n.client_enabled===undefined)n.client_enabled=true; // 旧记录没有默认目标字段，保留可操作语义。
   const legacy=[n.token,n.authToken,n.tokenOverride,n.auth?.token].filter(value=>typeof value==='string'&&value);
   if(legacy.some(value=>value!==F.token)){n.authMigration={roles:['server','client',...(n.proxies.some(x=>x.type==='stcp')?['visitor']:[])],message:'旧节点认证与全局 token 不同；新草稿统一使用全局值，应用前须明确确认。'};n.revision++;}
   delete n.token;delete n.authToken;delete n.tokenOverride;delete n.tokenSource;delete n.tokenMode;delete n.inheritToken;
   if(n.auth){delete n.auth.token;if(!Object.keys(n.auth).length)delete n.auth;}
  }
  F.schema=3;
- frpRefreshReferenceSample();
+ // 保留已有参考清单；新版示例必须由用户明确载入。
 }
 function frpReferenceProvider(){return {id:'frp-source',name:'FRP 内网执行机（身份待提供）',host:'未在参考包中提供',port:22,user:'待指定',auth:'待登记',os:'Debian（参考说明）',arch:'x86_64',kernel:'未观测',state:'unknown',group:'FRP 参考',cpu:0,mem:0,disk:0,checked:null,fp:'参考记录，不代表已接入或已信任',docker:false};}
 function frpReferenceServer(n){return {id:n.server||'frp-host-'+n.id,name:'FRP 云节点 '+n.ip+'（参考）',host:n.ip,port:22,user:n.ssh_user,auth:'待登记',os:'未核对',arch:n.arch,kernel:'未观测',state:'unknown',group:'FRP 参考',cpu:0,mem:0,disk:0,checked:null,fp:'未提供 host key；架构为试用值，不是真实观测',docker:false};}
@@ -30,12 +30,13 @@ function frpDraftProject(n,r){
 }
 function frpEnsure(){
  frpInit(); const F=S.frp;
- // 只清理原型未被用户改动的旧 FRP 程序假样例，不删除用户自行添加的记录。
- S.programs=S.programs.filter(b=>!(b.id==='bin3'&&b.identity==='demo-frpc-a'&&b.filename==='frpc-linux-x86_64'));
+ const seedPublicAssets=!S.publicAssetsSeeded&&S.programs.length>0&&S.templates.length>0;S.publicAssetsSeeded=true;
+ // 历史自定义 FRP 文件与项目保留；专用角色引用明确的公共资产 ID。
  if(F.nodes.some(n=>n.provider==='frp-source')&&!sr('frp-source'))S.servers.push(frpReferenceProvider());
- for(const role of Object.keys(frpRoles))if(!tpl('frp-template-'+role))S.templates.push({id:'frp-template-'+role,name:frpRoles[role],type:'systemd',software:role==='server'?'frps':'frpc',program:role==='server'?'frps':'frpc',port:role==='server'?7000:'不固定监听',rev:1,version:'待提供真实程序',desc:'来自脱敏部署方案；独立配置、生成预览与逐角色应用',env:'',tpl:'见 FRP 部署 → 模板与审阅',fields:'使用 FRP 结构化表单',frpRole:role});
+ for(const role of seedPublicAssets?Object.keys(frpRoles):[])if(!tpl('frp-template-'+role))S.templates.push({id:'frp-template-'+role,name:frpRoles[role],type:'systemd',software:role==='server'?'frps':'frpc',program:role==='server'?'frps':'frpc',port:role==='server'?7000:'不固定监听',rev:1,version:'待提供真实程序',desc:'来自脱敏部署方案；独立配置、生成预览与逐角色应用',env:'',tpl:'见 FRP 部署 → 模板与审阅',fields:'使用 FRP 结构化表单',frpRole:role});
+ const historical=S.programs.find(b=>b.id==='bin3'&&b.identity==='demo-frpc-a');if(historical&&!historical.groupId)historical.groupId='legacy-frp-bin3';
  const binaries=[['frps','x86_64','frps'],['frps','aarch64','frps-arm64'],['frpc','x86_64','frpc'],['frpc','aarch64','frpc-arm64']];
- for(const [name,arch,filename] of binaries)if(!S.programs.some(b=>b.id==='frp-bin-'+filename))S.programs.push({id:'frp-bin-'+filename,name,arch,filename,size:'0 B · 脱敏占位，不可执行',bytes:0,placeholder:true,time:null,identity:'仅文件名；无版本、架构或完整性验证'});
+ for(const [name,arch,filename] of seedPublicAssets?binaries:[])if(!S.programs.some(b=>b.id==='frp-bin-'+filename))S.programs.push({id:'frp-bin-'+filename,groupId:'asset-frp-bin-'+name,name,arch,filename,size:'0 B · 脱敏占位，不可执行',bytes:0,placeholder:true,time:null,identity:'仅文件名；无版本、架构或完整性验证'});
  for(const n of F.nodes){
   const hid=n.server||'frp-host-'+n.id;if(!sr(hid))S.servers.push(frpReferenceServer(n));
   for(const r of ['server','client',...(n.proxies.some(x=>x.type==='stcp')?['visitor']:[])]){
@@ -44,6 +45,7 @@ function frpEnsure(){
   }
  }
  if(F.samplePending)frpSeedSampleRoles();
+ frpSyncConfigs();
 }
 function frpHost(n,r){return r==='client'?n.provider:(n.server||'frp-host-'+n.id);}
 // 只采用对应角色完整部署的原主机参照，不以草稿或程序名称推断已部署。
@@ -54,9 +56,9 @@ function frpInstalledServers(role){
 function frpValidateConnectionServers(candidate){
  for(const [role,host] of [['client',candidate.provider],['server',candidate.server]])if(!frpInstalledServers(role).some(server=>server.id===host))throw Error('请选择已部署 '+(role==='client'?'frpc 客户端':'frps 服务端')+' 的服务器；部署状态可能已变化，请重新选择。');
 }
-function frpAuthChange(n,r){const p=pr(frpPid(n,r));if(n.authMigration?.roles.includes(r))return true;if(!p?.frpApplied)return false;const line=text=>text.match(/^\s*auth\.token\s*=.*$/m)?.[0]?.trim();return line(p.frpApplied.files.toml)!==line(frpRenderSafe(n,r).toml);}
-function frpPending(n,r){const p=pr(frpPid(n,r));return !!n.authMigration?.roles.includes(r)||!p?.frpApplied||JSON.stringify(p.frpApplied.files)!==JSON.stringify(frpRenderSafe(n,r));}
+function frpAuthChange(n,r){const p=pr(frpPid(n,r));if(n.authMigration?.roles.includes(r))return true;if(!p?.frpApplied)return false;const line=text=>text.match(/^\s*auth\.token\s*=.*$/m)?.[0]?.trim();return line(p.frpApplied.files.toml)!==line((p.frpDraft?.files||frpRenderSafe(n,r)).toml);}
+function frpPending(n,r){const p=n&&pr(frpPid(n,r));return !!n?.authMigration?.roles.includes(r)||!p?.frpApplied||JSON.stringify(p.frpApplied.files)!==JSON.stringify(p.frpDraft?.files)||p.frpApplied.programRef&&JSON.stringify(p.frpApplied.programRef)!==JSON.stringify(p.frpDraft?.programRef);}
 function frpAffectedRoles(role){return S.frp.nodes.flatMap(n=>Object.keys(frpRoles).filter(r=>(!role||r===role)&&(r!=='visitor'||n.proxies.some(x=>x.type==='stcp')||pr(frpPid(n,r)))).map(r=>({node:n,role:r,project:pr(frpPid(n,r))})));}
 function frpAuthImpact(items){return frpAffectedRoles().filter(x=>items.some(item=>item.node===x.node.id)&&(x.project?.life==='installed'||items.some(item=>item.node===x.node.id&&item.role===x.role))&&frpAuthChange(x.node,x.role));}
-function frpSyncConfigs(){if(!S.frp)return;for(const p of S.projects.filter(p=>p.frpInstallation?.role==='server'&&p.frpApplied)){const files=frpRenderSafe(p.frpApplied.node,'server');if(p.cfg.appConfig!==files.toml||p.frpDraftUnit!==files.unit)p.draftRev++;p.cfg.appConfig=files.toml;p.frpDraftUnit=files.unit;p.cfg.dataDir=S.frp.root;p.cfg.serviceUser=S.frp.user;}for(const p of S.projects.filter(x=>x.frpRef)){const n=frpNode(p.frpRef.node);if(!n)continue;const files=frpRenderSafe(n,p.frpRef.role),changed=p.cfg.appConfig!==files.toml||p.frpDraftUnit!==files.unit;p.cfg.appConfig=files.toml;p.frpDraftUnit=files.unit;p.cfg.dataDir=S.frp.root;p.cfg.serviceUser=S.frp.user;p.cfg.port=p.frpRef.role==='server'?n.bind_port:0;if(changed)p.draftRev++;p.frpDraftRefs={nodeRevision:n.revision,settingsRevision:S.frp.settingsRev,templateRevisions:clone(S.frp.templateRevisions)};}}
+function frpSyncConfigs(){if(S.frp)frpSyncDrafts();}
 function frpSaveNode(candidate,old){if(!old)frpValidateConnectionServers(candidate);const previousNodes=clone(S.frp.nodes);if(old)S.frp.nodes[S.frp.nodes.findIndex(n=>n.id===old.id)]=candidate;else S.frp.nodes.push(candidate);const errors=frpValidate();if(errors.length){S.frp.nodes=previousNodes;throw Error(errors.join('；'));}if(old&&Object.keys(frpRoles).some(r=>(r!=='server'||!old.roleProjects?.server)&&frpHost(old,r)!==frpHost(candidate,r)&&pr(frpPid(old,r))?.life==='installed')){S.frp.nodes=previousNodes;throw Error('已部署客户端的主机不能通过编辑清单偷偷换机；本轮不实现迁移。');}frpEnsure(); for(const r of Object.keys(frpRoles)){const p=pr(frpPid(candidate,r));if(p&&p.life==='draft')p.server=frpHost(candidate,r);}frpSyncConfigs();persist();}

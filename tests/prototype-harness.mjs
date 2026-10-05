@@ -61,11 +61,11 @@ function matches(element, selectors) {
 }
 
 function elements(html) {
-  return [...html.matchAll(/<([a-z][\w-]*)\b([^>]*)>/gi)].map(match => {
+  const parsed = [...html.matchAll(/<([a-z][\w-]*)\b([^>]*)>/gi)].map(match => {
     const element = new Element(match[1], attributes(match[2]));
     if (element.tagName === 'SELECT' || element.tagName === 'TEXTAREA') {
       const content = html.slice(match.index + match[0].length).split(new RegExp(`</${match[1]}\\s*>`, 'i'))[0];
-      if (element.tagName === 'TEXTAREA') element.value = decode(content);
+      if (element.tagName === 'TEXTAREA') element.value = decode(content.replace(/^\n/,''));
       else {
         const options = [...content.matchAll(/<option\b([^>]*)>([^<]*)<\/option>/gi)].map(([, attrs, text]) => ({ attrs: attributes(attrs), text }));
         const selected = options.find(option => Object.hasOwn(option.attrs, 'selected')) || options[0];
@@ -74,10 +74,12 @@ function elements(html) {
     }
     return element;
   });
+  for(const form of parsed.filter(item=>item.tagName==='FORM'))form._fields=parsed.filter(item=>['INPUT','SELECT','TEXTAREA'].includes(item.tagName));
+  return parsed;
 }
 
 class FormData {
-  constructor(form) { this.values = Object.entries(form.values || {}).flatMap(([key, value]) => (Array.isArray(value) ? value : [value]).map(item => [key, item])); }
+  constructor(form) { if(!form.values){this.values=(form._fields||[]).filter(item=>item.name&&!item.disabled&&!['file','submit','button'].includes(item.type)&&(!['checkbox','radio'].includes(item.type)||item.checked)).map(item=>[item.name,item.value]);return;}this.values = Object.entries(form.values || {}).flatMap(([key, value]) => (Array.isArray(value) ? value : [value]).map(item => [key, item])); }
   get(key) { return this.values.find(([name]) => name === key)?.[1] ?? null; }
   getAll(key) { return this.values.filter(([name]) => name === key).map(([, value]) => value); }
   has(key) { return this.values.some(([name]) => name === key); }
@@ -112,7 +114,7 @@ export function prototype(saved, { hash = '', missingScript } = {}) {
   let timerId = 0;
   const schedule = callback => { scheduled.set(++timerId, callback); return timerId; };
   const context = vm.createContext({
-    document, FormData, URL, console, crypto: webcrypto, TextEncoder,
+    document, FormData, URL, console, crypto: webcrypto, TextEncoder, TextDecoder,
     location: { hash, reload() {} }, window, navigator: {},
     localStorage: { getItem: () => stored || null, setItem: (_, value) => { stored = value; } },
     setTimeout: schedule, setInterval: schedule,

@@ -72,7 +72,7 @@ test('固定占位支持参考包两种写法及字面美元，不读取环境�
   assert.throws(() => p.run('frpSubstitute("${process.env.SECRET}",{})'));
 });
 
-test('全局token保存只改草稿，STCP密钥、在途输入及旧应用参照保持', () => {
+test('全局token保存只提示更新、保留草稿，STCP密钥、在途输入及旧应用参照保持', () => {
   const p = installed(['server', 'client', 'visitor']);
   p.run('const beforeApplied=JSON.stringify(S.projects.map(p=>p.frpApplied)),beforeSecrets=JSON.stringify(S.frp.nodes.map(n=>n.proxies.map(x=>x.secret_key)));const pendingOp=frpRun([{node:"n3",role:"server"}],"deploy",{binary:true,identity:true,impact:true,hold:true}),frozen=JSON.stringify(pendingOp.input);');
   p.click('frp-settings');
@@ -84,12 +84,12 @@ test('全局token保存只改草稿，STCP密钥、在途输入及旧应用参�
   assert.equal(p.run('frpAffectedRoles().every(x=>frpFiles(x.node,x.role).toml.includes("DEMO_NEW_GLOBAL_TOKEN"))'), true);
   p.run('frpFinish(pendingOp,"success");');
   assert.equal(p.run('pr("frp-n3-server").frpApplied.files.toml.includes("DEMO_NEW_GLOBAL_TOKEN")'), false);
-  assert.equal(p.run('frpPending(frpNode("n3"),"server")'), true);
+  assert.equal(p.run('pr("frp-n3-server").frpAvailableUpdate'), true);
 });
 
 test('同连接认证更新须明确覆盖旧认证角色，其他连接不自动部署', () => {
   const p = installed(['server', 'client', 'visitor']);
-  p.run('S.frp.token="DEMO_GLOBAL_CHANGED";S.frp.settingsRev++;frpSyncConfigs();const otherBefore=JSON.stringify(pr("frp-n3-server"));frpRun([{node:"n4",role:"server"}],"deploy",{binary:true,identity:true,impact:true,authChange:true,hold:true});');
+  p.run('S.frp.token="DEMO_GLOBAL_CHANGED";S.frp.settingsRev++;frpSyncConfigs();for(const r of ["server","client","visitor"])frpAdoptProject(pr(frpPid(frpNode("n4"),r)),frpPublicCandidate(frpNode("n4"),r));const otherBefore=JSON.stringify(pr("frp-n3-server"));frpRun([{node:"n4",role:"server"}],"deploy",{binary:true,identity:true,impact:true,authChange:true,hold:true});');
   assert.equal(p.run('S.operations[0].status'), 'rejected');
   assert.match(p.run('S.operations[0].message'), /配对角色仍使用旧认证/);
   p.click('frp-group', { node: 'n4' });
@@ -116,7 +116,7 @@ test('旧节点不同token迁移为待确认草稿，不改变已应用及历史
 test('预览后修订变化拒绝受理，不悄悄采用新token', () => {
   const p = prototype(undefined, { hash: '#frp' });
   p.click('frp-op', { node: 'n4', role: 'server', op: 'deploy' });
-  p.run('S.frp.token="DEMO_CHANGED_AFTER_PREVIEW";S.frp.settingsRev++;');
+  p.run('S.frp.token="DEMO_CHANGED_AFTER_PREVIEW";S.frp.settingsRev++;frpAdoptProject(pr("frp-n4-server"),frpPublicCandidate(frpNode("n4"),"server"));');
   p.submit('frp-op', { 'fo-binary': 'on', 'fo-identity': 'on', 'fo-impact': 'on', 'outcome': 'success', 'fo-hold': 'on' });
   assert.equal(p.run('S.operations[0].status'), 'rejected');
   assert.match(p.run('S.operations[0].message'), /预览后配置/);

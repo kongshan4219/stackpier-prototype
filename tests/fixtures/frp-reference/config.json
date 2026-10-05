@@ -1,0 +1,108 @@
+{
+  "version": 1,
+  "paths": {
+    "systemd_dir": "/etc/systemd/system"
+  },
+  "auth": {
+    "method": "token",
+    "token": "EXAMPLE_AUTH_TOKEN_NOT_FOR_PRODUCTION"
+  },
+  "servers": [
+    {
+      "ip": "192.0.2.10",
+      "ssh_user": "example-admin",
+      "client_enabled": false,
+      "bind_addr": "0.0.0.0",
+      "bind_port": 7000,
+      "proxies": [
+        {
+          "name": "http",
+          "type": "tcp",
+          "local_ip": "127.0.0.1",
+          "local_port": 80,
+          "remote_port": 18080
+        },
+        {
+          "name": "https",
+          "type": "tcp",
+          "local_ip": "127.0.0.1",
+          "local_port": 443,
+          "remote_port": 18443
+        }
+      ]
+    },
+    {
+      "ip": "198.51.100.20",
+      "ssh_user": "example-admin",
+      "client_enabled": true,
+      "bind_addr": "0.0.0.0",
+      "bind_port": 7000,
+      "proxies": [
+        {
+          "name": "http",
+          "type": "tcp",
+          "local_ip": "127.0.0.1",
+          "local_port": 80,
+          "remote_port": 18080
+        },
+        {
+          "name": "https",
+          "type": "tcp",
+          "local_ip": "127.0.0.1",
+          "local_port": 443,
+          "remote_port": 18443
+        }
+      ]
+    },
+    {
+      "ip": "203.0.113.30",
+      "ssh_user": "example-admin",
+      "client_enabled": false,
+      "bind_addr": "0.0.0.0",
+      "bind_port": 7000,
+      "proxies": [
+        {
+          "name": "http",
+          "type": "tcp",
+          "local_ip": "127.0.0.1",
+          "local_port": 80,
+          "remote_port": 18080
+        },
+        {
+          "name": "https",
+          "type": "tcp",
+          "local_ip": "127.0.0.1",
+          "local_port": 443,
+          "remote_port": 18443
+        },
+        {
+          "name": "example-database",
+          "type": "stcp",
+          "secret_key": "EXAMPLE_STCP_SECRET_03_NOT_FOR_PRODUCTION",
+          "local_ip": "127.0.0.1",
+          "local_port": 3306,
+          "visitor_bind_addr": "127.0.0.1",
+          "visitor_bind_port": 13307
+        }
+      ]
+    },
+    {
+      "ip": "192.0.2.40",
+      "ssh_user": "example-admin",
+      "client_enabled": true,
+      "bind_addr": "0.0.0.0",
+      "bind_port": 7000,
+      "proxies": [
+        {
+          "name": "example-database",
+          "type": "stcp",
+          "secret_key": "EXAMPLE_STCP_SECRET_04_NOT_FOR_PRODUCTION",
+          "local_ip": "127.0.0.1",
+          "local_port": 3306,
+          "visitor_bind_addr": "127.0.0.1",
+          "visitor_bind_port": 13307
+        }
+      ]
+    }
+  ]
+}

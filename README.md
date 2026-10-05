@@ -10,6 +10,7 @@
 | --- | --- |
 | `assets/components/` | 工作台外壳、图标、公共控件和弹窗容器。 |
 | `assets/features/` | 各功能页面、弹窗、按钮及表单处理。 |
+| `assets/features/assets/` | 稳定 ID / 修订关系、迁移、文件与配置详情抽屉、落点预览和单项目采用。 |
 | `assets/features/programs.js`、`assets/features/programs/` | 通用文件列表、内容分析、上传和命名确认；可识别的 ELF 文件额外记录架构。 |
 | `assets/features/deployments.js`、`assets/features/deployments/` | 部署配置列表、编辑及文件到目标路径的映射。 |
 | `assets/features/projects/` | 项目列表、详情、部署、失败记录、残留清理及服务器文件观测。 |
@@ -26,10 +27,11 @@
 
 - [界面规则](docs/interface-guidelines.md)：文字层级、公共组件、响应式与键盘操作。
 - [文件](docs/files.md)：任意类型文件的上传、架构识别、命名、去重与替换规则。
+- [资产版本联动](docs/asset-linkage.md)：文件修订、项目草稿、已应用/读取快照、迁移及关键截图。
 - [部署配置](docs/deployment-configurations.md)：配置正文、文件映射及项目采用规则。
 - [部署项目](docs/project-deployment.md)：部署入口、失败记录、残留清理和同机项目名唯一性。
 - [项目文件与巡检](docs/project-files-and-checks.md)：服务器实际文件读取、检查方式和已移除范围。
-- [FRP 连接与部署](docs/frp-connections.md)：先部署角色、再创建连接的流程与卡片状态。
+- [FRP 连接与部署](docs/frp-connections.md)：三角色流程、公共资产引用、独立采用 / 应用；[附件行为对照](docs/frp-reference-behavior.md)与[验收证据](docs/frp-validation.md)。
 
 ## 维护方法
 
@@ -50,7 +52,7 @@ python3 -m http.server 4311 --bind 127.0.0.1
 运行组件测试：
 
 ```sh
-node --test tests/*.test.mjs
+node --test --test-isolation=none tests/*.test.mjs
 ```
 
 页面或交互修改还需在浏览器检查相关流程、布局、焦点和弹窗。测试结果只代表原型模拟，不代表正式应用实现或用户验收。

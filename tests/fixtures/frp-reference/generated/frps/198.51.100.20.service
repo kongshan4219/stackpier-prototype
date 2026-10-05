@@ -1,0 +1,17 @@
+[Unit]
+Description=frps server on 198.51.100.20
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/srv/services/frp/bin/frps -c /srv/services/frp/generated/frps/198.51.100.20.toml
+WorkingDirectory=/srv/services/frp
+User=root
+Restart=always
+RestartSec=3s
+KillMode=mixed
+TimeoutStopSec=30s
+
+[Install]
+WantedBy=multi-user.target
