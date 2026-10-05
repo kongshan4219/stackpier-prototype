@@ -2,7 +2,7 @@
 
 let S,storageOK=true;
 
-try{const raw=localStorage.getItem(STORE);S=raw?JSON.parse(raw):initial();if(S.version!==1)S=initial();}catch{S=initial();storageOK=false;}
+try{const raw=localStorage.getItem(STORE);S=raw?JSON.parse(raw):initial();if(!S||typeof S!=='object'||Array.isArray(S))throw new Error('无效存储');}catch{S=initial();storageOK=false;}
 
 // 只迁出本轮暂停的功能状态，其余项目、草稿、FRP、通知和反馈保持原值。
 function migrateDeferredProtection(state){

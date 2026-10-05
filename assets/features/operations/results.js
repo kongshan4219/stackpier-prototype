@@ -30,6 +30,7 @@ function finishRuntimeOperation(o,result='success',{recheck=false}={}){
 }
 
 function finishOperation(o,result='success'){
+ if(o?.kind==='network'&&o.input?.netType==='dns')return finishCloudflareOperation(o,result);
  if(o?.kind==='failed-cleanup')return finishFailedCleanup(o,result);
  if(o&&isRuntimeAction(o.kind))return finishRuntimeOperation(o,result);
  if(!o||!['running','unknown'].includes(o.status))return;clearInterval(timers.get(o.id));timers.delete(o.id);const p=pr(o.project),input=o.input,before=input.before||{},at=now();o.outcome=result;o.status=result;o.ended=result==='unknown'?null:at;
@@ -45,8 +46,8 @@ function finishOperation(o,result='success'){
   if(o.kind==='uninstall'&&['success','partial'].includes(result)){
    p.life='uninstalled';p.runtime='na';p.health='na';p.monitorPaused=true;p.dataStatus=input.deleteData?'deleted':'retained';p.observed=at;p.components=[];
    const ds=input.dnsIds||[],fs=input.fwIds||[];
-   if(result==='success'){S.dns=S.dns.filter(r=>!ds.includes(r.id));S.firewalls=S.firewalls.filter(r=>!fs.includes(r.id));o.message='核心已卸载，选择的分项已完成。操作记录保留，此项目定时巡检已暂停。';}
-   else{o.message=ds.length||fs.length?'核心服务已卸载，选定网络清理失败。项目已卸载事实不回退，定时巡检已暂停。':'核心服务已卸载；演示缺少选中的失败清理分项，因此本次没有可表示的网络失败，按核心成功记录。';if(!ds.length&&!fs.length){o.status='success';o.steps.forEach(s=>s.status='success');}}
+   if(result==='success'&&!dnsCleanupError(input)){S.dns=S.dns.filter(r=>!ds.includes(r.id));S.firewalls=S.firewalls.filter(r=>!fs.includes(r.id));o.message='核心已卸载，选择的分项已完成。操作记录保留，此项目定时巡检已暂停。';}
+   else{if(dnsCleanupError(input))o.status='partial';o.message=ds.length||fs.length?'核心服务已卸载，选定网络清理失败。项目已卸载事实不回退，定时巡检已暂停。':'核心服务已卸载；演示缺少选中的失败清理分项，因此本次没有可表示的网络失败，按核心成功记录。';if(!ds.length&&!fs.length){o.status='success';o.steps.forEach(s=>s.status='success');}}
   }
  }
  if(o.kind==='env'&&result==='success'){const s=sr(input.server);if(s)s.docker=true;o.message='缺失依赖已补齐（模拟）；未升级或替换任何已存在组件。';}

@@ -2,7 +2,7 @@
 
 function toast(text,tone=''){const r=document.getElementById('toasts'),d=document.createElement('div');d.className='toast '+tone;d.setAttribute('role',tone==='error'?'alert':'status');d.innerHTML=I(tone==='error'?'alert':'check')+`<span>${h(text)}</span>`;r.appendChild(d);setTimeout(()=>d.remove(),5200);}
 
-function navigate(page,id){ui.page=page==='project'||navItems.some(item=>item[0]===page)?page:'overview';if(id)ui.project=id;ui.q='';ui.filter='all';ui.server='all';ui.zone='all';ui.tab='overview';ui.nav=false;persist();render();window.scrollTo({top:0});document.querySelector('.page-heading h1')?.focus({preventScroll:true});}
+function navigate(page,id){ui.page=page==='project'||navItems.some(item=>item[0]===page)?page:'overview';if(id)ui.project=id;ui.q='';ui.filter='all';ui.server='all';ui.zone='all';ui.cfAccount='all';ui.tab='overview';ui.nav=false;persist();render();window.scrollTo({top:0});document.querySelector('.page-heading h1')?.focus({preventScroll:true});}
 
 // 收起的移动导航退出键盘焦点顺序，打开时将焦点限制在抽屉中。
 function syncNavigationAccessibility(){

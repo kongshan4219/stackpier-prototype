@@ -5,6 +5,7 @@ if (prototypeLoading.errors.length) {
   showPrototypeLoadError();
 } else {
   try {
+    initializeCloudflare();
     initializeAssets();
     initializeFailedDeployments();
     initializeFrp();

@@ -56,6 +56,7 @@ function stepsFor(kind,input){const titles={deploy:['核对环境、身份与本
 
 function startOperation(p,kind,input={},outcome='success',options={}){
  if(!Object.hasOwn(opLabels,kind)&&kind!=='network'){closeModal();toast('此操作当前不提供，请从现有入口重新选择。');return null;}
+ if(p&&kind==='uninstall'){const err=prepareDnsCleanup(input);if(err)return rejectOperation(p,kind,err);}
  if(p&&kind==='deploy'&&!p.applied){options={...options,newProject:true};p.creationPending=true;}
  let mappedFiles=[];
  if(p){

@@ -1,0 +1,8 @@
+/* DNS 保留同一张表，窄屏横向滚动，避免账号、内容和确认状态被挤成逐字换行。 */
+.dns-records table{min-width:1040px}
+.dns-records td:nth-child(1){min-width:160px}
+.dns-records td:nth-child(2){min-width:210px}
+.dns-records td:nth-child(3){min-width:180px}
+.dns-records td:last-child{min-width:155px}
+.dns-scroll-hint{display:none}
+@media(max-width:820px){.dns-scroll-hint{display:block;padding:12px 18px;font-size:var(--font-meta);color:var(--muted);border-bottom:1px solid var(--line-soft)}}
