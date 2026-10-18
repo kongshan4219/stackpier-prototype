@@ -12,7 +12,7 @@ function projectCleanupPlan(p){
  if(p.frpApplied?.files.binaryPath&&!preserved.some(t=>t.path===p.frpApplied.files.binaryPath))preserved.push({kind:'file',path:p.frpApplied.files.binaryPath,reason:'共享 FRP 程序，始终保留'});
  const completed=p.cleanup?.items?.filter(t=>t.status==='success')||[];
  const remaining=targets.filter(t=>!completed.some(x=>x.kind===t.kind&&x.path===t.path));
- const network=[...S.dns.filter(r=>r.projects.includes(p.id)).map(r=>({kind:'DNS',id:r.id,label:r.name+'.'+r.zone,projects:clone(r.projects)})),...S.firewalls.filter(r=>r.projects.includes(p.id)).map(r=>({kind:'防火墙',id:r.id,label:sname(r.server)+' '+r.protocol+' '+r.port+' '+r.address,projects:clone(r.projects)}))];
+ const network=[...S.firewalls.filter(r=>r.projects.includes(p.id)).map(r=>({kind:'防火墙',id:r.id,label:sname(r.server)+' '+r.protocol+' '+r.port+' '+r.address,projects:clone(r.projects)}))];
  const frpConnections=(S.frp?.nodes||[]).filter(n=>Object.values(n.serviceBindings||{}).includes(p.id)).map(n=>({id:n.id,ip:n.ip,services:clone(n.serviceBindings)}));
  return {resourceSignature:projectResourceSignature(p),frpConnections,projectId:p.id,name:p.name,server:serverOperationSnapshot(p.server),targets,remaining,preserved,network,completed};
 }
@@ -48,7 +48,7 @@ function finishProjectCleanup(o,p,result){
  p.cleanup={operation:o.id,status:result,items:[...previous,...items],at:now()};o.cleanupResults=clone(p.cleanup.items);o.protectionReleased=result!=='unknown';recordResourceCleanup(p,o,items);
  if(result==='success'&&plan.targets.every(t=>p.cleanup.items.some(x=>x.path===t.path&&x.kind===t.kind&&x.status==='success'))){
   o.completeCleanup=true;completeUninstallResolution(o);o.message='所有必需专属资源与数据已清理并核对（模拟），项目实体已移除；公共资产和共享网络保留。';
-  for(const rows of [S.dns,S.firewalls])for(const row of rows)if(row.projects.includes(p.id)){row.historicalProjects||=[];if(!row.historicalProjects.some(x=>x.id===p.id))row.historicalProjects.push({id:p.id,name:p.name,removedAt:now()});row.projects=row.projects.filter(id=>id!==p.id);}
+  for(const rows of [S.firewalls])for(const row of rows)if(row.projects.includes(p.id)){row.historicalProjects||=[];if(!row.historicalProjects.some(x=>x.id===p.id))row.historicalProjects.push({id:p.id,name:p.name,removedAt:now()});row.projects=row.projects.filter(id=>id!==p.id);}
   S.projects=S.projects.filter(x=>x.id!==p.id);if(ui.page==='project'&&ui.project===p.id){ui.page='projects';ui.project='';}
  }else{
   p.life='uninstalling';p.runtimeCheckStatus='unknown';p.monitorPaused=true;

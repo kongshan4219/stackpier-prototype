@@ -16,7 +16,7 @@ function cfProbe(profile,zones){
 function cfAccess(zoneId,write=false,connectionId){
  const z=cfZone(zoneId);if(!z)return {ok:false,reason:'Zone 引用不存在，归属待核对'};
  const c=connectionId?cfConnection(connectionId):cfCurrent(z.accountId);
- if(!c||c.removedAt||c.accountId!==z.accountId)return {ok:false,reason:'连接已移除 · 保留缓存及项目关联'};
+ if(!c||c.removedAt||c.accountId!==z.accountId)return {ok:false,reason:'连接已移除 · 保留缓存与历史'};
  if(!cfCredential(c))return {ok:false,reason:'凭据引用失效'};
  const p=c.check;if(!p?.network)return {ok:false,reason:'模拟网络失败 · 缓存不可写'};
  if(!p.valid)return {ok:false,reason:'模拟凭据失效'};
@@ -34,7 +34,7 @@ function cfTargetError(t,{write=true,fixedRevision=true}={}){
  if(fixedRevision&&(a.connection.credentialId!==t.credentialId||a.connection.credentialRevision!==t.credentialRevision))return '凭据修订已改变，请重新核对本次目标';
  return '';
 }
-function cfBusy(c){return S.operations.find(o=>['running','unknown'].includes(o.status)&&!o.protectionReleased&&(o.input?.cfTarget?.connectionId===c.id||(o.input?.dnsTargets||[]).some(t=>t.connectionId===c.id)||o.input?.cfNeedsReview));}
+function cfBusy(c){return S.operations.find(o=>o.kind==='network'&&o.input?.netType==='dns'&&['running','unknown'].includes(o.status)&&!o.protectionReleased&&(o.input.cfTarget?.connectionId===c.id||o.input.cfNeedsReview));}
 function cfConnectionState(c){const p=c.check;if(c.removedAt)return '连接已移除';if(!p?.network)return '网络失败';if(!p.valid)return '凭据失效';if(!p.zoneRead||!p.dnsRead)return '权限不足';if(!p.grants.length)return '无授权域名';return p.grants.some(g=>g.write)?'已连接 · 按 Zone 授权':'已连接 · 只读';}
 function cfEnsureAccount(state,id,name){
  const cf=state.cloudflare;let a=cf.accounts.find(a=>a.id===id);if(a)return a;
@@ -58,17 +58,20 @@ function migrateCloudflare(state){
   const a=cfEnsureAccount(state,'cf-account-legacy',state.settings.cfName||'旧版演示账号');
   for(const r of state.dns){if(!r.accountId&&!r.zoneId){const z=cfEnsureZone(state,a.id,r.zone);r.accountId=a.id;r.zoneId=z.id;}else if(r.zoneId&&!r.accountId){r.accountId=cf.zones.find(z=>z.id===r.zoneId)?.accountId||null;}}
   if(!cf.connections.some(c=>c.accountId===a.id))cfCreateConnection(state,a.id,a.name);
-  for(const o of state.operations){if((o.kind==='network'&&o.input?.netType==='dns'&&!o.input.cfTarget)||(o.input?.dnsIds?.length&&!o.input.dnsTargets)){o.input.cfNeedsReview=true;o.message=(o.message||'')+' · 历史账号归属待核对';}}
+  for(const o of state.operations){if((o.kind==='network'&&o.input?.netType==='dns'&&!o.input.cfTarget)){o.input.cfNeedsReview=true;o.message=(o.message||'')+' · 历史账号归属待核对';}}
   cf.legacyMigrated=true;
  }
  if(!cf.examplesAdded){
   const a=cfEnsureAccount(state,'cf-account-readonly');const z=cfEnsureZone(state,a.id,'readonly.example.org','cf-zone-readonly');
   if(!cf.connections.some(c=>c.accountId===a.id))cfCreateConnection(state,a.id,a.name,'readonly');
   // 保留旧四条记录；新示例仅初次补充，用户后续清空不会恢复。
-  if(state.dns.length&&!state.dns.some(r=>r.id==='dns-demo-readonly'))state.dns.push({id:'dns-demo-readonly',accountId:a.id,zoneId:z.id,zone:z.name,name:'status',type:'TXT',content:'stackpier simulation',ttl:'300',proxy:false,projects:[]});
+  if(state.dns.length&&!state.dns.some(r=>r.id==='dns-demo-readonly'))state.dns.push({id:'dns-demo-readonly',accountId:a.id,zoneId:z.id,zone:z.name,name:'status',type:'TXT',content:'stackpier simulation',ttl:'300',proxy:false});
   cf.examplesAdded=true;
  }
- cf.schema=1;return state;
+ // 仅清理当前记录及草稿的旧项目用途，原始操作快照保留作历史证据。
+ for(const r of state.dns){delete r.projects;delete r.historicalProjects;}
+ for(const [key,draft] of Object.entries(state.interactionDrafts||{}))if(key.startsWith('dnsedit|')&&draft.record){delete draft.record.projects;delete draft.record.historicalProjects;}
+ cf.schema=2;return state;
 }
 function initializeCloudflare(){migrateCloudflare(S);ui.cfAccount??='all';}
 function cfSaveConnection(candidate){

@@ -31,7 +31,7 @@
 - [部署配置](docs/deployment-configurations.md)：配置正文、文件映射及项目采用规则。
 - [部署项目](docs/project-deployment.md)：部署入口、失败记录、残留清理和同机项目名唯一性。
 - [项目文件与巡检](docs/project-files-and-checks.md)：服务器实际文件读取、检查方式和已移除范围。
-- [Cloudflare 账号与 DNS](docs/cloudflare-accounts.md)：统一账号管理、逐 Zone 权限、固定身份提交与旧数据迁移；[验证与截图](docs/cloudflare-validation.md)。
+- [Cloudflare 账号与 DNS](docs/cloudflare-accounts.md)：连接管理弹窗、独立 DNS、逐 Zone 权限、固定身份提交与旧数据迁移；[验证与截图](docs/cloudflare-validation.md)。
 - [配置 / FRP](docs/frp-connections.md)：连接映射管理、公共资产引用、配置采用 / 应用与统一项目部署；[附件行为对照](docs/frp-reference-behavior.md)与[验收证据](docs/frp-validation.md)。
 
 - [操作上下文与返回修改验收](docs/operation-context-repairs.md)：固定目标、FRP 身份、网络草稿、项目副本与历史路由。
@@ -61,7 +61,7 @@ python3 -m http.server 4311 --bind 127.0.0.1
 运行组件测试：
 
 ```sh
-node --test --test-isolation=none tests/*.test.mjs
+node --test --experimental-test-isolation=none tests/*.test.mjs
 ```
 
 页面或交互修改还需在浏览器检查相关流程、布局、焦点和弹窗。测试结果只代表原型模拟，不代表正式应用实现或用户验收。

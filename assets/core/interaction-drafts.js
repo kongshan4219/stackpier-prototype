@@ -14,7 +14,7 @@ function saveInteractionDraft(m=ui.modal){
  }else if(kind==='dnsconfirm'){kind='dnsedit';id=m.editorId;data={record:clone(m.record),expectedTarget:clone(m.target),baseRevision:m.baseRevision,outcome:m.outcome};}
  else if(kind==='dnsedit'&&fd&&form.dataset.form==='dnsedit'){
   const z=cfZone(get('dns-zone')||m.expectedTarget?.zoneId);
-  if(z)data={record:{...(m.record||{}),zoneId:z.id,zone:z.name,accountId:z.accountId,type:get('dns-type'),name:get('dns-name'),content:get('dns-content'),ttl:get('dns-ttl'),proxy:fd.has('dns-proxy'),projects:fd.getAll('dns-project').map(String)},expectedTarget:clone(m.expectedTarget),baseRevision:m.baseRevision,outcome:get('outcome')};
+  if(z)data={record:{...(m.record||{}),zoneId:z.id,zone:z.name,accountId:z.accountId,type:get('dns-type'),name:get('dns-name'),content:get('dns-content'),ttl:get('dns-ttl'),proxy:fd.has('dns-proxy')},expectedTarget:clone(m.expectedTarget),baseRevision:m.baseRevision,outcome:get('outcome')};
  }else if(kind==='firewallconfirm'){kind='firewalledit';id=m.editor.id;data={...m.editor,record:clone(m.record),outcome:m.outcome};}
  else if(kind==='firewalledit'&&fd){data={copyId:m.copyId,server:m.server,record:{...(m.record||{}),server:get('fw-server')||m.before?.server||'',direction:get('fw-direction'),protocol:get('fw-protocol'),port:get('fw-port'),address:get('fw-address'),action:get('fw-action'),scope:get('fw-scope'),projects:fd.getAll('fw-project').map(String)},outcome:get('outcome')};}
  else if(kind==='newproject'&&fd){data={template:get('np-template'),server:get('np-server'),name:get('np-name'),projectConfig:m.projectConfig,frpValues:{bind:get('np-frp-bind'),port:get('np-frp-port'),serverService:get('np-frp-server-service'),connection:get('np-frp-connection')}};}

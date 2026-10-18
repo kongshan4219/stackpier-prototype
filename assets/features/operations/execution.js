@@ -46,7 +46,7 @@ function resourcesFor(p,kind){const keys=['project:'+p.id];if(p.software==='mysq
 
 function intersects(a,b){return a===b||(a.endsWith(':*')&&b.startsWith(a.slice(0,-1)))||(b.endsWith(':*')&&a.startsWith(b.slice(0,-1)));}
 
-function conflictFor(resources){return S.operations.find(o=>['running','unknown'].includes(o.status)&&!o.protectionReleased&&o.resources?.some(a=>resources.some(b=>intersects(a,b))));}
+function conflictFor(resources){return S.operations.find(o=>['running','unknown'].includes(o.status)&&!o.protectionReleased&&o.resources?.some(a=>resources.some(b=>intersects(a,b)&&(!/^(dns|cf-connection):/.test(b)||o.kind==='network'&&o.input?.netType==='dns'))));}
 
 function record(label,kind,project,statusValue,message,extra={}){const o={id:uid('op'),label,kind,project,status:statusValue,time:now(),ended:now(),message,steps:[],input:{},resources:[],...extra};S.operations.unshift(o);persist();return o;}
 
@@ -56,7 +56,7 @@ function stepsFor(kind,input){const titles={deploy:['核对环境、身份与本
 
 function startOperation(p,kind,input={},outcome='success',options={}){
  if(!Object.hasOwn(opLabels,kind)&&kind!=='network'){closeModal();toast('此操作当前不提供，请从现有入口重新选择。');return null;}
- if(p&&kind==='uninstall'){const plan=projectCleanupPlan(p),err=projectCleanupError(p,plan);if(err)return rejectOperation(p,kind,err);input={...input,cleanupPlan:clone(plan),deleteData:true,dnsIds:[],fwIds:[]};}
+ if(p&&kind==='uninstall'){const plan=projectCleanupPlan(p),err=projectCleanupError(p,plan);if(err)return rejectOperation(p,kind,err);input={...input,cleanupPlan:clone(plan),deleteData:true,fwIds:[]};delete input.dnsIds;delete input.dnsTargets;}
  if(p&&kind==='deploy'&&!p.applied){options={...options,newProject:true};p.creationPending=true;}
  let mappedFiles=[];
  if(p){

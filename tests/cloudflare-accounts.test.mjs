@@ -8,7 +8,7 @@ function connect(p,{account=extra,profile='normal',id,token='STACKPIER_DEMO_TOKE
 }
 function save(p){p.submit('cfsave',{'cf-confirm':'on'});}
 function edit(p,id='dns1',content='203.0.113.17'){
- p.click('dnsedit',{id});p.submit('dnsedit',{'dns-type':'A','dns-name':'api','dns-content':content,'dns-ttl':'300','dns-project':['p1','p5'],'network-ack':'on','outcome':'success'});
+ p.click('dnsedit',{id});p.submit('dnsedit',{'dns-type':'A','dns-name':'api','dns-content':content,'dns-ttl':'300','network-ack':'on','outcome':'success'});
 }
 function operation(p,id='dns1',outcome='success'){
  return p.run(`(()=>{const r=clone(S.dns.find(r=>r.id===${JSON.stringify(id)}));r.content='203.0.113.18';return cloudflareNetworkOperation('upsert',r,${JSON.stringify(outcome)},cfTarget(r))?.id})()`);
@@ -45,7 +45,7 @@ test('只读与分 Zone 权限、失效、DNS 读取不足分别阻止写入',()
 });
 
 test('编辑不能隐式移动账号或 Zone，提交前重新校验修订',()=>{
- const p=prototype();edit(p);const id=p.run('cfCurrent("cf-account-legacy").id');p.run('cfCurrent("cf-account-legacy").credentialRevision++');p.submit('dnscommit',{'dns-confirm':'on','shared-ack':'on'});assert.match(p.document.getElementById('modal-error').textContent,/修订|失效/);assert.equal(p.run('S.dns[0].content'),'198.51.100.20');
+ const p=prototype();edit(p);const id=p.run('cfCurrent("cf-account-legacy").id');p.run('cfCurrent("cf-account-legacy").credentialRevision++');p.submit('dnscommit',{'dns-confirm':'on'});assert.match(p.document.getElementById('modal-error').textContent,/修订|失效/);assert.equal(p.run('S.dns[0].content'),'198.51.100.20');
  p.run('cfCurrent("cf-account-legacy").credentialRevision--');assert.equal(p.run('cloudflareNetworkOperation("upsert",{...S.dns[0],accountId:"cf-account-readonly",zoneId:"cf-zone-readonly"},"success",cfTarget(S.dns[0]))'),null);assert.equal(p.run('cfConnection('+JSON.stringify(id)+').accountId'),primary);
 });
 
@@ -67,9 +67,8 @@ test('读取核对失败保持未知，确认结束不伪造 DNS 成功',()=>{
  const p=prototype(),id=operation(p,'dns1','unknown');finish(p,id,'unknown');p.run('cfCurrent("cf-account-legacy").check.valid=false');p.click('verifyop',{id});p.submit('verifyop',{'verify-result':'success','verify-evidence':'on'});assert.equal(p.run('S.operations.find(o=>o.id==='+JSON.stringify(id)+').status'),'unknown');p.submit('verifyop',{'verify-result':'ended-unknown','verify-evidence':'on'});assert.equal(p.run('S.operations.find(o=>o.id==='+JSON.stringify(id)+').protectionReleased'),true);assert.equal(p.run('S.dns[0].content'),'198.51.100.20');
 });
 
-test('移除只断开管理连接，保留 DNS、项目和历史，卸载清理也检查 Zone 权限',()=>{
+test('移除只断开管理连接，保留 DNS、项目和历史',()=>{
  const p=prototype();const before=p.run('JSON.stringify([S.dns,S.projects,S.operations])');assert.equal(p.run('cfRemoveConnection(cfCurrent("cf-account-legacy").id)'), '');assert.equal(p.run('JSON.stringify([S.dns,S.projects,S.operations])'),before);assert.equal(p.run('cfAccess(S.dns[0].zoneId).ok'),false);
- assert.match(p.run('prepareDnsCleanup({dnsIds:["dns1"]})'),/没有写权限/);
 });
 
 test('刷新中断保留固定身份且转为未知，明确失败不改写原记录',()=>{
@@ -84,6 +83,14 @@ test('旧未知操作释放保护后迟到核对不覆盖后续确认的记录',
  const p=prototype(),old=operation(p,'dns1','unknown');finish(p,old,'unknown');p.run('S.operations.find(o=>o.id==='+JSON.stringify(old)+').protectionReleased=true');const newer=operation(p);finish(p,newer);const before=p.run('JSON.stringify(S.dns)');p.run('finishCloudflareOperation(S.operations.find(o=>o.id==='+JSON.stringify(old)+'),"success",{reconcile:true})');assert.equal(p.run('JSON.stringify(S.dns)'),before);assert.equal(p.run('S.operations.find(o=>o.id==='+JSON.stringify(old)+').status'),'unknown');
 });
 
-test('旧卸载操作没有 DNS 固定身份时禁止清理，归属与保护保持可追溯',()=>{
- const p=prototype();assert.match(p.run('dnsCleanupError({dnsIds:["dns1"]})'),/待核对/);const input={dnsIds:['dns1']};p.run('const cleanupInput='+JSON.stringify(input)+';prepareDnsCleanup(cleanupInput)');assert.equal(p.run('dnsCleanupError(cleanupInput)'),'');p.run('S.dns[0].accountId="cf-account-readonly"');assert.match(p.run('dnsCleanupError(cleanupInput)'),/归属/);
+test('DNS 旧用途迁移仅清理当前记录与草稿，历史保留且幂等',()=>{
+ const old=prototype(),state=json(old,'S');state.cloudflare.schema=1;state.dns[0].projects=['missing-project'];state.dns[0].historicalProjects=[{id:'gone'}];state.interactionDrafts={'dnsedit|dns1':{record:{...state.dns[0]}}};state.operations.push({id:'historical-dns',kind:'network',status:'success',input:{netType:'dns',record:{...state.dns[0]},cfTarget:json(old,'cfTarget(S.dns[0])')},steps:[],resources:[]});
+ const p=prototype(JSON.stringify(state));assert.equal(p.run('S.dns[0].projects'),undefined);assert.equal(p.run('S.interactionDrafts["dnsedit|dns1"].record.projects'),undefined);assert.equal(p.run('S.operations.find(o=>o.id==="historical-dns").input.record.projects[0]'),'missing-project');assert.equal(p.run('S.dns[0].content'),state.dns[0].content);assert.deepEqual(JSON.parse(prototype(p.saved()).saved()),JSON.parse(p.saved()));
+});
+
+test('无项目也可完成 DNS 新增编辑删除，不受旧项目清理锁影响',()=>{
+ const p=prototype();p.run('S.projects=[];S.operations=[];S.operations.push({id:"legacy-cleanup",kind:"uninstall",status:"unknown",resources:["dns:dns1"],input:{dnsTargets:[{connectionId:cfCurrent("cf-account-legacy").id}],cfNeedsReview:true}})');p.click('navigate',{page:'dns'});assert.doesNotMatch(p.html('app'),/关联用途|未关联|共享用途/);
+ p.click('dnsedit');const target=json(p,'ui.modal.expectedTarget');p.submit('dnsedit',{'dns-account':target.accountId,'dns-zone':target.zoneId,'dns-type':'A','dns-name':'independent','dns-content':'192.0.2.7','dns-ttl':'300','network-ack':'on',outcome:'success'});assert.doesNotMatch(p.html('modal'),/关联项目|共享用途/);p.submit('dnscommit',{'dns-confirm':'on'});finish(p,p.run('S.operations[0].id'));const id=p.run('S.dns.find(r=>r.name==="independent").id');
+ edit(p,'dns1');p.submit('dnscommit',{'dns-confirm':'on'});finish(p,p.run('S.operations[0].id'));assert.equal(p.run('S.dns.find(r=>r.id==="dns1").content'),'203.0.113.17');
+ p.click('dnsdelete',{id});p.submit('dnsdelete',{'delete-ack':'on',outcome:'success'});finish(p,p.run('S.operations[0].id'));assert.equal(p.run('S.dns.some(r=>r.id==='+JSON.stringify(id)+')'),false);assert.equal(p.run('S.dns.some(r=>Object.hasOwn(r,"projects"))'),false);
 });
