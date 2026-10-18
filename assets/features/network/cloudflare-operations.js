@@ -12,7 +12,7 @@ function applyCloudflareRecord(input){
  const idx=S.dns.findIndex(x=>x.id===input.targetId);if(idx>=0&&(S.dns[idx].accountId!==t.accountId||S.dns[idx].zoneId!==t.zoneId))return false;
  S.cloudflare.recordVersions[input.targetId]=(input.baseRevision||0)+1;
  if(input.action==='delete'){if(idx>=0)S.dns.splice(idx,1);return true;}
- const updated={...clone(r),providerConfirmedAt:now(),propagation:'unverified'};if(idx>=0)S.dns[idx]=updated;else S.dns.push(updated);return true;
+ const updated={...clone(r),providerConfirmedAt:now(),propagation:'unverified'};delete updated.projects;delete updated.historicalProjects;if(idx>=0)S.dns[idx]=updated;else S.dns.push(updated);return true;
 }
 function finishCloudflareOperation(o,result,{reconcile=false}={}){
  if(!o||!['running','unknown'].includes(o.status))return;
@@ -37,13 +37,3 @@ function cfVerifySubmit(o,get,has){const v=get('verify-result');if(v==='working'
  if(v==='success'){const err=cfTargetError(o.input.cfTarget,{write:false,fixedRevision:false});if(err){modalError('读取核对失败：'+err);return;}}
  openModal('opdetail',{id:o.id});finishCloudflareOperation(o,v,{reconcile:true});
 }
-function prepareDnsCleanup(input){
- input.dnsTargets=[];for(const id of input.dnsIds||[]){const r=S.dns.find(r=>r.id===id),target=r&&cfTarget(r);if(!target)return '选定 DNS 没有写权限或连接失效，请保留该条目';input.dnsTargets.push({...target,recordId:id});}
- input.extraResources=[...(input.extraResources||[]),...input.dnsTargets.map(t=>'cf-connection:'+t.connectionId),...(input.dnsIds||[]).map(id=>'dns:'+id)];return '';
-}
-function dnsCleanupError(input){
- if((input.dnsIds||[]).length!==(input.dnsTargets||[]).length||input.cfNeedsReview)return '历史 DNS 清理归属待核对';
- return (input.dnsTargets||[]).map(t=>{const r=S.dns.find(r=>r.id===t.recordId);return cfTargetError(t)||(r&&(r.accountId!==t.accountId||r.zoneId!==t.zoneId)?'记录归属已改变':'');}).find(Boolean)||'';
-}
-
-function dnsCleanupChoice(r){const access=cfAccess(r.zoneId,true),hint=cfAccountName(r.accountId)+' / '+r.zone+'；'+(access.ok?(r.projects.length>1?'共享用途：'+r.projects.map(pname).join('、'):'须核对归属'):access.reason);const html=check('dns-'+r.id,dnsRecordLabel(r),false,hint);return access.ok?html:html.replace('<input ','<input disabled ');}
