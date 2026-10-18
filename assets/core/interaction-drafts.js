@@ -28,7 +28,7 @@ const interactionOpen=openModal,interactionClose=closeModal;
 openModal=function(kind,data={}){
  saveInteractionDraft();data=Object.fromEntries(Object.entries(data).filter(([,value])=>value!==undefined));let saved=S.interactionDrafts?.[interactionDraftKey(kind,data.id)];
  // 显式目标优先；其他字段从原编辑恢复。复制始终开启新操作。
- if(kind==='dnsedit'&&!data.id&&saved?.record&&((ui.cfAccount!=='all'&&saved.record.accountId!==ui.cfAccount)||(ui.zone!=='all'&&saved.record.zoneId!==ui.zone)))saved=null;
+ if(kind==='dnsedit'&&!data.id&&saved?.record&&(saved.record.accountId!==cfActiveConnection()?.accountId||(ui.zone!=='all'&&saved.record.zoneId!==ui.zone)))saved=null;
  if(saved&&!data.copyId)data={...clone(saved),...data};
  if(kind==='firewalledit'&&data.freshTarget&&data.record)data.record={...data.record,server:data.server};
  return interactionOpen(kind,data);

@@ -13,7 +13,7 @@ function routeURL(){
  if(['projects','firewall','servers','frp'].includes(ui.page))put('server',ui.server);
  if(ui.page==='projects'){put('view',ui.view);put('section',ui.projectsTab);put('filter',ui.filter);}
  if(ui.page==='templates')put('section',ui.templateTab);
- if(ui.page==='dns'){put('account',ui.cfAccount);put('zone',ui.zone);}
+ if(ui.page==='dns')put('zone',ui.zone);
  if(ui.page==='frp'){put('tab',FRP.tab);if(FRP.tab!=='connections'&&FRP.tab!=='review')put('node',FRP.node);put('role',FRP.role);}
  if(assetDrawer){put('detail',assetDrawer.kind);put('asset',assetDrawer.id);put('revision',assetDrawer.revision);put('source',assetDrawer.projectId);}
  const modal=ui.modal?.kind==='interaction-discard'?ui.modal.previous:ui.modal;let kind=modal?.kind;if(kind==='dnsconfirm')kind='dnsedit';if(kind==='firewallconfirm')kind='firewalledit';if(['deploymentpreview','deploymentadapt'].includes(kind))kind='newproject';
@@ -34,7 +34,7 @@ function restoreRoute(){
  const [requested,query='']=String(location.hash||'#overview').slice(1).split('?'),p=new URL('https://prototype.invalid/?'+query).searchParams;
  ui.routeNotice='';ui.page=routePages.has(requested)?requested:'overview';
  if(!routePages.has(requested))ui.routeNotice='页面入口无效，已返回总览。';
- ui.server=p.get('server')||'all';ui.cfAccount=p.get('account')||'all';ui.zone=p.get('zone')||'all';ui.q='';ui.filter=p.get('filter')||'all';
+ ui.server=p.get('server')||'all';ui.zone=p.get('zone')||'all';ui.q='';ui.filter=p.get('filter')||'all';
  if(ui.server!=='all'&&!sr(ui.server))ui.routeNotice='筛选服务器已移除；请重新选择目标，不会自动换机。';
  if(ui.page==='project'){ui.project=p.get('project')||ui.project;ui.tab=['overview','config','monitor','logs','history'].includes(p.get('tab'))?p.get('tab'):'overview';}
  if(ui.page==='projects'){ui.projectsTab=p.get('section')==='failures'?'failures':'list';ui.view=p.get('view')==='cards'?'cards':'table';ui.filter=p.get('filter')||'all';}

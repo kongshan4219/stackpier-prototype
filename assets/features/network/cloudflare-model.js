@@ -5,6 +5,7 @@ const cfProfiles=[['normal','正常读写'],['readonly','只读'],['invalid','�
 const cfDemoAccounts=[['cf-account-legacy','demo-account-001','旧版演示账号',['example.com','example.net']],['cf-account-readonly','demo-account-002','只读演示账号',['readonly.example.org']],['cf-account-extra','demo-account-003','第二个可写账号',['team.example.org']]];
 function cfAccount(id){return S.cloudflare.accounts.find(a=>a.id===id);}
 function cfConnection(id){return S.cloudflare.connections.find(c=>c.id===id);}
+function cfActiveConnection(){const active=S.cloudflare.connections.filter(c=>!c.removedAt);return active.length===1?active[0]:null;}
 function cfCurrent(accountId){return S.cloudflare.connections.find(c=>c.accountId===accountId&&!c.removedAt);}
 function cfZone(id){return S.cloudflare.zones.find(z=>z.id===id);}
 function cfCredential(c){return S.cloudflare.credentials.find(v=>v.id===c?.credentialId&&v.revision===c.credentialRevision);}
@@ -61,23 +62,18 @@ function migrateCloudflare(state){
   for(const o of state.operations){if((o.kind==='network'&&o.input?.netType==='dns'&&!o.input.cfTarget)){o.input.cfNeedsReview=true;o.message=(o.message||'')+' · 历史账号归属待核对';}}
   cf.legacyMigrated=true;
  }
- if(!cf.examplesAdded){
-  const a=cfEnsureAccount(state,'cf-account-readonly');const z=cfEnsureZone(state,a.id,'readonly.example.org','cf-zone-readonly');
-  if(!cf.connections.some(c=>c.accountId===a.id))cfCreateConnection(state,a.id,a.name,'readonly');
-  // 保留旧四条记录；新示例仅初次补充，用户后续清空不会恢复。
-  if(state.dns.length&&!state.dns.some(r=>r.id==='dns-demo-readonly'))state.dns.push({id:'dns-demo-readonly',accountId:a.id,zoneId:z.id,zone:z.name,name:'status',type:'TXT',content:'stackpier simulation',ttl:'300',proxy:false});
-  cf.examplesAdded=true;
- }
+ // 新实例只使用一个活动连接；保留旧版已有的账号、缓存和历史，不补第二账号。
+ cf.examplesAdded=true;
  // 仅清理当前记录及草稿的旧项目用途，原始操作快照保留作历史证据。
  for(const r of state.dns){delete r.projects;delete r.historicalProjects;}
  for(const [key,draft] of Object.entries(state.interactionDrafts||{}))if(key.startsWith('dnsedit|')&&draft.record){delete draft.record.projects;delete draft.record.historicalProjects;}
  cf.schema=2;return state;
 }
-function initializeCloudflare(){migrateCloudflare(S);ui.cfAccount??='all';}
+function initializeCloudflare(){migrateCloudflare(S);}
 function cfSaveConnection(candidate){
- const existing=cfCurrent(candidate.accountId),updating=candidate.updateId&&cfConnection(candidate.updateId);
+ const existing=S.cloudflare.connections.find(c=>!c.removedAt&&c.id!==candidate.updateId),updating=candidate.updateId&&cfConnection(candidate.updateId);
  if(updating&&updating.accountId!==candidate.accountId)return '新凭据选择了另一账号，请新增连接，不迁移旧数据';
- if(existing&&existing.id!==candidate.updateId)return '此 Account ID 已有连接，请更新已有连接';
+ if(existing)return '已有活动连接，请更新该连接；更换账号前先移除旧连接';
  if(updating&&(updating.removedAt||updating.credentialRevision!==candidate.beforeRevision))return '连接已改变，请重新检查';
  if(updating&&cfBusy(updating))return '存在进行中或结果未知的操作，请先核对原操作';
  if(!candidate.probe.valid||!candidate.probe.zoneRead||!candidate.probe.dnsRead||!candidate.probe.network)return '检查未通过，原连接保持不变';
