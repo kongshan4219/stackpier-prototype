@@ -20,7 +20,7 @@ test('增量迁移保留原 DNS ID、用户编辑及其他模块，反复迁移�
  const modules=['servers','projects','templates','programs','frp'];const preserved=Object.fromEntries(modules.map(k=>[k,JSON.stringify(original[k])]));
  const p=prototype(JSON.stringify(original));assert.equal(p.run('S.version'),42);assert.equal(p.run('S.dns.find(r=>r.id==="dns1").content'),'203.0.113.88');assert.equal(p.run('cfAccountName("cf-account-legacy")'),'用户旧账号');assert.equal(p.run('S.operations.find(o=>o.id==="old-dns-op").input.cfNeedsReview'),true);
  for(const k of modules)assert.equal(p.run(`JSON.stringify(S.${k})`),preserved[k],k);
- const before=p.run('JSON.stringify(S.cloudflare)');p.run('migrateCloudflare(S);migrateCloudflare(S)');assert.equal(p.run('JSON.stringify(S.cloudflare)'),before);assert.equal(p.run('S.dns.length'),5);
+ const before=p.run('JSON.stringify(S.cloudflare)');p.run('migrateCloudflare(S);migrateCloudflare(S)');assert.equal(p.run('JSON.stringify(S.cloudflare)'),before);assert.equal(p.run('S.dns.length'),4);
  const reloaded=prototype(p.saved());assert.equal(reloaded.run('S.dns.find(r=>r.id==="dns1").accountId'),primary);
 });
 
@@ -30,16 +30,16 @@ test('清空列表、移除连接与删除示例后刷新不重新填充',()=>{
 
 test('任意凭据输入不进入持久化、历史、导出或内存候选，只有固定演示引用可保存',()=>{
  const p=prototype(),canary='fake-private-input-must-not-persist';connect(p,{token:canary});assert.ok(!p.saved().includes(canary));assert.ok(!p.run('JSON.stringify(S.operations)').includes(canary));assert.ok(!p.run('notesText()').includes(canary));assert.equal(p.document.getElementById('cf-token').value,'');assert.equal(p.run('ui.modal.candidate'),undefined);
- connect(p);save(p);assert.ok(!p.saved().includes('STACKPIER_DEMO_TOKEN_ONLY'));assert.ok(p.run('!!cfCurrent("cf-account-extra")'));
+ p.run('cfRemoveConnection(cfActiveConnection().id)');connect(p);save(p);assert.ok(!p.saved().includes('STACKPIER_DEMO_TOKEN_ONLY'));assert.ok(p.run('!!cfCurrent("cf-account-extra")'));
 });
 
-test('选择一个账号，重复 Account ID 引导更新，名称不会改变稳定身份',()=>{
- const p=prototype();connect(p);save(p);const count=p.run('S.cloudflare.connections.length'),c=json(p,'cfCurrent("cf-account-extra")');connect(p);assert.match(p.html('modal'),/此账号已有当前连接/);save(p);assert.equal(p.run('S.cloudflare.connections.length'),count);
+test('只允许一个活动连接，更换账号须先移除，名称不改变身份',()=>{
+ const p=prototype();connect(p);save(p);assert.equal(p.run('S.cloudflare.connections.length'),1);assert.equal(p.run('cfActiveConnection().accountId'),primary);p.run('cfRemoveConnection(cfActiveConnection().id)');connect(p);save(p);const count=p.run('S.cloudflare.connections.length'),c=json(p,'cfCurrent("cf-account-extra")');connect(p);assert.match(p.html('modal'),/已有活动连接/);save(p);assert.equal(p.run('S.cloudflare.connections.length'),count);
  p.click('cfrename',{id:c.id});p.submit('cfrename',{'cf-name':'与旧账号重名也可用'});assert.equal(p.run('cfCurrent("cf-account-extra").id'),c.id);assert.equal(p.run('cfCurrent("cf-account-extra").accountId'),extra);
 });
 
 test('只读与分 Zone 权限、失效、DNS 读取不足分别阻止写入',()=>{
- const p=prototype();assert.equal(p.run('cfAccess("cf-zone-readonly").ok'),true);assert.equal(p.run('cfAccess("cf-zone-readonly",true).ok'),false);assert.equal(operation(p,'dns-demo-readonly'),undefined);
+ const p=prototype();p.run('cfActiveConnection().check=cfProbe("readonly",dnsZones())');assert.equal(p.run('cfAccess(S.dns[0].zoneId).ok'),true);assert.equal(p.run('cfAccess(S.dns[0].zoneId,true).ok'),false);assert.equal(operation(p),undefined);
  p.run('const c=cfCurrent("cf-account-legacy");c.check=cfProbe("mixed",S.cloudflare.zones.filter(z=>z.accountId===c.accountId))');assert.equal(p.run('cfAccess(S.dns[0].zoneId,true).ok'),true);assert.equal(p.run('cfAccess(S.dns[2].zoneId,true).ok'),false);
  for(const profile of ['invalid','denied','dnsdenied','network','nozones']){p.run(`c.check=cfProbe(${JSON.stringify(profile)},S.cloudflare.zones.filter(z=>z.accountId===c.accountId))`);assert.equal(operation(p),undefined,profile);}
 });
@@ -56,7 +56,7 @@ test('更新失败保留旧连接，成功增加凭据修订且范围缩小保�
 });
 
 test('操作异步返回只写提交时账号，成功与传播区分，重复终态不重放',()=>{
- const p=prototype(),id=operation(p);p.run('ui.cfAccount="cf-account-readonly";ui.zone="cf-zone-readonly"');const readonly=p.run('JSON.stringify(S.dns.find(r=>r.id==="dns-demo-readonly"))');finish(p,id);assert.equal(p.run('S.dns.find(r=>r.id==="dns1").content'),'203.0.113.18');assert.equal(p.run('JSON.stringify(S.dns.find(r=>r.id==="dns-demo-readonly"))'),readonly);assert.equal(p.run('S.dns.find(r=>r.id==="dns1").propagation'),'unverified');const before=p.run('JSON.stringify(S.dns)');finish(p,id);assert.equal(p.run('JSON.stringify(S.dns)'),before);
+ const p=prototype(),id=operation(p);p.run('ui.zone=S.dns.find(r=>r.id==="dns3").zoneId');const readonly=p.run('JSON.stringify(S.dns.find(r=>r.id==="dns3"))');finish(p,id);assert.equal(p.run('S.dns.find(r=>r.id==="dns1").content'),'203.0.113.18');assert.equal(p.run('JSON.stringify(S.dns.find(r=>r.id==="dns3"))'),readonly);assert.equal(p.run('S.dns.find(r=>r.id==="dns1").propagation'),'unverified');const before=p.run('JSON.stringify(S.dns)');finish(p,id);assert.equal(p.run('JSON.stringify(S.dns)'),before);
 });
 
 test('未知结果阻止移除和覆盖，读取核对不会新增修改操作',()=>{
@@ -90,7 +90,13 @@ test('DNS 旧用途迁移仅清理当前记录与草稿，历史保留且幂等'
 
 test('无项目也可完成 DNS 新增编辑删除，不受旧项目清理锁影响',()=>{
  const p=prototype();p.run('S.projects=[];S.operations=[];S.operations.push({id:"legacy-cleanup",kind:"uninstall",status:"unknown",resources:["dns:dns1"],input:{dnsTargets:[{connectionId:cfCurrent("cf-account-legacy").id}],cfNeedsReview:true}})');p.click('navigate',{page:'dns'});assert.doesNotMatch(p.html('app'),/关联用途|未关联|共享用途/);
- p.click('dnsedit');const target=json(p,'ui.modal.expectedTarget');p.submit('dnsedit',{'dns-account':target.accountId,'dns-zone':target.zoneId,'dns-type':'A','dns-name':'independent','dns-content':'192.0.2.7','dns-ttl':'300','network-ack':'on',outcome:'success'});assert.doesNotMatch(p.html('modal'),/关联项目|共享用途/);p.submit('dnscommit',{'dns-confirm':'on'});finish(p,p.run('S.operations[0].id'));const id=p.run('S.dns.find(r=>r.name==="independent").id');
+ p.click('dnsedit');const target=json(p,'ui.modal.expectedTarget');p.submit('dnsedit',{'dns-zone':target.zoneId,'dns-type':'A','dns-name':'independent','dns-content':'192.0.2.7','dns-ttl':'300','network-ack':'on',outcome:'success'});assert.doesNotMatch(p.html('modal'),/关联项目|共享用途/);p.submit('dnscommit',{'dns-confirm':'on'});finish(p,p.run('S.operations[0].id'));const id=p.run('S.dns.find(r=>r.name==="independent").id');
  edit(p,'dns1');p.submit('dnscommit',{'dns-confirm':'on'});finish(p,p.run('S.operations[0].id'));assert.equal(p.run('S.dns.find(r=>r.id==="dns1").content'),'203.0.113.17');
  p.click('dnsdelete',{id});p.submit('dnsdelete',{'delete-ack':'on',outcome:'success'});finish(p,p.run('S.operations[0].id'));assert.equal(p.run('S.dns.some(r=>r.id==='+JSON.stringify(id)+')'),false);assert.equal(p.run('S.dns.some(r=>Object.hasOwn(r,"projects"))'),false);
+});
+
+test('DNS 自动使用唯一连接，旧多账号状态保持并要求核对',()=>{
+ const p=prototype();p.click('navigate',{page:'dns'});assert.equal(p.run('S.cloudflare.connections.filter(c=>!c.removedAt).length'),1);assert.doesNotMatch(p.html('app'),/data-filter="cfAccount"/);p.click('dnsedit');assert.doesNotMatch(p.html('modal'),/id="dns-account"/);p.click('closemodal');
+ p.run('cfEnsureAccount(S,"cf-account-extra");cfCreateConnection(S,"cf-account-extra","旧版第二账号");persist()');const before=p.run('JSON.stringify([S.dns,S.cloudflare,S.operations])');const restored=prototype(p.saved());restored.click('navigate',{page:'dns'});assert.match(restored.html('app'),/旧版有多个活动连接/);assert.equal(restored.run('JSON.stringify([S.dns,S.cloudflare,S.operations])'),before);restored.click('dnsedit');assert.match(restored.html('modal'),/没有可写 Zone/);
+ restored.click('cfaccount');restored.click('cfremove',{id:restored.run('cfCurrent("cf-account-extra").id')});restored.submit('cfremove',{'cf-confirm':'on'});restored.click('closemodal');assert.match(restored.html('app'),/198.51.100.20/);assert.equal(restored.run('S.dns.length'),4);
 });
