@@ -25,6 +25,8 @@
 
 ## 交互说明
 
+- [凭据正文输入](docs/credential-input.md)：FRP、STCP 与通知输入只接受虚构值，编辑留空保留且不回填。
+
 - [服务器状态](docs/server-status.md)：登记信息持久化、页面内模拟轮询与离页停止。
 - [界面规则](docs/interface-guidelines.md)：文字层级、公共组件、响应式与键盘操作。
 - [文件](docs/files.md)：任意类型文件的上传、架构识别、命名、去重与替换规则。
