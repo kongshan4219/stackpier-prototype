@@ -5,6 +5,7 @@ const navItems=[['overview','总览','home','工作空间'],['servers','服务�
 function brand(){return '<div class="brand" aria-label="栈桥 StackPier"><span class="brand-mark" aria-hidden="true"><i></i><b></b></span><span class="brand-word"><strong>栈桥</strong><span lang="en">STACKPIER</span></span></div>'}
 
 function render(){
+ syncServerStatusTimer();
  const af=document.activeElement,focus=af?.id,ss=af?.selectionStart,se=af?.selectionEnd;
  const title=ui.page==='project'?pname(ui.project):ui.page==='projects'&&ui.projectsTab==='failures'?'失败记录':navItems.find(n=>n[0]===ui.page)?.[1]||'工作台';
  document.title=title+' · 栈桥交互原型';

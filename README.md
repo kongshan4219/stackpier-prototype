@@ -25,6 +25,7 @@
 
 ## 交互说明
 
+- [服务器状态](docs/server-status.md)：登记信息持久化、页面内模拟轮询与离页停止。
 - [界面规则](docs/interface-guidelines.md)：文字层级、公共组件、响应式与键盘操作。
 - [文件](docs/files.md)：任意类型文件的上传、架构识别、命名、去重与替换规则。
 - [资产版本联动](docs/asset-linkage.md)：文件修订、项目草稿、已应用/读取快照、迁移及关键截图。
