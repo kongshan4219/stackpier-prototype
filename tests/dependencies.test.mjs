@@ -30,7 +30,7 @@ test('旧状态加载时清理依赖与复制字段和操作，并补齐检查�
   assert.equal(loaded.run('Object.hasOwn(pr("p1").monitor,"tcp")'), false);
 });
 
-test('配置页只读展示服务器 systemd 文件和已映射实际文件', () => {
+test('配置页展示固定部署信息，核对后只读展示三类受管文件摘要', async () => {
   const p = prototype();
   p.run(`
     const project=pr('p1'),file=S.programs.find(item=>item.id==='file1');
@@ -40,6 +40,9 @@ test('配置页只读展示服务器 systemd 文件和已映射实际文件', ()
   `);
   p.click('project', { id: 'p1' });
   p.click('tab', { id: 'config' });
+  assert.match(p.html('app'), /已应用配置与文件[\s\S]*固定版本/);
+  assert.match(p.html('app'), /尚未核对受管文件/);
+  await p.run('checkProjectFiles(pr("p1"))');
   const html = p.html('app');
   assert.match(html, /\/etc\/systemd\/system\/catalog-api\.service/);
   assert.match(html, /\/srv\/stackpier-demo\/catalog-api\/app\.conf/);
@@ -47,32 +50,38 @@ test('配置页只读展示服务器 systemd 文件和已映射实际文件', ()
   assert.doesNotMatch(html, /new-upload-not-on-server|DRAFT_ONLY=1|保存草稿|cfg-port/);
 });
 
-test('Compose 配置页读取已部署文件，不把待应用草稿当成服务器现状', () => {
+test('Compose 配置页展示固定服务，草稿仅在独立弹窗展示', () => {
   const p = prototype();
   p.click('project', { id: 'p2' });
   p.click('tab', { id: 'config' });
   const html = p.html('app');
-  assert.match(html, /\/srv\/stackpier-demo\/media-web\/compose\.yaml/);
+  assert.match(html, /\/srv\/stackpier-demo\/media-web/);
   assert.match(html, /8090:80/);
+  assert.doesNotMatch(html, /8091:80|服务器当前读取结果|核对受管文件/);
   assert.doesNotMatch(p.run('projectRuntimeFile(pr("p2")).content'), /8091:80/);
-  assert.match(html,/项目草稿[\s\S]*8091:80/);
-  assert.match(html, /待应用内容[\s\S]*有/);
+  p.click('projectmore', {id:'p2'});
+  assert.match(p.html('modal'), /项目草稿与更新/);
+  p.click('projectdraft', {id:'p2'});
+  assert.match(p.html('modal'),/项目草稿[\s\S]*8091:80/);
+  assert.match(p.html('modal'), /待应用内容[\s\S]*有/);
 });
 
-test('重新读取记录成功或失败，失败时保留最近文件快照', () => {
+test('摘要核对失败时保留历史观测，不改动读取快照与部署参照', async () => {
   const p = prototype();
   p.click('project', { id: 'p1' });
   p.click('tab', { id: 'config' });
-  p.click('refreshprojectfiles', { id: 'p1' });
-  assert.equal(p.run('pr("p1").configurationReadStatus'), 'success');
-  const previous = p.run('pr("p1").configurationReadAt');
+  await p.run('checkProjectFiles(pr("p1"))');
+  const previous = p.run('pr("p1").fileCheck.files.find(f=>f.kind==="config").checked');
+  const snapshot=p.run('JSON.stringify(pr("p1").serverReadSnapshot)');
+  const applied=p.run('JSON.stringify(pr("p1").appliedSnapshot)');
   p.run('sr("s2").state="unknown";');
-  p.click('refreshprojectfiles', { id: 'p1' });
-  assert.equal(p.run('pr("p1").configurationReadStatus'), 'unknown');
-  assert.equal(p.run('pr("p1").configurationReadAt'), previous);
-  assert.ok(p.run('pr("p1").configurationReadAttemptAt') >= previous);
-  assert.match(p.html('app'), /本次未取得新内容[\s\S]*上次成功读取快照/);
-  assert.match(p.html('app'), /读取失败/);
+  await p.run('checkProjectFiles(pr("p1"))');
+  assert.equal(p.run('pr("p1").fileCheck.files.find(f=>f.kind==="config").state'), 'unknown');
+  assert.equal(p.run('pr("p1").fileCheck.files.find(f=>f.kind==="config").previous.checked'), previous);
+  assert.equal(p.run('JSON.stringify(pr("p1").serverReadSnapshot)'),snapshot);
+  assert.equal(p.run('JSON.stringify(pr("p1").appliedSnapshot)'),applied);
+  assert.match(p.html('app'), /本次核对未确认/);
+  assert.match(p.html('app'), /历史观测 · 已过期/);
   assert.match(p.html('app'), /catalog-api\.service/);
 });
 

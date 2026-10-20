@@ -2,6 +2,9 @@
 
 const scenes=[
  {id:'saved',title:'保存了配置，但还没有应用',desc:'新端口留在草稿，远端旧端口并不因此异常。'},
+ {id:'files-changed',title:'受管配置被远端修改',desc:'只核对摘要，标记远端被改，不覆盖项目草稿或成功参照。'},
+ {id:'files-missing',title:'受管配置文件缺失',desc:'缺失与无法读取分开呈现，核对不会补发文件。'},
+ {id:'files-unknown',title:'文件核对失败，保留历史观测',desc:'标明本次无法确认及旧观测时间，不显示旧结果为当前成功。'},
  {id:'stop-failed',title:'你要求停止，但停止失败',desc:'命令报错后仍核对实际状态，未停止就记录失败。'},
  {id:'update-partial',title:'更新部分完成后失败',desc:'保留已交付内容，不假装全部旧版或自动回退。'},
  {id:'deploy-failed',title:'新项目部署失败',desc:'失败项目进入失败记录，可清理服务器残留。'},

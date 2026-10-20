@@ -12,7 +12,7 @@ function frpLinkedAction(action,d){
  if(action==='frp-update'){const p=pr(d.id);if(p?.frpRef&&!frpNode(p.frpRef.node)){openModal('frp-invalid-link',{project:p.id});return true;}openModal('frp-update',{id:d.id});return true;}
  if(action==='frp-adopt'){const m=ui.modal,p=pr(m.id);if(JSON.stringify(frpProjectCandidate(p))!==m.binding)throw Error('查看后公共版本变化，请重新查看差异');frpAdoptProject(p,m.next);closeModal();render();toast('只采用到 '+p.name+' 草稿；已应用和读取结果保持。','success');return true;}
  if(action==='frp-project-apply'){openModal('projectop',{id:d.id,op:'apply'});return true;}
- if(action==='frp-read'){const p=pr(d.id);if(d.fail==='true'||serverOperationError(p.server)){p.frpReadError=(serverOperationError(p.server)||'模拟读取失败')+'；保留上次成功内容及时间';}else if(p.frpApplied){p.frpReadSnapshot={files:clone(p.frpApplied.files),program:clone(p.frpApplied.program||null),at:now(),source:'浏览器模拟读取'};delete p.frpReadError;}else p.frpReadError='没有服务器文件模拟读取来源';persist();render();return true;}
+ if(action==='frp-read'){const p=pr(d.id);if(d.fail==='true'||serverOperationError(p.server)){p.frpReadError=(serverOperationError(p.server)||'模拟读取失败')+'；保留上次成功内容及时间';}else if(p.frpApplied){p.frpReadSnapshot={files:clone(p.frpApplied.files),program:clone(p.frpApplied.program||null),at:now(),source:'浏览器模拟读取'};delete p.frpReadError;}else p.frpReadError='没有服务器文件模拟读取来源';persist();render();if(ui.modal?.kind==='projectdraft')renderModal();return true;}
  if(action==='frp-program-pin'){openModal('frp-program-pin',{role:d.role});return true;}
  return false;
 }

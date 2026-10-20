@@ -4,7 +4,7 @@ function stateGrid(p){const op=activeOps(p)[0]||S.operations.find(o=>o.project==
 
 function projectPage(){const p=pr(ui.project);if(!p)return empty('项目不存在','回到项目列表继续。',btn('项目列表','navigate',{page:'projects'}));
  const actions=p.cleanup?btn('继续清理 / 核对','projectop',{id:p.id,kind:'uninstall'},'danger')+btn('操作记录','tab',{id:'history'}):btn(p.runtime==='running'?'停止':'启动','projectop',{id:p.id,kind:p.runtime==='running'?'stop':'start'},'',''+(p.runtime==='running'?'stop':'play'))+btn('应用配置','projectop',{id:p.id,kind:'apply'},'primary','upload')+btn('更多','projectmore',{id:p.id},'','down');
- return heading(p.name,`${sname(p.server)} · ${p.type==='compose'?'Docker Compose':'systemd'} · ${sr(p.server)?.arch||'架构待核对'}`,actions,'WORKSPACE / PROJECT DETAIL')+(p.programUpdate?notice('有新的文件可以部署','当前服务仍使用已交付文件；通过“配置 → 查看差异 / 采用更新”进入项目草稿，再单独确认应用，正在进行的操作输入不变。','warning'):'')+stateGrid(p)+(p.cleanup?notice('清理待处理','项目尚未完成全部专属清理，保留服务与残留证据。','warning'):'')+(p.components.length?`<div class="mb">${notice('本次变更只完成了一部分',p.components.map(c=>c.name+'：'+c.result).join('；')+'。没有自动回退。','warning')}</div>`:'')+tabs([['overview','概览'],['config','配置'],['monitor','巡检'],['logs','日志'],['history','操作记录']],ui.tab)+projectTab(p);
+ return heading(p.name,`${sname(p.server)} · ${p.type==='compose'?'Docker Compose':'systemd'} · ${sr(p.server)?.arch||'架构待核对'}`,actions,'WORKSPACE / PROJECT DETAIL')+(p.programUpdate?notice('有新的文件可以部署','当前服务仍使用已交付文件；通过“更多 → 项目草稿与更新”查看差异，再单独确认应用，正在进行的操作输入不变。','warning'):'')+stateGrid(p)+(p.cleanup?notice('清理待处理','项目尚未完成全部专属清理，保留服务与残留证据。','warning'):'')+(p.components.length?`<div class="mb">${notice('本次变更只完成了一部分',p.components.map(c=>c.name+'：'+c.result).join('；')+'。没有自动回退。','warning')}</div>`:'')+tabs([['overview','概览'],['config','配置'],['monitor','巡检'],['logs','日志'],['history','操作记录']],ui.tab)+projectTab(p);
 }
 
 function projectTab(p){if(ui.tab==='config')return projectConfig(p);if(ui.tab==='monitor')return projectMonitor(p);if(ui.tab==='logs')return projectLogs(p);if(ui.tab==='history')return operationTable(S.operations.filter(o=>o.project===p.id));
@@ -16,7 +16,7 @@ function projectLogs(p){const lines=[`[示例日志] ${p.name} / ${p.type}`,`${f
 // 本组件的弹窗。保留原来的分支和中断语义。
 registerPrototypeHandlers(prototypeModals, ["projectmore"], function(m, p) {
   switch (m.kind) {
-case'projectmore':layout(p.name+' · 更多操作','所有动作都只是演示；不提供已取消或暂缓的功能。',`<div class="stack">${['restart','update'].map(k=>btn(opLabels[k],'projectop',{id:p.id,kind:k},'','refresh')).join('')}${btn('卸载项目','projectop',{id:p.id,kind:'uninstall'},'danger','trash')}</div>`,btn('关闭','closemodal'));break;
+case'projectmore':layout(p.name+' · 更多操作','所有动作都只是演示；不提供已取消或暂缓的功能。',`<div class="stack">${btn('项目草稿与更新','projectdraft',{id:p.id})}${['restart','update'].map(k=>btn(opLabels[k],'projectop',{id:p.id,kind:k},'','refresh')).join('')}${btn('卸载项目','projectop',{id:p.id,kind:'uninstall'},'danger','trash')}</div>`,btn('关闭','closemodal'));break;
   }
 });
 

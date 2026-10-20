@@ -4,6 +4,7 @@ function resetSample(preserve=true){formDrafts.clear();timers.forEach(clearInter
 
 function loadScene(id){if(!scenes.some(scene=>scene.id===id)){toast('此试用场景当前不提供。');return;}resetSample();ui.scenario=id;const p=pr('p1');let op;
  switch(id){
+ case'files-changed':case'files-missing':case'files-unknown':navigate('project','p1');ui.tab='config';render();void loadProjectFileCheckScene(p,id.slice(6));break;
  case'saved':navigate('project','p2');ui.tab='config';render();break;
  case'stop-failed':navigate('project','p1');op=startOperation(p,'stop',{},'failed',{hold:true});finishOperation(op,'failed');break;
  case'update-partial':pr('p2').cfg.version='demo-new-content';pr('p2').draftRev++;navigate('project','p2');op=startOperation(pr('p2'),'update',{},'partial',{hold:true});finishOperation(op,'partial');break;
@@ -16,6 +17,12 @@ function loadScene(id){if(!scenes.some(scene=>scene.id===id)){toast('此试用�
  case'empty':S.servers=[];S.projects=[];S.operations=[];S.dns=[];S.firewalls=[];S.notifications=[];S.frp.nodes=[];persist();navigate('servers');break;
  }
  toast('已装载虚构场景；修改意见保留。场景行为尚待审阅。');
+}
+
+async function loadProjectFileCheckScene(p,scenario){
+ if(scenario==='unknown')await checkProjectFiles(p);
+ if(pr(p.id)!==p)return;
+ p.fileCheckScenario=scenario;await checkProjectFiles(p);
 }
 
 function copyText(text){if(navigator.clipboard?.writeText){navigator.clipboard.writeText(text).then(()=>toast('已复制，请粘贴到对话中。','success')).catch(()=>fallbackCopy(text));}else fallbackCopy(text);}

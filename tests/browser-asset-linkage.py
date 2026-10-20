@@ -32,6 +32,9 @@ def editor(page):
     if value(page,'ui.modal?.kind==="templateedit"&&ui.modal.id==="t1"'):return
     click(page,'navigate',page='templates');click(page,'templateedit',id='t1')
 def finish(page):click(page,'finishdemo',where='#modal');click(page,'closemodal',where='#modal')
+def project_draft(page,id='p1'):
+    click(page,'projectmore',id=id)
+    click(page,'projectdraft',where='#modal',id=id)
 def shot(page,name):page.screenshot(path=str(OUT/name),full_page=name.startswith('project-read'))
 
 with sync_playwright() as playwright:
@@ -104,9 +107,9 @@ with sync_playwright() as playwright:
     check('保存公共配置不更新项目快照',snapshot(page)==old and value(page,'tpl("t1").rev')==2 and value(page,'tpl("t1").fileMappings[1].pins[0].revision')==1)
     click(page,'project',id='p1') if page.locator('[data-action=project][data-id=p1]').count() else click(page,'navigate',page='projects')
     if page.locator('h1').inner_text()!='catalog-api':click(page,'project',id='p1')
-    click(page,'tab',id='config');click(page,'asset-update',id='p1')
+    click(page,'tab',id='config');project_draft(page);click(page,'asset-update',where='#modal',id='p1')
     check('差异查看尚未采用',value(page,'pr("p1").cfg.fileMappings[1].pins[0].revision')==1)
-    click(page,'closemodal',where='#modal');click(page,'asset-update',id='p1');click(page,'asset-update-adopt',where='#modal',id='p1')
+    click(page,'closemodal',where='#modal');project_draft(page);click(page,'asset-update',where='#modal',id='p1');click(page,'asset-update-adopt',where='#modal',id='p1')
     check('采用只更新当前草稿',snapshot(page)==old and value(page,'pr("p1").cfg.fileMappings[1].pins[0].revision')==2 and value(page,'JSON.stringify(pr("p7").cfg)')==old_other)
     click(page,'projectop',id='p1',kind='apply')
     check('应用单独确认含项目和映射落点','catalog-api' in page.locator('#modal').inner_text() and '部署落点预览' in page.locator('#modal').inner_text() and snapshot(page)==old)
@@ -114,10 +117,12 @@ with sync_playwright() as playwright:
     page.locator('#modal button[type=submit]').click();finish(page)
     check('确认执行后仅当前项目应用新版本',value(page,'pr("p1").appliedSnapshot.files[1].binary.revision')==2 and snapshot(page,'p7')==other)
     read=value(page,'JSON.stringify(pr("p1").serverReadSnapshot)')
-    click(page,'asset-read-fail',id='p1')
-    check('读取失败保留成功内容和时间',value(page,'JSON.stringify(pr("p1").serverReadSnapshot)')==read and '读取失败 · 旧结果' in page.locator('#main').inner_text())
+    click(page,'checkprojectfiles',id='p1');page.wait_for_function('()=>!!pr("p1").fileCheck&&!projectFileReads.has("p1")')
+    page.evaluate('pr("p1").fileCheckScenario="unknown"')
+    click(page,'checkprojectfiles',id='p1');page.wait_for_function('()=>!!pr("p1").fileCheck.error&&!projectFileReads.has("p1")')
+    check('核对失败保留成功内容和时间',value(page,'JSON.stringify(pr("p1").serverReadSnapshot)')==read and '历史观测 · 已过期' in page.locator('#main').inner_text())
     shot(page,'project-read-stale-desktop.png')
-    click(page,'asset-file',where='#main',id='file1')
+    click(page,'navigate',page='programs');click(page,'asset-file',where='#main',id='file1')
     page.locator('#asset-revision').select_option('1')
     check('旧修订仍有应用项目引用','catalog-config.yaml' in page.locator('#asset-details').inner_text() and 'report-worker' in page.locator('#asset-details').inner_text())
     click(page,'asset-close',where='#asset-details')
