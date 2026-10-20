@@ -4,15 +4,10 @@ function frpServiceProject(id,role){const p=pr(id);return p&&p.frpService?.role=
 function frpServices(role){return S.projects.filter(p=>p.frpService?.role===role&&p.life==='installed'&&!p.cleanup);}
 function frpBoundService(n,role){return frpServiceProject(n?.serviceBindings?.[role]||n?.roleProjects?.[role],role);}
 function frpServiceOptions(role,node=''){return [['','请选择服务实例'],...frpServices(role).map(p=>{const owners=role==='server'?[]:frpReservationOwners(role,p.id,node);return [p.id,p.name+' · '+sname(p.server)+' · '+runtimeName[p.runtime]+(owners.length?' · 已被连接 '+owners.map(n=>n.id).join('、')+' 占用':''),owners.length>0];})];}
-function syncNewFrpFields(m=ui.modal){
- const target=document.getElementById('np-frp-fields'),t=tpl(document.getElementById('np-template')?.value);if(!target||!t)return;
- const v=m.frpValues||m.projectConfig?.frpInputs||{};
- target.innerHTML=!t.frpRole?'':t.frpRole==='server'?`<div class="field-row">${field('np-frp-bind','FRPS 监听地址',v.bind||'0.0.0.0','配置值不是实际端口探测。')}${field('np-frp-port','FRPS 控制端口',v.port||7000,'','number','min="1" max="65535" required')}</div>`:t.frpRole==='client'?select('np-frp-server-service','连接到已部署 FRPS',frpServiceOptions('server'),v.serverService||'','部署服务不自动创建连接记录。','required'):select('np-frp-connection','STCP visitor 配置来源',[['','请选择包含 STCP 的连接'],...S.frp.nodes.filter(n=>n.proxies.some(x=>x.type==='stcp')).map(n=>[n.id,sname(n.provider)+' → '+n.ip])],v.connection||'','visitor 必须部署在该连接 FRPS 所在服务器，使用 frpc。','required');
-}
-document.addEventListener('change',e=>{if(e.target.id==='np-template')syncNewFrpFields();});
 function configureFrpServiceDraft(draft,fd,m){
  const t=tpl(draft.template),role=t.frpRole,settings=clone(t.frpSource||frpSettingsSnapshot());
- const inputs={bind:String(fd.get('np-frp-bind')||''),port:Number(fd.get('np-frp-port')),serverService:String(fd.get('np-frp-server-service')||''),connection:String(fd.get('np-frp-connection')||'')};
+ if(!t.frpInputs)throw Error('请先在「部署配置」保存此 FRP 配置的角色参数。');
+ const inputs=clone(t.frpInputs);
  let node;
  if(role==='server'){
   if(!validIPv4(inputs.bind)&&!validIPv6(inputs.bind)||!Number.isInteger(inputs.port)||inputs.port<1||inputs.port>65535)throw Error('监听 IP 与控制端口无效。');
@@ -31,7 +26,7 @@ function configureFrpServiceDraft(draft,fd,m){
  if(role==='visitor')files.unit=files.unit.replace(/^After=.*$/m,'After=network.target '+frpBoundService(node,'server')?.frpApplied.unit).replace(/^Requires=.*$/m,'Requires='+frpBoundService(node,'server')?.frpApplied.unit);
  const programRef=clone(t.programRef),snapshot={role,host:draft.server,node,files,unit:draft.name+'.service',root:settings.root,settings,settingsRevision:settings.settingsRev,templateRevisions:clone(settings.templateRevisions),configurationRevision:t.rev,programRef,templateId:t.id,program:clone(frpResolveProgram(programRef,draft.server).file)};
  draft.frpService={role};draft.cfg={...draft.cfg,source:files.unit,appConfig:files.toml,program:frpProgramName(role),programRef,frpSnapshot:snapshot,frpInputs:inputs,dataDir:directory,port:role==='server'?node.bind_port:0,version:'固定程序修订 · '+(snapshot.program?.revision||'无效'),fileMappings:[]};
- m.frpValues=clone(inputs);return draft;
+ return draft;
 }
 function frpServiceLocation(p){
  const snapshot=p.cfg.frpSnapshot,server=sr(p.server),errors=[],warnings=[],files=[];
