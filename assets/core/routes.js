@@ -18,6 +18,7 @@ function routeURL(){
  if(assetDrawer){put('detail',assetDrawer.kind);put('asset',assetDrawer.id);put('revision',assetDrawer.revision);put('source',assetDrawer.projectId);}
  const modal=ui.modal?.kind==='interaction-discard'?ui.modal.previous:ui.modal;let kind=modal?.kind;if(kind==='dnsconfirm')kind='dnsedit';if(kind==='firewallconfirm')kind='firewalledit';if(['deploymentpreview','deploymentadapt'].includes(kind))kind='newproject';
  if(routeModals.has(kind)){put('dialog',kind);put('id',modal.editorId||modal.editor?.id||modal.id);if(kind==='frp-role-manage'){put('host',ui.modal.server);put('role',ui.modal.role);}}
+ if(kind==='templateedit'&&!modal.id)put('type',modal.editor?.type||modal.initialType);
  return '#'+ui.page+(query.toString()?'?'+query.toString():'');
 }
 function routeIdentity(hash){const [page,query='']=hash.split('?'),p=new URL('https://prototype.invalid/?'+query).searchParams;return [page,p.get('project'),p.get('tab'),p.get('detail'),p.get('asset'),p.get('dialog'),p.get('id'),p.get('host')].join('|');}
@@ -49,7 +50,7 @@ function restoreRoute(){
  const modal=p.get('dialog'),id=p.get('id');
  if(routeModals.has(modal)){
   const valid=modal==='serverdetail'?!!sr(id):['opdetail','verifyop'].includes(modal)?S.operations.some(o=>o.id===id):modal==='dnsedit'?(!id||S.dns.some(r=>r.id===id)):modal==='firewalledit'?(!id||S.firewalls.some(r=>r.id===id)):modal==='cfconnect'?(!id||!!cfConnection(id)):modal==='templateedit'?(!id||!!tpl(id)):modal==='frp-role-manage'?!!sr(p.get('host'))&&['client','server'].includes(p.get('role')):modal==='frp-nodeedit'?(!id||!!frpNode(id)):true;
-  if(valid)openModal(modal,{...(id?{id}:{}),...(modal==='frp-role-manage'?{server:p.get('host'),role:p.get('role')}:{})});else{ui.routeNotice='详情对象已失效；请从当前列表重新选择。';render();}
+  if(valid)openModal(modal,{...(id?{id}:{}),...(modal==='templateedit'&&configurationNames[p.get('type')]?{initialType:p.get('type')}:{}),...(modal==='frp-role-manage'?{server:p.get('host'),role:p.get('role')}:{})});else{ui.routeNotice='详情对象已失效；请从当前列表重新选择。';render();}
  }
  routeRestoring=false;routeLast=routeURL();if(window.history)window.history.replaceState(null,'',routeLast);
 }

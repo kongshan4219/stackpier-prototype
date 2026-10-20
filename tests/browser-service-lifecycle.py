@@ -17,19 +17,21 @@ def click(p,action,where='',**data):
 def submit(p):p.locator('#modal button[type=submit]').click()
 def close(p):click(p,'closemodal',where='#modal')
 def fresh(b,width=1440,saved=None):
- c=b.new_context(viewport={'width':width,'height':1000},device_scale_factor=1);p=c.new_page();p.on('pageerror',lambda e:errors.append(str(e)));p.on('request',lambda r:requests.append(r.url))
+ c=b.new_context(viewport={'width':width,'height':1000},device_scale_factor=1);p=c.new_page();p.set_default_timeout(6000);p.on('pageerror',lambda e:errors.append(str(e)));p.on('request',lambda r:requests.append(r.url))
  if saved:c.add_init_script('localStorage.setItem("stackpier.prototype.review.v1",'+json.dumps(saved)+')')
  p.goto(BASE);p.wait_for_function('()=>prototypeLoading.ready');return c,p
 def shot(p,name):p.screenshot(path=str(OUT/name),full_page='mobile' not in name)
 def new(p,name='qa-temp-service',template='t1',server='s4'):
+ click(p,'navigate',page='projects')
  click(p,'newproject');click(p,'deployment-type',where='#modal',type=ev(p,'deploymentType(tpl('+json.dumps(template)+'))'));p.locator('#np-template').select_option(template);p.locator('#np-server').select_option(server);p.locator('#np-name').fill(name)
 def preview(p):
+ # 从全部服务器视图重开部署时，显式选择本用例的目标。
+ if not p.locator('#np-server').input_value():p.locator('#np-server').select_option('s4')
  if p.locator('#np-template').input_value()=='t1':
   name=p.locator('#np-name').input_value();port=18000+sum(ord(x) for x in name)
-  # 仅设置本用例的声明端口；正文与文件通过配置编辑器的真实输入事件修改。
-  ev(p,'tpl("t1").port='+str(port));click(p,'deployment-config-manage',where='#modal')
-  p.locator('#tpl-source').fill('[Service]\nExecStart=/srv/'+name+'/catalog-service\n')
-  for i,field in enumerate(p.locator('[id^=tpl-map-path-]').all()):field.fill('/srv/'+name+'/file'+str(i))
+  # 固定文件与健康端口通过编辑器真实输入；预览按服务名生成独立落点。
+  click(p,'deployment-config-manage',where='#modal')
+  p.locator('#tpl-program').select_option('bin1@1');p.locator('#tpl-config').select_option('file1@1');p.locator('#tpl-port').fill(str(port))
   submit(p)
  submit(p);p.get_by_role('heading',name='确认模拟部署落点',exact=True).wait_for()
 
@@ -42,7 +44,7 @@ def deploy(p,name,role,server,target=None,node=None):
  new(p,name,'frp-template-'+role,server)
  preview(p);ck('统一部署 '+role+' 预览无阻塞',ev(p,'deploymentLocation(ui.modal.draft).errors.length')==0);click(p,'deployment-preview-execute',where='#modal');ck('统一部署 '+role+' 进行中没有服务实体',not ev(p,'S.projects.some(p=>p.name==='+json.dumps(name)+')'));finish(p);ck('统一部署 '+role+' 成功后恰好一个服务',ev(p,'S.projects.filter(p=>p.name==='+json.dumps(name)+').length')==1);close(p);return ev(p,'S.projects.find(p=>p.name==='+json.dumps(name)+').id')
 with sync_playwright() as pw:
- b=pw.chromium.launch(executable_path='/usr/bin/chromium',args=['--no-sandbox','--disable-dev-shm-usage'])
+ b=pw.chromium.launch(executable_path=os.environ.get('CHROMIUM','/usr/bin/chromium'),args=['--no-sandbox','--disable-dev-shm-usage'])
  c,p=fresh(b);click(p,'navigate',page='projects');count=ev(p,'S.projects.length')
  ck('项目仅含已部署服务，清理证据可见',not ev(p,'S.projects.some(p=>p.life==="draft"||p.life==="uninstalled"||p.frpInstallation?.role==="client")') and '历史归属待核对' in p.locator('#main').inner_text())
  shot(p,'service-projects-desktop.png')
@@ -57,7 +59,7 @@ with sync_playwright() as pw:
  ev(p,'tpl("frp-template-server").frpInputs={bind:"127.0.0.1",port:7700,serverService:"",connection:""}');new(p,'qa-placeholder','frp-template-server','s4');preview(p);ck('FRP 0 B 占位阻断',p.locator('[data-action=deployment-preview-execute]').is_disabled() and '0 B' in p.locator('#modal').inner_text());close(p)
  # QA 元数据仅存在这个独立浏览器，原附件四占位保留。
  qa(p);frps=deploy(p,'qa-frps','server','s4');frpc=deploy(p,'qa-frpc','client','s1',target=frps)
- click(p,'navigate',page='frp');ck('FRP 位于配置，无生命周期按钮','CONFIGURATION / FRP' in p.locator('#main').inner_text() and p.locator('#main [data-action=frp-batch],#main [data-action=frp-install],#main [data-action=frp-install-remove]').count()==0);click(p,'frp-nodeedit');p.locator('#fn-provider').select_option(frpc);p.locator('#fn-server').select_option(frps);p.locator('[name=fn-default]').uncheck();before=ev(p,'S.projects.length');submit(p);node=ev(p,'FRP.node');ck('新连接不创建项目，稳定绑定服务',ev(p,'S.projects.length')==before and ev(p,'frpNode(FRP.node).serviceBindings.client')==frpc);click(p,'frp-proxyedit',node=node);p.locator('#fp-name').fill('qa-stcp');p.locator('#fp-type').select_option('stcp');p.locator('#fp-localport').fill('3307');p.locator('#fp-vport').fill('13307');submit(p);ck('新增 STCP 不隐式部署 visitor',ev(p,'S.projects.length')==before and '尚无可用 visitor' in p.locator('#main').inner_text());click(p,'frp-configapply',node=node);ck('缺 visitor 明确阻塞',p.locator('#modal button[type=submit]').is_disabled() and 'visitor' in p.locator('#modal').inner_text());close(p)
+ click(p,'navigate',page='frp');ck('FRP 位于配置，无生命周期按钮','CONFIGURATION / FRP' in p.locator('#main').inner_text() and p.locator('#main [data-action=frp-batch],#main [data-action=frp-install],#main [data-action=frp-install-remove]').count()==0);click(p,'frp-nodeedit');p.locator('#fn-provider').select_option(frpc);p.locator('#fn-server').select_option(frps);p.locator('[name=fn-default]').uncheck();before=ev(p,'S.projects.length');submit(p);node=ev(p,'FRP.node');ck('新连接不创建项目，稳定绑定服务',ev(p,'S.projects.length')==before and ev(p,'frpNode(FRP.node).serviceBindings.client')==frpc);click(p,'frp-proxyedit',node=node);p.locator('#fp-name').fill('qa-stcp');p.locator('#fp-type').select_option('stcp');p.locator('#fp-secret').fill('DEMO_LIFECYCLE_STCP_SECRET');p.locator('#fp-localport').fill('3307');p.locator('#fp-vport').fill('13307');submit(p);ck('新增 STCP 不隐式部署 visitor',ev(p,'S.projects.length')==before and '尚无可用 visitor' in p.locator('#main').inner_text());click(p,'frp-configapply',node=node);ck('缺 visitor 明确阻塞',p.locator('#modal button[type=submit]').is_disabled() and 'visitor' in p.locator('#modal').inner_text());close(p)
  visitor=deploy(p,'qa-visitor','visitor','s4',node=node);click(p,'navigate',page='frp');click(p,'frp-home');click(p,'frp-node',id=node);click(p,'frp-nodeedit',id=node);p.locator('#fn-visitor').select_option(visitor);submit(p);ck('visitor 同 FRPS 主机，引用 frpc',ev(p,'pr('+json.dumps(visitor)+').server===pr('+json.dumps(frps)+').server&&pr('+json.dumps(visitor)+').cfg.program==="frpc"'))
  click(p,'frp-configapply',node=node);ck('应用确认包含固定服务与配置文件','写入' in p.locator('#modal').inner_text() and 'qa-frpc' in p.locator('#modal').inner_text());shot(p,'service-frp-apply-desktop.png');p.locator('[name=fc-confirm]').check();p.locator('[name=fc-hold]').check();submit(p);finish(p);ck('配置成功核对更新参照',ev(p,'frpNode('+json.dumps(node)+').appliedConfiguration.revision===frpNode('+json.dumps(node)+').revision'));close(p)
  before_applied=ev(p,'JSON.stringify(frpNode('+json.dumps(node)+').appliedConfiguration)');click(p,'frp-proxyedit',node=node,index=0);p.locator('#fp-name').fill('qa-stcp-edited');submit(p);ck('保存映射不改变已应用参照',ev(p,'JSON.stringify(frpNode('+json.dumps(node)+').appliedConfiguration)')==before_applied);click(p,'frp-configapply',node=node);p.locator('[name=fc-confirm]').check();p.locator('#outcome').select_option('failed');submit(p);finish(p);ck('配置失败保留旧参照',ev(p,'JSON.stringify(frpNode('+json.dumps(node)+').appliedConfiguration)')==before_applied);close(p)

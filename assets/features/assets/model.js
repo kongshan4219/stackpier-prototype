@@ -60,6 +60,7 @@ function initializeAssets(){
 function assetReferences(id,revision=null){
  const match=mapping=>(mapping.pins||[]).some(pin=>pin.fileId===id&&(revision===null||pin.revision===Number(revision)));
  const configurations=S.templates.flatMap(template=>(template.fileMappings||[]).filter(match).map(mapping=>({template,mapping})));
+ for(const template of S.templates.filter(t=>t.editorSchema&&!t.frpRole))for(const [ref,path] of [[template.programRef,'program'],[template.configRef,'config.json']])if(ref&&match(ref))configurations.push({template,mapping:{...ref,targetPath:'部署目录 / '+path}});
  const projects=S.projects.filter(project=>project.life!=='uninstalled').flatMap(project=>(project.appliedSnapshot?.files||[]).filter(mapping=>mapping.binary?.id===id&&(revision===null||mapping.binary.revision===Number(revision))).map(mapping=>({project,mapping})));
  return {configurations,projects};
 }
@@ -68,12 +69,13 @@ function newerAssetPins(mapping){return {...mapping,file:mappingName(mapping),pi
 function mappingHasUpdate(mapping,server=null){if(server){const before=pinnedMappingFile(mapping,server),after=pinnedMappingFile(newerAssetPins(mapping),server);return before?.id!==after?.id||before?.revision!==after?.revision;}return (mapping.pins||[]).some(pin=>assetById(pin.fileId)?.revision>pin.revision)||assetGroups().find(group=>group.id===mapping.groupId)?.files.some(file=>!(mapping.pins||[]).some(pin=>pin.fileId===file.id))||false;}
 function markAssetUpdates(){for(const project of S.projects){
   if(project.frpRef||project.frpInstallation||project.frpService||['frpc','frps'].includes(project.software))continue;project.templateUpdate=(tpl(project.template)?.rev||0)>(project.cfg.templateRev||0);project.programUpdate=(project.cfg.fileMappings||[]).some(mapping=>mappingHasUpdate(mapping,sr(project.server)))||!!project.cfg.programRef&&mappingHasUpdate(project.cfg.programRef,sr(project.server));}}
-function projectUpdateCfg(project){const template=tpl(project.template);return {...clone(project.cfg),...(template?{source:template.tpl,variables:template.variables||'{}',templateRev:template.rev}:{}),programRef:template?.programRef?newerAssetPins(template.programRef):project.cfg.programRef,fileMappings:(template?.fileMappings||project.cfg.fileMappings||[]).map(newerAssetPins)};}
+function projectUpdateCfg(project){const template=tpl(project.template);if(template?.editorSchema&&!template.frpRole)return {...clone(project.cfg),...configurationProjectDraft(template,newProjectDraft(template,sr(project.server),project.name)).cfg};return {...clone(project.cfg),...(template?{source:template.tpl,variables:template.variables||'{}',templateRev:template.rev}:{}),programRef:template?.programRef?newerAssetPins(template.programRef):project.cfg.programRef,fileMappings:(template?.fileMappings||project.cfg.fileMappings||[]).map(newerAssetPins)};}
 function adoptProjectUpdate(project){project.cfg=projectUpdateCfg(project);project.draftRev++;markAssetUpdates();persist();}
 function deploymentLocation(project){
  if(project.frpService)return frpServiceLocation(project);
  const server=sr(project.server),mainPath=project.type==='compose'?`/srv/stackpier-demo/${project.name}/compose.yaml`:`/etc/systemd/system/${project.name}.service`;
  const files=resolvedFileMappings(project.cfg.fileMappings,server),errors=[],warnings=[],targets=new Set([mainPath]);
+ for(const file of project.cfg.composeFiles||[])files.push({file:file.path,targetPath:`/srv/stackpier-demo/${project.name}/${file.path}`,binary:{filename:file.path,size:file.size+' B',bytes:file.size,revision:project.cfg.templateRev,arch:'any',identity:'已固定的浏览器附件；摘要未核对'}});
  const targetError=serverOperationError(project.server);if(targetError)errors.push(targetError);
  if(project.type==='systemd'&&project.cfg.program&&!projectProgramFile(project))errors.push('主程序缺少匹配架构 '+(server?.arch||'未知')+'。');
  for(const mapping of files){const error=targetFilePathError(mapping.targetPath);if(error)errors.push(error);if(targets.has(mapping.targetPath))errors.push('路径冲突：'+mapping.targetPath);targets.add(mapping.targetPath);if(!mapping.binary)errors.push(mappingName(mapping)+'：文件无效、占位或缺少匹配架构 '+(server?.arch||'未知'));}

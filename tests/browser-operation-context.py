@@ -35,11 +35,10 @@ with sync_playwright() as pw:
     ck('正文可展开查看',p.locator('#modal summary').filter(has_text='实际交付正文').count()==1)
     p.locator('#modal summary').filter(has_text='实际交付正文').click();ck('原样正文包含旧路径', '/catalog-api/' in p.locator('#modal').inner_text())
     applied_before=ev(p,'JSON.stringify(S.projects.map(p=>p.applied))');click(p,'deployment-config-manage',where='#modal')
-    body='[Unit]\nDescription=QA configured service\n[Service]\nWorkingDirectory=/srv/qa-adapt\nExecStart=/srv/qa-adapt/catalog-service --config /srv/qa-adapt/app.conf\n'
-    p.locator('#tpl-source').fill(body);p.locator('#tpl-map-path-0').fill('/srv/qa-adapt/catalog-service');p.locator('#tpl-map-path-1').fill('/srv/qa-adapt/app.conf');submit(p)
+    p.locator('#tpl-program').select_option('bin1@1');p.locator('#tpl-config').select_option('file1@1');p.locator('#tpl-port').fill('18080');submit(p)
     ck('配置保存返回保留服务器与名称',p.locator('#np-server').input_value()=='s4' and p.locator('#np-name').input_value()=='qa-adapt')
     ck('公共配置保存不改已应用项目',ev(p,'JSON.stringify(S.projects.map(p=>p.applied))')==applied_before)
-    submit(p);ck('重新预览使用已保存正文',ev(p,'ui.modal.draft.cfg.source')==body)
+    submit(p);body=ev(p,'ui.modal.draft.cfg.source');ck('重新预览使用已保存固定文件', '/qa-adapt/program' in body and ev(p,'ui.modal.draft.cfg.port')==18080)
     shot(p,'operation-project-preview-desktop.png');click(p,'deployment-preview-back',where='#modal');submit(p)
     click(p,'deployment-preview-execute',where='#modal');ck('执行记录固定备用节点',ev(p,'S.operations[0].input.serverTarget.id')=='s4')
     click(p,'finishdemo',where='#modal');ck('应用参照为确认的配置',ev(p,'pr(S.operations[0].project).applied.source')==body);close(p)

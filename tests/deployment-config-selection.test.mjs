@@ -31,7 +31,7 @@ test('清空已选配置后进入管理会新建配置',()=>{
 });
 test('FRP 角色参数在配置管理保存，部署只引用固定值',()=>{
  const p=readyServices();p.click('templateedit',{id:'frp-template-server'});assert.ok(p.document.getElementById('fc-port'));
- p.submit('frpdeploymentconfig',{'fc-name':'QA FRPS 配置','fc-bind':'127.0.0.1','fc-port':'7790','fc-token':'DEMO_CONFIG_TOKEN'});
+ p.submit('templateedit',{'tpl-name':'QA FRPS 配置','fc-bind':'127.0.0.1','fc-port':'7790','fc-token':'DEMO_CONFIG_TOKEN'});
  assert.equal(p.run('tpl("frp-template-server").frpInputs.port'),7790);
  p.click('newproject',{template:'frp-template-server',server:'s4'});assert.doesNotMatch(p.html('modal'),/np-frp|fc-token|textarea/);
  p.submit('newproject',{'np-template':'frp-template-server','np-server':'s4','np-name':'qa-frps','np-frp-port':'9999'});assert.equal(p.run('ui.modal.draft.cfg.frpInputs.port'),7790);
@@ -46,7 +46,7 @@ test('配置编辑时刷新仍可返回原部署目标',()=>{
  const restored=prototype(p.saved(),{hash:p.run('location.hash')});assert.match(restored.html('modal'),/保存并返回部署/);restored.click('deployment-config-return');assert.equal(restored.document.getElementById('np-name').value,'qa-refresh');assert.equal(restored.document.getElementById('np-server').value,'s4');
 });
 test('独立 FRP 配置的更新来源保持自己的固定配置',()=>{
- const p=readyServices();p.run('openModal("templateedit",{initialType:"frp"});');p.submit('frpdeploymentconfig',{'fc-name':'QA independent FRPS','fc-bind':'127.0.0.1','fc-port':'7900','fc-token':'DEMO_INDEPENDENT_TOKEN'});
+ const p=readyServices();p.run('openModal("templateedit",{initialType:"frp"});');p.submit('templateedit',{'tpl-program':p.run('configurationVersionValue(tpl("frp-template-server").programRef.pins[0])'),'tpl-name':'QA independent FRPS','fc-bind':'127.0.0.1','fc-port':'7900','fc-token':'DEMO_INDEPENDENT_TOKEN'});
  const id=p.run('S.templates.find(t=>t.name==="QA independent FRPS").id');p.click('newproject',{template:id,server:'s4'});p.submit('newproject',{'np-template':id,'np-server':'s4','np-name':'qa-independent'});p.click('deployment-preview-execute');p.run('finishOperation(S.operations[0],"success");');
  assert.equal(p.run('frpProjectCandidate(S.projects.find(p=>p.name==="qa-independent")).settings.token'),'DEMO_INDEPENDENT_TOKEN');
  p.run('S.frp.token="DEMO_GLOBAL_OTHER";frpSyncPublicTemplates();');assert.equal(p.run(`tpl(${JSON.stringify(id)}).frpSource.token`),'DEMO_INDEPENDENT_TOKEN');

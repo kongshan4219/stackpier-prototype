@@ -3,14 +3,11 @@
 const assetBaseCloseModal=closeModal;
 closeModal=function(){
  const m=ui.modal;
- if(m?.kind==='templateedit'&&!m.saved&&m.editor){syncTemplateEditorDraft();S.editorDrafts||={};S.editorDrafts[m.id||'new']={editor:clone(m.editor),fileMappings:clone(m.fileMappings||[])};persist();}
- const editor=m?.returnEditor||m?.draft?.returnEditor;
- if(editor){ui.modal=editor;renderModal();return;}
+ if(m?.kind==='templateedit'){if(!m.saved)cacheTemplateDraft();m.uploadSequence=(m.uploadSequence||0)+1;m.token='';configurationForgetContext();persist();}
  return assetBaseCloseModal();
 };
 const assetBaseReset=resetSample;
-resetSample=function(...args){const result=assetBaseReset(...args);initializeAssets();persist();return result;};
-function cacheTemplateDraft(){const m=ui.modal;if(m?.kind!=='templateedit'||!m.editor)return;syncTemplateEditorDraft();S.editorDrafts||={};S.editorDrafts[m.id||'new']={editor:clone(m.editor),fileMappings:clone(m.fileMappings||[]),...(m.returnDeployment?{returnDeployment:clone(m.returnDeployment)}:{})};persist();}
+resetSample=function(...args){const result=assetBaseReset(...args);configurationDrafts.clear();configurationForgetContext();initializeAssets();persist();return result;};
 document.addEventListener('input',event=>{if(event.target.closest('form[data-form=templateedit]'))cacheTemplateDraft();});
 document.addEventListener('change',event=>{if(event.target.closest('form[data-form=templateedit]'))cacheTemplateDraft();});
 function landingPreviewBody(project){
@@ -20,7 +17,8 @@ function landingPreviewBody(project){
 registerPrototypeHandlers(prototypeModals,['deploymentpreview','assetupdate'],function(m){
  if(m.kind==='deploymentpreview'){m.serverTarget||=serverOperationSnapshot(m.draft.server);const preview=deploymentLocation(m.draft);layout('确认模拟部署落点','核对目标和已保存的配置。全部成功核对后才建立服务项目。',landingPreviewBody(m.draft)+select('deploy-outcome','模拟部署结果',[['success','完成并核对'],['failed','明确失败'],['partial','部分完成'],['unknown','结果未知']],m.outcome||'success'),btn('返回选择','deployment-preview-back')+btn('前往部署配置管理','deployment-config-manage')+`<button class="btn primary" data-action="deployment-preview-execute" ${preview.errors.length?'disabled':''}>执行模拟部署</button>`,true);return;}
  const project=pr(m.id);if(!project)return closeModal();m.next=projectUpdateCfg(project);
- layout('查看可用更新 · '+project.name,'采用只修改这个项目的草稿；已应用参照和服务器读取结果保持不变；文件最新修订作为项目独立草稿映射采用，不改写公共配置的固定修订。',`<div class="stack">${detail([['来源配置',h(tpl(project.template)?.name||'已删除')],['配置修订',`草稿 C${project.cfg.templateRev} → 公共 C${m.next.templateRev}`]])}<div class="diff-grid"><section><h3>当前项目草稿 · D${project.draftRev}</h3><pre class="code asset-text">${h(configText(project))}</pre>${fileMappingPreview(project.cfg.fileMappings)}<pre class="code">${h(projectMappingVersions(project.cfg))}</pre></section><section><h3>采用后的草稿</h3><pre class="code asset-text">${h(configText(project,m.next))}</pre>${fileMappingPreview(m.next.fileMappings)}<pre class="code">${h(projectMappingVersions(m.next))}</pre></section></div>${notice('只影响 '+project.name,'应用配置仍需从项目页面发起单独确认。其他项目不会随此次采用改变。')}</div>`,btn('取消','closemodal')+btn('采用到项目草稿','asset-update-adopt',{id:project.id},'primary'),true);
+ const versionHint=tpl(project.template)?.editorSchema?'采用公共配置中明确保存的固定文件版本。':'文件最新修订作为项目独立草稿映射采用，不改写公共配置的固定修订。';
+ layout('查看可用更新 · '+project.name,'采用只修改这个项目的草稿；已应用参照和服务器读取结果保持不变；'+versionHint,`<div class="stack">${detail([['来源配置',h(tpl(project.template)?.name||'已删除')],['配置修订',`草稿 C${project.cfg.templateRev} → 公共 C${m.next.templateRev}`]])}<div class="diff-grid"><section><h3>当前项目草稿 · D${project.draftRev}</h3><pre class="code asset-text">${h(configText(project))}</pre>${fileMappingPreview(project.cfg.fileMappings)}<pre class="code">${h(projectMappingVersions(project.cfg))}</pre></section><section><h3>采用后的草稿</h3><pre class="code asset-text">${h(configText(project,m.next))}</pre>${fileMappingPreview(m.next.fileMappings)}<pre class="code">${h(projectMappingVersions(m.next))}</pre></section></div>${notice('只影响 '+project.name,'应用配置仍需从项目页面发起单独确认。其他项目不会随此次采用改变。')}</div>`,btn('取消','closemodal')+btn('采用到项目草稿','asset-update-adopt',{id:project.id},'primary'),true);
 });
 function projectMappingVersions(cfg){return (cfg.fileMappings||[]).map(mapping=>mappingName(mapping)+' · '+(mapping.pins||[]).map(pin=>{const file=assetRevision(pin.fileId,pin.revision);return (file?storedFileArchitectureLabel(file):'缺失')+' R'+pin.revision;}).join(' / ')).join('\n');}
 registerPrototypeHandlers(prototypeActions,['deployment-preview-back','deployment-preview-execute','asset-update','asset-update-adopt'],function(event,target,data,action){

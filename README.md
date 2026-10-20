@@ -12,7 +12,7 @@
 | `assets/features/` | 各功能页面、弹窗、按钮及表单处理。 |
 | `assets/features/assets/` | 稳定 ID / 修订关系、迁移、文件与配置详情抽屉、落点预览和单项目采用。 |
 | `assets/features/programs.js`、`assets/features/programs/` | 通用文件列表、内容分析、上传和命名确认；可识别的 ELF 文件额外记录架构。 |
-| `assets/features/deployments.js`、`assets/features/deployments/` | 部署配置列表、编辑及文件到目标路径的映射。 |
+| `assets/features/deployments.js`、`assets/features/deployments/` | 部署配置列表，以及按正式界面对齐的三类编辑器、固定文件与附件。 |
 | `assets/features/projects/` | 项目列表、详情、部署、失败记录、残留清理、固定部署信息及受管文件摘要核对。 |
 | `assets/features/frp/` | FRP 参考模板、虚构样例、模型、文件生成、页面、弹窗和模拟操作。 |
 | `assets/features/operations/` | 操作记录界面、模拟执行与结果处理。 |
@@ -31,7 +31,7 @@
 - [界面规则](docs/interface-guidelines.md)：文字层级、公共组件、响应式与键盘操作。
 - [文件](docs/files.md)：任意类型文件的上传、架构识别、命名、去重与替换规则。
 - [资产版本联动](docs/asset-linkage.md)：文件修订、项目草稿、已应用/读取快照、迁移及关键截图。
-- [部署配置](docs/deployment-configurations.md)：配置正文、文件映射及项目采用规则。
+- [部署配置](docs/deployment-configurations.md)：三类编辑表单、固定文件、Compose 附件及保存规则。
 - [部署项目](docs/project-deployment.md)：部署入口、失败记录、残留清理和同机项目名唯一性。
 - [部署配置选择流程](docs/deployment-config-selection.md)：先选类型，部署只填三项；配置集中编辑与保存返回，待用户审阅。
 - [项目文件与巡检](docs/project-files-and-checks.md)：按正式界面对齐的配置页、文件摘要核对、独立草稿入口和巡检方式。

@@ -118,7 +118,7 @@ export function prototype(saved, { hash = '', missingScript } = {}) {
   window.history={pushState(_state,_title,url){historyEntries.splice(++historyIndex);historyEntries.push(String(url));location.hash=String(url);},replaceState(_state,_title,url){historyEntries[historyIndex]=String(url);location.hash=String(url);}};
   function travel(delta){const next=historyIndex+delta;if(next<0||next>=historyEntries.length)return;historyIndex=next;location.hash=historyEntries[historyIndex];dispatch('popstate',window,{},window);}
   const context = vm.createContext({
-    document, FormData, URL, console, crypto: webcrypto, TextEncoder, TextDecoder,
+    document, FormData, URL, console, crypto: webcrypto, TextEncoder, TextDecoder, btoa, atob,
     location, window, navigator: {},
     localStorage: { getItem: () => stored || null, setItem: (_, value) => { stored = value; } },
     setTimeout: schedule, setInterval: schedule,

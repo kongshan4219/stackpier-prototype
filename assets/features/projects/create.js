@@ -53,5 +53,5 @@ registerPrototypeHandlers(prototypeForms,['newproject'],function(event,form,fd,g
  const template=tpl(get('np-template')),server=sr(get('np-server')),name=get('np-name'),error=projectNameError(name);
  if(!template||!server)return modalError('请选择有效的配置和目标服务器。');if(m.deploymentType&&deploymentType(template)!==m.deploymentType)return modalError('部署配置与当前类型不匹配，请重新选择。');if(error)return modalError(error);
  if(S.projects.some(project=>project.server===server.id&&project.name===name))return modalError('这台服务器已存在同名项目，请更换项目名。');
- let draft=newProjectDraft(template,server,name);if(template.frpRole){try{draft=configureFrpServiceDraft(draft,fd,m);}catch(error){return modalError(error.message);}}openModal('deploymentpreview',{draft,serverArchitecture:server.arch,origin:{kind:'newproject',deploymentType:deploymentType(template),template:template.id,server:server.id,name}});
+ let draft=configurationProjectDraft(template,newProjectDraft(template,server,name));if(template.frpRole){try{draft=configureFrpServiceDraft(draft,fd,m);}catch(error){return modalError(error.message);}}openModal('deploymentpreview',{draft,serverArchitecture:server.arch,origin:{kind:'newproject',deploymentType:deploymentType(template),template:template.id,server:server.id,name}});
 });

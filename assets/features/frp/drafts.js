@@ -70,7 +70,8 @@ function frpProjectCandidate(p){
  const configured=tpl(p.template);
  if(configured?.deploymentConfig){
   const source=clone(configured.frpSource),node=clone(fixed);if(role==='server')Object.assign(node,{bind_addr:configured.frpInputs.bind,bind_port:configured.frpInputs.port});
-  Object.assign(next,{node,files:frpFiles(node,role,source),settings:source,root:source.root,settingsRevision:source.settingsRev,templateRevisions:clone(source.templateRevisions),templateId:configured.id,configurationRevision:configured.rev,programRef:clone(configured.programRef),program:clone(frpResolveProgram(configured.programRef,p.server).file||null)});
+  Object.assign(next,{node,files:configurationFrpFiles(node,role,source,configured.frpParameters),settings:source,root:source.root,settingsRevision:source.settingsRev,templateRevisions:clone(source.templateRevisions),templateId:configured.id,configurationRevision:configured.rev,programRef:clone(configured.programRef),program:clone(frpResolveProgram(configured.programRef,p.server).file||null)});
+  if(configured.editorSchema){next.parameters=clone(configured.frpParameters);next.unbound=role!=='server'&&!linked;}
  }
  if(p.frpService&&previous){next.files.tomlPath=previous.tomlPath;next.files.unitPath=previous.unitPath;next.files.generatedToml=previous.generatedToml||next.files.generatedToml;next.files.generatedUnit=previous.generatedUnit||next.files.generatedUnit;next.files.unit=next.files.unit.replace(/^ExecStart=.*$/m,'ExecStart='+next.files.binaryPath+' -c '+next.files.tomlPath);next.unit=p.frpApplied.unit;}
  return next;

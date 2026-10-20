@@ -71,8 +71,8 @@ test('普通文件与空文件均按通用范围保存，并显示文件类型',
   assert.match(p.html('app'), /通用/);
   assert.match(p.html('app'), /text\/yaml/);
   p.click('templateedit');
-  p.click('template-map-add');
-  assert.match(p.html('modal'), /settings\.yaml · 通用/);
+  assert.match(p.html('modal'), /settings\.yaml/);
+  assert.doesNotMatch(p.html('modal'), /empty\.conf/);
 });
 
 test('相同文件名的不同适用范围可并存，同范围同名不同内容拒绝覆盖', async () => {

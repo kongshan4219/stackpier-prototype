@@ -94,7 +94,8 @@ test('FRP 部署配置在统一配置编辑器维护', () => {
   p.run('frpEnsure();openModal("templateedit",{id:"frp-template-client"});');
   assert.equal(p.run('ui.modal.kind'), 'templateedit');
   assert.equal(p.run('ui.modal.id'), 'frp-template-client');
-  assert.ok(p.document.getElementById('fc-server'));
+  assert.ok(p.document.getElementById('fc-admin'));
+  assert.equal(p.document.getElementById('fc-port').value,'9');
   assert.equal(p.document.getElementById('modal').open, true);
 });
 
@@ -122,15 +123,17 @@ test('共享配置正文原样保存；显式采用不改变服务器文件或�
   assert.equal(reloaded.run('configText(pr("p3"))'), source);
 });
 
-test('共享配置空正文不能覆盖已有内容，systemd 完整正文也原样保存', () => {
-  const p = prototype();
-  p.run('const templateId=pr("p1").template,before=JSON.stringify(tpl(templateId));openModal("templateedit",{id:templateId});');
-  p.submit('templateedit', { 'tpl-name': '空正文', 'tpl-type': 'systemd', 'tpl-source': ' \n\t' });
-  assert.equal(p.run('JSON.stringify(tpl(templateId))===before'), true);
-  assert.equal(p.document.getElementById('modal-error').hidden, false);
-  const source = '\n# 示例服务文件\n[Service]\nExecStart=/srv/example/app --name="  demo  "\nEnvironment="LABEL=${LABEL}"\n\n';
-  p.submit('templateedit', { 'tpl-name': '完整服务文件', 'tpl-type': 'systemd', 'tpl-source': source });
-  assert.equal(p.run('tpl(templateId).tpl'), source);
+test('systemd 编辑固定文件，失效版本不能覆盖已保存配置', () => {
+  const p=prototype();p.click('templateedit',{id:'t1'});
+  const before=p.run('JSON.stringify(tpl("t1"))');
+  p.submit('templateedit',{'tpl-name':'固定服务','tpl-program':'missing@1','tpl-config':'file1@1','tpl-port':'18080'});
+  assert.equal(p.run('JSON.stringify(tpl("t1"))'),before);
+  assert.match(p.document.getElementById('modal-error').textContent,/程序固定版本/);
+  p.submit('templateedit',{'tpl-name':'固定服务','tpl-program':'bin1@1','tpl-config':'file1@1','tpl-port':'18080'});
+  assert.equal(p.run('tpl("t1").rev'),2);
+  p.click('newproject',{template:'t1',server:'s4'});p.submit('newproject',{'np-template':'t1','np-name':'qa-fixed-config','np-server':'s4'});
+  assert.match(p.run('ui.modal.draft.cfg.source'),/STACKPIER_CONFIG=.*qa-fixed-config/);
+  assert.equal(p.run('ui.modal.draft.cfg.fileMappings.length'),2);
 });
 
 test('FRP 三角色仍生成配对 TOML 与 unit，地址、程序和转义保持一致', () => {

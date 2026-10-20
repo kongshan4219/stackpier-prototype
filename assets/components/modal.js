@@ -8,7 +8,7 @@ function openModal(kind,data={}){if(!prototypeModals[kind]&&!kind.startsWith('fr
 
 function closeModal(){if(dialog.open)dialog.close();ui.modal=null;try{lastFocus?.focus({preventScroll:true})}catch{}}
 
-function layout(title,subtitle,body,foot='',wide=false,form=''){dialog.classList.toggle('wide',wide);dialog.innerHTML=`${form?`<form data-form="${h(form)}" class="dialog-layout">`:'<div class="dialog-layout">'}<div class="dialog-header"><div><h2 id="dialog-title">${h(title)}</h2><p>${h(subtitle)}</p></div><button type="button" class="modal-close" data-action="closemodal" aria-label="关闭">${I('close')}</button></div><div class="dialog-body">${body}<p class="field-error" id="modal-error" role="alert" hidden></p></div><div class="dialog-footer">${foot||btn('关闭','closemodal')}</div>${form?'</form>':'</div>'}`;}
+function layout(title,subtitle,body,foot='',wide=false,form=''){dialog.classList.toggle('wide',wide);dialog.classList.toggle('configuration-dialog',form==='templateedit');dialog.innerHTML=`${form?`<form data-form="${h(form)}" class="dialog-layout">`:'<div class="dialog-layout">'}<div class="dialog-header"><div><h2 id="dialog-title">${h(title)}</h2><p>${h(subtitle)}</p></div><button type="button" class="modal-close" data-action="closemodal" aria-label="关闭" ${form==='templateedit'?'autofocus':''}>${I('close')}</button></div><div class="dialog-body">${body}<p class="field-error" id="modal-error" role="alert" hidden></p></div><div class="dialog-footer">${foot||btn('关闭','closemodal')}</div>${form?'</form>':'</div>'}`;}
 
 function modalError(text){const el=document.getElementById('modal-error');if(el){el.hidden=false;el.textContent=text;el.scrollIntoView({block:'nearest'});}else toast(text,'error');return false;}
 

@@ -12,6 +12,8 @@ function configureFrpServiceDraft(draft,fd,m){
  if(role==='server'){
   if(!validIPv4(inputs.bind)&&!validIPv6(inputs.bind)||!Number.isInteger(inputs.port)||inputs.port<1||inputs.port>65535)throw Error('监听 IP 与控制端口无效。');
   node={id:'service-'+draft.name,ip:sr(draft.server).host,provider:draft.server,server:draft.server,ssh_user:sr(draft.server).user,bind_addr:inputs.bind,bind_port:inputs.port,proxies:[],client_enabled:true,revision:1};
+ }else if(t.editorSchema){
+  node={id:'service-'+draft.name,ip:'127.0.0.1',provider:draft.server,server:draft.server,ssh_user:sr(draft.server).user,bind_addr:'127.0.0.1',bind_port:9,proxies:[],client_enabled:true,revision:1};
  }else if(role==='client'){
   const service=frpServiceProject(inputs.serverService,'server');if(!service||service.cleanup)throw Error('尚无可用 FRPS 服务，请先从项目部署。');
   node={...clone(service.frpApplied.node),id:'service-'+draft.name,provider:draft.server,server:service.server,proxies:[],serviceBindings:{server:service.id},client_enabled:true};
@@ -20,11 +22,12 @@ function configureFrpServiceDraft(draft,fd,m){
   const server=frpBoundService(n,'server');if(!server||draft.server!==server.server)throw Error('visitor 必须位于对应 FRPS 主机。');
   node=clone(n);
  }
- const files=frpFiles(node,role,settings),directory=settings.root+'/projects/'+draft.name;
+ const files=configurationFrpFiles(node,role,settings,t.frpParameters),directory=settings.root+'/projects/'+draft.name;
  files.tomlPath=directory+'/'+frpPrefixes[role]+'.toml';files.unitPath=settings.systemdDir+'/'+draft.name+'.service';files.generatedToml='generated/'+frpPrefixes[role]+'/'+draft.name+'.toml';files.generatedUnit='generated/'+frpPrefixes[role]+'/'+draft.name+'.service';
  files.unit=files.unit.replace(/^ExecStart=.*$/m,'ExecStart='+files.binaryPath+' -c '+files.tomlPath);
- if(role==='visitor')files.unit=files.unit.replace(/^After=.*$/m,'After=network.target '+frpBoundService(node,'server')?.frpApplied.unit).replace(/^Requires=.*$/m,'Requires='+frpBoundService(node,'server')?.frpApplied.unit);
+ if(role==='visitor')files.unit=t.editorSchema?files.unit.replace(/^After=.*$/m,'After=network.target').replace(/^Requires=.*\n?/m,''):files.unit.replace(/^After=.*$/m,'After=network.target '+frpBoundService(node,'server')?.frpApplied.unit).replace(/^Requires=.*$/m,'Requires='+frpBoundService(node,'server')?.frpApplied.unit);
  const programRef=clone(t.programRef),snapshot={role,host:draft.server,node,files,unit:draft.name+'.service',root:settings.root,settings,settingsRevision:settings.settingsRev,templateRevisions:clone(settings.templateRevisions),configurationRevision:t.rev,programRef,templateId:t.id,program:clone(frpResolveProgram(programRef,draft.server).file)};
+ if(t.editorSchema){snapshot.unbound=role!=='server';snapshot.parameters=clone(t.frpParameters);}
  draft.frpService={role};draft.cfg={...draft.cfg,source:files.unit,appConfig:files.toml,program:frpProgramName(role),programRef,frpSnapshot:snapshot,frpInputs:inputs,dataDir:directory,port:role==='server'?node.bind_port:0,version:'固定程序修订 · '+(snapshot.program?.revision||'无效'),fileMappings:[]};
  return draft;
 }
@@ -37,7 +40,7 @@ function frpServiceLocation(p){
  const f=snapshot.files;
  for(const path of [f.unitPath,f.tomlPath,f.binaryPath]){const error=targetFilePathError(path);if(error)errors.push(error);}
  if(!f.unit.includes('ExecStart='+f.binaryPath+' -c '+f.tomlPath))errors.push('启动命令与程序 / TOML 路径不一致。');
- if(snapshot.role==='visitor'){if(!snapshot.node.proxies.some(x=>x.type==='stcp'))errors.push('TCP-only 连接不部署 visitor。');if(p.server!==snapshot.node.server)errors.push('visitor 必须位于 FRPS 主机。');if(snapshot.node.proxies.some(x=>x.type==='stcp'&&!frpLoopback(x.visitor_bind_addr)))errors.push('visitor 只允许回环地址。');}
+ if(snapshot.role==='visitor'&&!snapshot.unbound){if(!snapshot.node.proxies.some(x=>x.type==='stcp'))errors.push('TCP-only 连接不部署 visitor。');if(p.server!==snapshot.node.server)errors.push('visitor 必须位于 FRPS 主机。');if(snapshot.node.proxies.some(x=>x.type==='stcp'&&!frpLoopback(x.visitor_bind_addr)))errors.push('visitor 只允许回环地址。');}
  for(const other of S.projects.filter(x=>x.id!==p.id&&x.server===p.server&&x.frpApplied)){
   if([other.frpApplied.files.unitPath,other.frpApplied.files.tomlPath].some(path=>[f.unitPath,f.tomlPath].includes(path)))errors.push('目标文件已被 '+other.name+' 使用。');
   if(other.frpApplied.files.binaryPath===f.binaryPath){const old=frpResolveProgram(other.frpApplied.programRef,other.server),next=frpResolveProgram(snapshot.programRef,p.server);if(old.errors.length||!old.file||old.file.identity!==next.file?.identity)errors.push('共享程序目标仍由 '+other.name+' 使用不同或未知修订；不能从本项目替换共享程序，先核对共享影响或使用独立程序落点。');else warnings.push('共享程序：'+other.name+'；固定相同内容身份，不替换其版本或重启该服务。');}

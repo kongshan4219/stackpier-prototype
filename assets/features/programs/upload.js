@@ -65,7 +65,7 @@ function saveProgramFile(m,filename){
  const next={...S,programs,projects};
  // 只保存识别结果和摘要；先写浏览器记录，失败时保留原状态与确认弹窗。
  try{localStorage.setItem(STORE,JSON.stringify(next));}catch{storageOK=false;modalError('保存失败，浏览器存储不可用或空间不足。请释放空间后重试。');return;}
- S=next;storageOK=true;if(draft.returnEditor&&Number.isInteger(draft.selectMappingIndex)){const old=draft.returnEditor.fileMappings[draft.selectMappingIndex];draft.returnEditor.fileMappings[draft.selectMappingIndex]=pinMapping({...old,file:binary.name,groupId:binary.groupId,pins:undefined});}markAssetUpdates();persist();closeModal();render();toast('文件记录已保存。','success');
+ S=next;storageOK=true;markAssetUpdates();persist();closeModal();render();toast('文件记录已保存。','success');
 }
 
 registerPrototypeHandlers(prototypeModals,['programupload','programname'],m=>m.kind==='programupload'?programEditor(m):programNameEditor(m));
@@ -81,7 +81,7 @@ registerPrototypeHandlers(prototypeForms,['programupload','programname'],functio
 registerPrototypeHandlers(prototypeActions,['program-upload-back'],()=>{
  if(ui.modal?.kind!=='programname')return;
  const draft=ui.modal.draft;
- openModal('programupload',{id:draft.id,original:draft.original,analysis:draft.analysis,filename:document.getElementById('bin-filename').value,returnEditor:draft.returnEditor,selectMappingIndex:draft.selectMappingIndex});
+ openModal('programupload',{id:draft.id,original:draft.original,analysis:draft.analysis,filename:document.getElementById('bin-filename').value});
 });
 
 document.addEventListener('change',event=>{if(event.target.id==='bin-file')return selectProgramFile(event.target.files);});
