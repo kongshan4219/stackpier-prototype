@@ -15,7 +15,7 @@ function templateFileMappingRows(mappings){
 function templateFileMappingSection(mappings){return `<section class="file-mapping-section" aria-labelledby="template-file-mapping-title"><div class="between wrap"><div><h3 id="template-file-mapping-title">附带文件映射</h3><p class="small muted">固定所选内容修订。移除引用不会删除公共文件；目标架构在部署前检查。</p></div><div class="flex wrap">${btn('上传新文件','mapping-upload',{},'small ghost','upload')}<button type="button" class="btn small" data-action="template-map-add" ${mappings.length>=templateFileMappingLimit?'disabled':''}>添加文件映射</button></div></div><div class="file-mapping-list">${mappings.length?templateFileMappingRows(mappings):'<p class="small muted">尚未添加文件映射，可选择公共文件或上传新文件。</p>'}</div></section>`;}
 function syncTemplateEditorDraft(override=null){
  const m=ui.modal,form=dialog.querySelector('form[data-form="templateedit"]');if(m?.kind!=='templateedit'||!form)return;
- const values=override||new FormData(form);m.editor={name:String(values.get('tpl-name')||''),type:String(values.get('tpl-type')||'compose'),source:String(values.get('tpl-source')??'')};
+ const values=override||new FormData(form);m.editor={name:String(values.get('tpl-name')||''),type:String(values.get('tpl-type')||'compose'),source:String(values.get('tpl-source')??''),variables:String(values.get('tpl-variables')||m.editor?.variables||'{}')};
  m.fileMappings=(m.fileMappings||[]).map((mapping,index)=>{
   const selected=String(values.get('tpl-map-file')===null?mapping.groupId:values.getAll('tpl-map-file')[index]||'');const groupId=assetGroups().find(item=>item.name===selected)?.id||selected;
   const group=assetGroups().find(item=>item.id===groupId),changed=groupId!==mapping.groupId;

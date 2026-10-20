@@ -6,7 +6,9 @@ export function readyServices(){
  return p;
 }
 export function deployService(p,role,name,server,fields={}){
+ const inputs={bind:fields['np-frp-bind']||'127.0.0.1',port:Number(fields['np-frp-port']||7000),serverService:fields['np-frp-server-service']||'',connection:fields['np-frp-connection']||''};
+ p.run(`tpl(${JSON.stringify('frp-template-'+role)}).frpInputs=${JSON.stringify(inputs)};`);
  p.click('newproject',{template:'frp-template-'+role,server});
- p.submit('newproject',{'np-template':'frp-template-'+role,'np-server':server,'np-name':name,...fields});
+ p.submit('newproject',{'np-template':'frp-template-'+role,'np-server':server,'np-name':name});
  return p;
 }

@@ -89,11 +89,12 @@ test('演示访问流程保留错误提示、首次设置与登录，密码不�
   assert.equal(p.saved().includes(password), false);
 });
 
-test('共享配置跳转到 FRP 页面后不会重新打开已经关闭的弹窗', () => {
+test('FRP 部署配置在统一配置编辑器维护', () => {
   const p = prototype();
   p.run('frpEnsure();openModal("templateedit",{id:"frp-template-client"});');
-  assert.equal(p.run('ui.modal.kind'), 'frp-template');
-  assert.equal(p.run('ui.modal.id'), 'frpc.toml.tpl');
+  assert.equal(p.run('ui.modal.kind'), 'templateedit');
+  assert.equal(p.run('ui.modal.id'), 'frp-template-client');
+  assert.ok(p.document.getElementById('fc-server'));
   assert.equal(p.document.getElementById('modal').open, true);
 });
 

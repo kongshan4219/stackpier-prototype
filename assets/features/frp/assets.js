@@ -29,7 +29,7 @@ function frpPublicCandidate(n,role){
 function frpSettingsSnapshot(){const F=S.frp;return clone({root:F.root,systemdDir:F.systemdDir,user:F.user,token:F.token,naming:F.naming,settingsRev:F.settingsRev,templateRev:F.templateRev,templateRevisions:F.templateRevisions,templates:F.templates});}
 function frpSyncPublicTemplates(){
  frpLinkAssets();for(const role of Object.keys(frpRoles)){
-  const t=tpl('frp-template-'+role);if(!t)continue;
+  const t=tpl('frp-template-'+role);if(!t||t.deploymentConfig)continue;
   const signature=JSON.stringify([S.frp.settingsRev,...['.toml.tpl','.service.tpl'].map(s=>S.frp.templateRevisions[frpPrefixes[role]+s])]);
   if(t.frpSignature&&t.frpSignature!==signature){t.rev++;t.frpSource=frpSettingsSnapshot();t.revisions.push(clone({...t,revisions:undefined}));}t.frpSignature=signature;
  }

@@ -2,6 +2,7 @@
 
 registerPrototypeHandlers(prototypeActions,['deployment-adapt'],()=>{
  const m=ui.modal;if(m?.kind!=='deploymentpreview')return;
+ if(m.origin?.kind==='newproject')return prototypeActions['deployment-config-manage'](null,null,{},'deployment-config-manage');
  openModal('deploymentadapt',{draft:clone(m.draft),origin:clone(m.origin),serverArchitecture:m.serverArchitecture});
 });
 registerPrototypeHandlers(prototypeModals,['deploymentadapt'],m=>{

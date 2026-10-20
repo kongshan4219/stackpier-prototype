@@ -1,0 +1,7 @@
+.deployment-types{display:grid;gap:12px}
+.deployment-type{display:flex;align-items:center;gap:16px;width:100%;padding:20px;text-align:left;color:var(--text);background:var(--surface);border:1px solid var(--line);border-radius:8px;cursor:pointer;font:inherit}
+.deployment-type:hover{border-color:var(--accent);background:var(--canvas)}
+.deployment-type .grow{display:grid;gap:6px}
+.deployment-type>svg{width:18px;height:18px;flex:none}
+.deployment-config-summary{padding:4px 0}
+@media(max-width:600px){.deployment-type{padding:16px;gap:12px}}
