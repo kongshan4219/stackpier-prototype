@@ -115,7 +115,9 @@ test('共享配置正文原样保存；显式采用不改变服务器文件或�
   p.click('tab', { id: 'config' });
   assert.doesNotMatch(p.html('app'), /data-form="(?:file)?projectconfig"|保存草稿/);
   assert.doesNotMatch(p.run('projectRuntimeFile(subject).content'), /保留注释与首尾空白/);
-  assert.match(p.html('app'), /项目草稿[\s\S]*保留注释与首尾空白/);
+  assert.doesNotMatch(p.html('app'), /保留注释与首尾空白/);
+  p.click('projectdraft',{id:'p3'});
+  assert.match(p.html('modal'), /项目草稿[\s\S]*保留注释与首尾空白/);
   const reloaded = prototype(p.saved());
   assert.equal(reloaded.run('configText(pr("p3"))'), source);
 });

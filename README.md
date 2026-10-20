@@ -13,7 +13,7 @@
 | `assets/features/assets/` | 稳定 ID / 修订关系、迁移、文件与配置详情抽屉、落点预览和单项目采用。 |
 | `assets/features/programs.js`、`assets/features/programs/` | 通用文件列表、内容分析、上传和命名确认；可识别的 ELF 文件额外记录架构。 |
 | `assets/features/deployments.js`、`assets/features/deployments/` | 部署配置列表、编辑及文件到目标路径的映射。 |
-| `assets/features/projects/` | 项目列表、详情、部署、失败记录、残留清理及服务器文件观测。 |
+| `assets/features/projects/` | 项目列表、详情、部署、失败记录、残留清理、固定部署信息及受管文件摘要核对。 |
 | `assets/features/frp/` | FRP 参考模板、虚构样例、模型、文件生成、页面、弹窗和模拟操作。 |
 | `assets/features/operations/` | 操作记录界面、模拟执行与结果处理。 |
 | `assets/features/network/` | Cloudflare 账号、逐 Zone DNS 权限、防火墙及网络模拟操作。 |
@@ -34,7 +34,7 @@
 - [部署配置](docs/deployment-configurations.md)：配置正文、文件映射及项目采用规则。
 - [部署项目](docs/project-deployment.md)：部署入口、失败记录、残留清理和同机项目名唯一性。
 - [部署配置选择流程](docs/deployment-config-selection.md)：先选类型，部署只填三项；配置集中编辑与保存返回，待用户审阅。
-- [项目文件与巡检](docs/project-files-and-checks.md)：服务器实际文件读取、检查方式和已移除范围。
+- [项目文件与巡检](docs/project-files-and-checks.md)：按正式界面对齐的配置页、文件摘要核对、独立草稿入口和巡检方式。
 - [Cloudflare 账号与 DNS](docs/cloudflare-accounts.md)：连接管理弹窗、独立 DNS、逐 Zone 权限、固定身份提交与旧数据迁移；[验证与截图](docs/cloudflare-validation.md)。
 - [配置 / FRP](docs/frp-connections.md)：连接映射管理、公共资产引用、配置采用 / 应用与统一项目部署；[附件行为对照](docs/frp-reference-behavior.md)与[验收证据](docs/frp-validation.md)。
 

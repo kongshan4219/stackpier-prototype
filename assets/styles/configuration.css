@@ -9,10 +9,23 @@
 .monitor-target{display:grid;gap:5px;margin-top:14px;padding:12px 14px;border-radius:7px;background:#f7f9fc;border:1px solid var(--line)}
 .monitor-target small{color:var(--muted)}
 .monitor-target code,.monitor-table-target{overflow-wrap:anywhere;word-break:break-word}
+.project-plan-details{display:grid;grid-template-columns:125px minmax(0,1fr);gap:13px 18px;margin:0}
+.project-plan-details dt{color:var(--muted)}
+.project-plan-details dd{margin:0;min-width:0;overflow-wrap:anywhere}
+.project-plan-details code{display:block;overflow-wrap:anywhere}
+.project-plan-details+.table-wrap,.project-plan-details~section,.project-plan-details+.muted{margin-top:22px}
+.project-file-check{margin-top:22px}
+.file-observation{border-top:1px solid var(--line);padding-top:16px;min-width:0}
+.file-observation h4,.file-digest{overflow-wrap:anywhere}
+.file-observation h4{font-size:var(--font-ui);margin:0 0 8px}
+.file-digest{margin:8px 0}
+.file-history{padding:12px;background:var(--canvas);border-left:3px solid #94a3b8}
 
 @media(max-width:700px){
  .server-file-path{align-items:flex-start;flex-direction:column}
  .server-file-item>.between{align-items:flex-start;flex-direction:column}
  .server-file-identity{text-align:left}
  .project-config-file{min-height:260px}
+ .project-plan-details{grid-template-columns:minmax(0,1fr);gap:5px}
+ .project-plan-details dd{margin-bottom:12px}
 }

@@ -11,11 +11,12 @@
 | 项目草稿 | `id`（projectId）、template、cfg.templateRev、draftRev、固定映射 pins |
 | 已应用快照 | appliedSnapshot：templateId、templateRevision、cfg、实际匹配 files、应用时间 |
 | 服务器读取快照 | serverReadSnapshot：独立内容与上次成功读取时间；失败保留原值 |
+| 文件核对观测 | fileCheck：固定参照身份、尝试时间、三类文件摘要状态与历史观测；只读核对不改动其他快照 |
 | 配置编辑缓存 | editorDrafts：按 templateId 保存未提交正文和映射，与公共配置修订分开 |
 
 文件替换或公共配置保存不写入项目 cfg、已应用快照或读取快照。采用只更新指定项目 cfg 和 D 修订。应用确认固定输入，成功后更新该项目应用参照及模拟读取结果；失败/部分完成沿用现有操作事实规则。
 
-读取失败只记录尝试时间/失败状态，旧成功内容及时间不变，页面明确显示旧结果。项目配置页分别展示服务器读取、已应用参照、公共配置最新版本与项目草稿。
+项目配置页以正式界面为准，展示固定部署信息与受管文件摘要核对；失败保留历史观测。公共配置、采用差异与项目草稿移到“更多 → 项目草稿与更新”独立弹窗，读取快照仍与草稿分开保存。当前页面和验证见[项目文件与巡检](project-files-and-checks.md)。
 
 ## 迁移与空状态
 
@@ -49,7 +50,7 @@ CHROMIUM=/usr/bin/chromium python3 tests/browser-asset-linkage.py
 - [应用落点确认](screenshots/apply-preview-desktop.png)
 - [ARM 部署预览](screenshots/deployment-preview-arm-desktop.png)
 - [缺架构阻塞](screenshots/deployment-blocked-desktop.png)
-- [读取失败保留旧内容](screenshots/project-read-stale-desktop.png)
+- [摘要核对失败保留历史观测](screenshots/project-configuration/read-failed-mobile.png)
 - [移动端详情与长路径](screenshots/asset-detail-mobile.png)
 
 自动化与浏览器验证只证明原型模拟行为，不代表真实部署成功或用户验收。
