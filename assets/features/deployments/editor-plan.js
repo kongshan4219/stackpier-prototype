@@ -9,7 +9,7 @@ function configurationProjectDraft(t,draft){
   draft.cfg.fileMappings=[{...clone(t.programRef),file:program?.name||'程序版本已失效',targetPath:root+'/program'},{...clone(t.configRef),file:config?.name||'配置版本已失效',targetPath:root+'/config.json'}];
   draft.cfg.appConfig=config?.text||'';draft.cfg.configRef=clone(t.configRef);
  }
- if(t.type==='compose')draft.cfg.composeFiles=clone(t.composeFiles||[]);
+ if(t.type==='compose'){draft.cfg.composeFiles=clone(t.composeFiles||[]);draft.cfg.pathMappings=clone(t.pathMappings||[]);}
  return draft;
 }
 function configurationFrpFiles(node,role,source,parameters){

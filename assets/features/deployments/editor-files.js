@@ -23,8 +23,31 @@ async function configurationUploadFiles(m,chosen){
  }catch(error){if(ui.modal===m&&m.uploadSequence===sequence){m.uploading=false;syncTemplateEditorDraft();renderModal();modalError(error.message);}}
  finally{if(ui.modal===m&&m.uploadSequence===sequence)m.uploading=false;}
 }
-document.addEventListener('change',event=>{if(event.target.id==='tpl-files'&&ui.modal?.kind==='templateedit')return configurationUploadFiles(ui.modal,event.target.files||[]);});
+
 registerPrototypeHandlers(prototypeActions,['configuration-file-remove'],(event,target,data)=>{
  const m=ui.modal;if(m?.kind!=='templateedit'||m.uploading||m.saving)return;
  syncTemplateEditorDraft();m.editor.files=m.editor.files.filter(file=>file.path!==data.path);renderModal();cacheTemplateDraft();
+});
+
+function configurationMappingFields(v,m){
+ const mappings=v.mappings||[];
+ return `<section class="compose-mappings" aria-label="文件与目录映射"><div class="actions"><strong>文件与目录映射</strong>${mappings.length<32?btn('添加映射','configuration-mapping-add',{},'small'):''}</div>${mappings.length?'<div class="mapping-head" aria-hidden="true"><span>类型</span><span>本机绝对路径</span><span>远程绝对路径</span></div>':''}${mappings.map((row,i)=>`<div class="mapping-row" role="group" aria-label="映射 ${i+1}"><div class="mapping-kind"><select id="tpl-map-kind-${i}" name="tpl-map-kind-${i}" aria-label="映射 ${i+1} 类型"><option value="file" ${row.kind==='file'?'selected':''}>文件</option><option value="directory" ${row.kind==='directory'?'selected':''}>目录</option></select>${btn('×','configuration-mapping-remove',{index:i},'small')}</div><input id="tpl-map-local-${i}" name="tpl-map-local-${i}" aria-label="映射 ${i+1} 本机绝对路径" value="${h(row.localPath)}" required pattern="/.*" maxlength="1024" placeholder="/srv/config/nginx.conf"><input id="tpl-map-remote-${i}" name="tpl-map-remote-${i}" aria-label="映射 ${i+1} 远程绝对路径" value="${h(row.remotePath)}" required pattern="/.*" maxlength="1024" placeholder="/srv/nginx/nginx.conf"></div>`).join('')}<p class="muted">本机指运行栈桥管理端的机器。目录同步内容，两端末尾有无 / 均可；文件须填写完整文件名。部署前使用 rsync 覆盖同名文件，保留远端多余文件；全部同步成功后启动。</p><p class="muted">Compose 使用远程绝对路径只读挂载。最多 32 行、合计 32 MiB／1024 个文件与目录条目。同步目标在卸载时保留。原型仅模拟，不读取本机文件或执行 rsync。</p></section>`;
+}
+function configurationNormalizeMappings(rows){return rows.map(row=>({...row,...(row.kind==='directory'?{localPath:row.localPath.replace(/\/+$/,''),remotePath:row.remotePath.replace(/\/+$/,'')}:{})}));}
+function configurationMappingError(rows){
+ if(rows.length>32)return '文件与目录映射最多 32 行';
+ const normalized=configurationNormalizeMappings(rows),valid=value=>value.startsWith('/')&&value!=='/'&&value.length<=1024&&!/[\0\r\n]/.test(value)&&!value.split('/').slice(1).some(part=>!part||part==='.'||part==='..'),overlap=(a,b)=>a===b||a.startsWith(b+'/')||b.startsWith(a+'/');
+ for(const [i,row] of normalized.entries()){
+  if(!['file','directory'].includes(row.kind)||!valid(row.localPath)||!valid(row.remotePath))return '映射两端须为有效绝对路径；文件须填写完整文件名';
+  if(['/proc','/sys','/dev','/run','/opt/stackpier','/opt/stackpier-compose','/var/lib/stackpier','/var/lib/stackpier-compose'].some(path=>overlap(path,row.remotePath)))return '映射目标与系统运行目录或栈桥受管目录冲突';
+  if(normalized.slice(0,i).some(old=>overlap(old.remotePath,row.remotePath)))return '远程映射路径不能重复或相互包含';
+ }
+ return '';
+}
+function configurationMappingSummary(rows){return rows.map(row=>`<p>${row.kind==='file'?'文件':'目录'} · <code>${h(row.localPath)}</code> → <code>${h(row.remotePath)}</code></p>`).join('')+(rows.length?notice('部署前 rsync 同步','覆盖同名文件，保留远端多余文件；全部同步成功后启动。浏览器只做模拟。'):'');}
+registerPrototypeHandlers(prototypeActions,['configuration-mapping-add','configuration-mapping-remove'],(event,target,data)=>{
+ const m=ui.modal;if(m?.kind!=='templateedit'||m.saving)return;syncTemplateEditorDraft();
+ if(target.dataset.action==='configuration-mapping-add'){if(m.editor.mappings.length<32)m.editor.mappings.push({kind:'file',localPath:'',remotePath:''});}
+ else m.editor.mappings.splice(Number(data.index),1);
+ renderModal();cacheTemplateDraft();
 });

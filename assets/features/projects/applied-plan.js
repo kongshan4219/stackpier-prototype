@@ -33,7 +33,7 @@ function projectAppliedPlan(p){
   const table=services?`<div class="table-wrap"><table aria-label="Compose 固定服务"><thead><tr><th>服务</th><th>固定镜像</th><th>端口</th><th>环境变量名称</th><th>健康检查</th></tr></thead><tbody>${services.map(service=>`<tr><td>${h(service.name)}</td><td><code>${h(service.image)}</code></td><td>${h((service.ports||[]).join('、')||'—')}</td><td>${h((service.environment||[]).join('、')||'—')}</td><td>${service.healthcheck?'已配置':'未配置'}</td></tr>`).join('')}</tbody></table></div>`:'<p class="muted">历史参照未保存固定服务摘要。</p>';
   const files=(snapshot.files||[]).length?`<section><h3>固定文件</h3><ul>${snapshot.files.map(file=>`<li><code>${h(file.targetPath)}</code> · ${h(file.binary?.size||'大小未记录')} ${projectPlanDigest(file.binary?.sha256)}</li>`).join('')}</ul></section>`:'';
   const resources=[...(compose?.volumes||[]).map(item=>({...item,kind:'命名卷'})),...(compose?.networks||[]).map(item=>({...item,kind:'网络'}))];
-  return projectPlanDetails(items)+table+files+(resources.length?`<section><h3>卷与网络范围</h3><ul>${resources.map(item=>`<li>${item.kind} <code>${h(item.resource||item.name)}</code> · ${item.external?'外部，保留':'项目独占'}</li>`).join('')}</ul></section>`:'');
+  return projectPlanDetails(items)+table+configurationMappingSummary(cfg.pathMappings||[])+files+(resources.length?`<section><h3>卷与网络范围</h3><ul>${resources.map(item=>`<li>${item.kind} <code>${h(item.resource||item.name)}</code> · ${item.external?'外部，保留':'项目独占'}</li>`).join('')}</ul></section>`:'');
  }
  const files=projectFixedFiles(p);
  items.push(['服务',h(p.name+'.service')],['独占目录',`<code>${h(directory)}</code>`],

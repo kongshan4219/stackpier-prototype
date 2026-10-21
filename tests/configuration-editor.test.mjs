@@ -10,7 +10,7 @@ function upload(p,name,text){return p.run(`configurationUploadFiles(ui.modal,[{n
 
 test('三类编辑器只展示正式字段，已有类型和 FRP 角色固定',()=>{
  const p=prototype();
- for(const [id,fields] of [['t1',['程序固定版本','配置固定版本','健康检查端口']],['t5',['Compose YAML 正文','显式变量（JSON）','附加文件']],['frp-template-client',['FRP 程序固定版本','回环管理端口','允许映射端口起点']]]){
+ for(const [id,fields] of [['t1',['程序固定版本','配置固定版本','健康检查端口']],['t5',['Compose YAML 正文','显式变量（JSON）','文件与目录映射']],['frp-template-client',['FRP 程序固定版本','回环管理端口','允许映射端口起点']]]){
   p.click('templateedit',{id});const html=p.html('modal');
   for(const field of fields)assert.ok(html.includes(field));
   assert.doesNotMatch(html,/systemd 正文|架构选择规则|生成模板与|运行用户|连接到已部署 FRPS/);
@@ -116,4 +116,19 @@ test('FRPC 与 visitor 保存后可独立预览未绑定服务，不需要选旧
   assert.match(p.run('ui.modal.draft.cfg.appConfig'),/serverPort = 9/);
   assert.doesNotMatch(p.run('ui.modal.draft.cfg.source'),/undefined|Requires=/);
  }
+});
+
+
+test('Compose 映射按三列逐行编辑，目录后缀归一并固定到新预览',()=>{
+ const p=prototype();open(p,'compose');
+ p.click('configuration-mapping-add');p.submit('templateedit',{'tpl-name':'路径配置','tpl-source':source,'tpl-map-kind-0':'directory','tpl-map-local-0':'/srv/input/','tpl-map-remote-0':'/srv/output/'});
+ assert.equal(p.run('S.templates.find(t=>t.name==="路径配置").pathMappings[0].remotePath'),'/srv/output');
+ p.run('openModal("templateedit",{id:S.templates.find(t=>t.name==="路径配置").id})');
+ assert.equal(p.document.getElementById('tpl-map-kind-0').value,'directory');
+ assert.equal(p.document.getElementById('tpl-map-local-0').value,'/srv/input');
+ p.click('configuration-mapping-add');assert.equal(p.run('ui.modal.editor.mappings.length'),2);
+ p.click('configuration-mapping-remove',{index:0});assert.equal(p.run('ui.modal.editor.mappings.length'),1);
+ assert.match(p.run('configurationMappingError([{kind:"file",localPath:"relative",remotePath:"/srv/output"}])'),/绝对路径/);
+ assert.match(p.run('configurationMappingError([{kind:"file",localPath:"/srv/file",remotePath:"/srv/output/"}])'),/绝对路径/);
+ assert.match(p.run('configurationMappingError([{kind:"directory",localPath:"/srv/input",remotePath:"/srv/output"},{kind:"file",localPath:"/srv/file",remotePath:"/srv/output/file"}])'),/相互包含/);
 });

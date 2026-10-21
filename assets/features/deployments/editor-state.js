@@ -16,11 +16,12 @@ function configurationVersions(kind,type){
 function configurationInitial(t,type='systemd'){
  const role=t?.frpRole||'server',config=t?.configRef||t?.fileMappings?.find(mapping=>mapping.pins?.some(pin=>storedFileKind(assetRevision(pin.fileId,pin.revision)||{})!=='elf'));
  return {name:t?.name||'',type:t?deploymentType(t):type,revision:t?.rev||0,programVersion:configurationVersionValue(t?.programRef?.pins?.[0]),configVersion:configurationVersionValue(config?.pins?.[0]),port:t?.port||18080,
-  source:t?.tpl||'',variables:t?.variables||'{}',files:clone(t?.composeFiles||[]),role,frp:configurationFrpDefaults(t,role)};
+  source:t?.tpl||'',variables:t?.variables||'{}',files:clone(t?.composeFiles||[]),mappings:clone(t?.pathMappings||[]),role,frp:configurationFrpDefaults(t,role)};
 }
 function readConfigurationDraft(m,fd){
  const v=clone(m.editor),value=(name,fallback)=>fd.has(name)?String(fd.get(name)):fallback;
  v.name=value('tpl-name',v.name);v.source=value('tpl-source',v.source);v.variables=value('tpl-variables',v.variables);
+ v.mappings=(v.mappings||[]).map((row,i)=>({...row,kind:value('tpl-map-kind-'+i,row.kind),localPath:value('tpl-map-local-'+i,row.localPath),remotePath:value('tpl-map-remote-'+i,row.remotePath)}));
  v.programVersion=value('tpl-program',v.programVersion);v.configVersion=value('tpl-config',v.configVersion);v.port=Number(value('tpl-port',v.port));
  for(const [field,key] of [['fc-bind','controlAddr'],['fc-port','controlPort'],['fc-admin','adminPort'],['fc-start','allowedPortStart'],['fc-end','allowedPortEnd']])
   v.frp[key]=key==='controlAddr'?value(field,v.frp[key]):Number(value(field,v.frp[key]));

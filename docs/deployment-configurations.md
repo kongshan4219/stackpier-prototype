@@ -9,10 +9,10 @@
 | 类型 | 编辑内容 |
 | --- | --- |
 | systemd | 程序固定版本、配置固定版本、1024–65535 健康检查端口；程序通过 STACKPIER_CONFIG 读取配置，并提供回环 /health。 |
-| Compose | Compose YAML 正文、显式变量 JSON、附加文件；同名上传替换当前草稿中的附件，支持移除。 |
+| Compose | Compose YAML 正文、显式变量 JSON、文件／目录映射；每行类型、本机绝对路径、远程绝对路径，支持添加与移除。 |
 | FRP | x86_64 程序固定版本、服务角色、认证 Token、控制地址 / 端口、回环管理端口、允许映射端口范围。已有配置的角色不可更换。 |
 
-不再在公共配置编辑器提供任意 systemd 正文、架构规则、目标绝对路径、FRP 生成模板、运行用户或预先选择连接。新 systemd 配置在部署预览时按服务名生成模拟独占落点。FRPC / visitor 初始为未绑定的 `127.0.0.1:9`，连接与 TCP / STCP 映射在 FRP 页面管理。
+不再在公共配置编辑器提供任意 systemd 正文、架构规则、systemd 任意目标绝对路径、FRP 生成模板、运行用户或预先选择连接。新 systemd 配置在部署预览时按服务名生成模拟独占落点。FRPC / visitor 初始为未绑定的 `127.0.0.1:9`，连接与 TCP / STCP 映射在 FRP 页面管理。
 
 ## 保存与草稿
 
@@ -21,11 +21,11 @@
 - Token 从不回填，不进入编辑缓存；离开编辑器或更换类型 / 角色即清空。仍只接受 `EXAMPLE_` / `DEMO_` 开头的虚构值；留空保留已保存凭据。
 - 保存失败保留输入；读取时的配置修订与当前修订不一致时拒绝覆盖。保存不会建立项目、自动采用更新或启动部署。
 - 浏览器存储配额不足或不可用时拒绝保存，保留原配置与草稿，移除附件后可重试。
-- 上传中禁用保存；晚到的文件读取结果不会覆盖已关闭或已切换类型的编辑器，读取期间填写的正文保持。
+- 路径映射只保存表单值；原型不检查本机来源是否存在，也不读取来源内容。
 
-## 附件与校验
+## 映射与校验
 
-Compose 附件独立于公共文件库，路径固定为 `files/文件名`，正文通过 `./files/文件名` 只读挂载。文件名使用英文、数字或 `._-`，不超过 100 字符；单文件 1 B–1 MiB，总量 2 MiB，最多 32 个。原型保存附件字节用于模拟固定快照，不执行传输。
+本机指运行管理端的机器，文件映射两端填写完整文件名；目录映射同步内容，两端有无末尾 `/` 行为相同。路径须为规范绝对路径，远程目标不得重复、互相包含或覆盖系统运行 / 栈桥受管目录。Compose 使用远程绝对路径只读挂载。正式部署预览固定内容，先 rsync 覆盖同名文件、保留远端多余文件，同步成功后启动；卸载保留映射目标。原型仅保存虚构路径并模拟流程，不读取本机文件或执行 rsync。正式快照最多 32 行、32 MiB／1024 个条目。
 
 变量须为最多 64 项的 JSON 字符串对象；名称不超过 64 字符，值不超过 8192 UTF-8 字节且不含 NUL。原型不实现正式后端的 Compose YAML 白名单解析、变量展开或真实资源检查。
 
@@ -33,13 +33,13 @@ FRP 校验私网 / 回环控制地址、管理与控制端口冲突、最多 256
 
 ## 历史数据
 
-打开编辑器不迁移或重写已保存配置、项目草稿、已应用参照和读取记录。原任意正文 / 文件映射保留在历史修订；明确保存后生成新结构的公共修订。历史 Compose 绝对路径映射在编辑器提示重新上传所需附件，不默默带入新修订。
+打开编辑器不迁移或重写已保存配置、项目草稿、已应用参照和读取记录。原任意正文 / 文件映射保留在历史修订；明确保存后生成新结构的公共修订。历史公共资产映射不自动转成管理端路径；新的 `pathMappings` 与旧模型分开保存。已有旧版附件继续保留内容与移除操作，不再提供新上传。
 
 公共文件仍按稳定 ID 和内容修订选择，不跟随最新文件。原型可查看配置历史与文件反向引用；这不表示正式应用已有公共历史恢复功能。项目采用与应用是独立操作，见[资产版本联动](asset-linkage.md)。
 
 ## 组件与验证
 
-`assets/features/deployments/` 中的 `editor-state.js` 管理内存草稿，`editor-view.js` 渲染表单，`editor-files.js` 读取附件，`editor-save.js` 校验保存，`editor-plan.js` 转换新的模拟预览；`frp-services.js` 提供 FRP 字段与校验。入口仅装配。
+`assets/features/deployments/` 中的 `editor-state.js` 管理内存草稿，`editor-view.js` 渲染表单，`editor-files.js` 管理映射行与旧附件，`editor-save.js` 校验保存，`editor-plan.js` 转换新的模拟预览；`frp-services.js` 提供 FRP 字段与校验。入口仅装配。
 
 组件回归入口为 `tests/configuration-editor.test.mjs` 与 README 的全量测试。浏览器入口 `tests/browser-configuration-editor.mjs` 需要 `STACKPIER_PREVIEW_URL`、`STACKPIER_ACTUAL_URL`、`STACKPIER_SCREENSHOTS`，并通过 `STACKPIER_PLAYWRIGHT_MODULE` / `CHROMIUM` 指定已有依赖。实际构建使用虚构 API 替身，原型使用隔离浏览器状态；不连接真实实例、数据库或服务器。
 
@@ -52,3 +52,9 @@ FRP 校验私网 / 回环控制地址、管理与控制端口冲突、最多 256
 | FRP | [1440px](screenshots/configuration-editor/prototype-frp-1440.png) | [390px](screenshots/configuration-editor/prototype-frp-390.png) |
 
 实际构建的 systemd 对照：[桌面](screenshots/configuration-editor/actual-systemd-1440.png)、[手机](screenshots/configuration-editor/actual-systemd-390.png)。FRP 提示保留“仅接受虚构 Token”的原型限制，不声称具备真实私有数据库。以上为本地自验证，用户视觉验收与发布待完成。
+
+## 文件／目录映射迭代
+
+本次改为三列映射表单并同步正式前后端。234 项原型组件检查通过；与本次正式构建对照的 69 项浏览器检查通过，覆盖 1440 / 390px、映射添加与移除、文件后缀错误、目录路径归一、存储失败和保存返回。旧附件的字节保存检查只用于历史数据，不表示仍提供上传入口。
+
+映射截图：[正式桌面](screenshots/configuration-editor/actual-mappings-1440.png)、[正式手机](screenshots/configuration-editor/actual-mappings-390.png)、[原型桌面](screenshots/configuration-editor/prototype-mappings-1440.png)、[原型手机](screenshots/configuration-editor/prototype-mappings-390.png)。上述旧编辑器截图仍归属所注明的旧版本。新映射尚未发布，用户体验验收待完成。

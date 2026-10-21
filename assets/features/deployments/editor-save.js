@@ -16,7 +16,7 @@ function configurationSaveError(t,v,token){
  }
  if(v.type==='compose'){
   if(!v.source.trim())return '请填写 Compose YAML 正文。';
-  return configurationVariableError(v.variables)||configurationFileError(v.files);
+  return configurationVariableError(v.variables)||configurationFileError(v.files)||configurationMappingError(v.mappings||[]);
  }
  if(v.type==='frp')return configurationFrpError(v,token);
  return '';
@@ -30,7 +30,7 @@ registerPrototypeHandlers(prototypeForms,['templateedit'],(event,form,fd,get,has
  const common={...t,id:t?.id||uid('template'),name:v.name.trim(),type:v.type,editorSchema:1,rev:(t?.rev||0)+1};
  let n;
  if(v.type==='systemd')n={...common,programRef:configurationPin(v.programVersion),configRef:configurationPin(v.configVersion),program:configurationVersion(v.programVersion).name,port:v.port,software:t?.software||'custom',tpl:'',contentMode:'managed',fileMappings:[],desc:'固定程序、配置文件与健康检查端口'};
- else if(v.type==='compose')n={...common,tpl:v.source,variables:v.variables,composeFiles:clone(v.files),fileMappings:[],programRef:null,program:'',port:null,contentMode:'file',desc:'已保存 Compose 正文、显式变量与附加文件'};
+ else if(v.type==='compose')n={...common,tpl:v.source,variables:v.variables,composeFiles:clone(v.files),pathMappings:configurationNormalizeMappings(v.mappings||[]),fileMappings:[],programRef:null,program:'',port:null,contentMode:'file',desc:'已保存 Compose 正文、显式变量与文件／目录映射'};
  else n={...common,...configurationFrpTemplate(t,v,token)};
  n.revisions=[...(t?.revisions||[]),clone({...n,revisions:undefined})];
  m.saving=true;
