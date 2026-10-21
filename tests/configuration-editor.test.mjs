@@ -123,9 +123,15 @@ test('Compose 映射按三列逐行编辑，目录后缀归一并固定到新预
  const p=prototype();open(p,'compose');
  p.click('configuration-mapping-add');p.submit('templateedit',{'tpl-name':'路径配置','tpl-source':source,'tpl-map-kind-0':'directory','tpl-map-local-0':'/srv/input/','tpl-map-remote-0':'/srv/output/'});
  assert.equal(p.run('S.templates.find(t=>t.name==="路径配置").pathMappings[0].remotePath'),'/srv/output');
+ p.run('globalThis.mappingTemplate=S.templates.find(t=>t.name==="路径配置");globalThis.mappingDraft=configurationProjectDraft(mappingTemplate,{name:"mapping-fixture",cfg:{}})');
+ assert.equal(p.run('mappingDraft.cfg.pathMappings[0].deleteExtraneous'),true);
+ assert.equal(p.run('mappingTemplate.pathMappings[0].deleteExtraneous'),undefined);
+ assert.match(p.run('configurationMappingSummary(mappingDraft.cfg.pathMappings,true)'),/完全同步，删除多余条目/);
+ assert.match(p.run('configurationMappingSummary(mappingTemplate.pathMappings,true)'),/覆盖同名，保留多余条目/);
  p.run('openModal("templateedit",{id:S.templates.find(t=>t.name==="路径配置").id})');
  assert.equal(p.document.getElementById('tpl-map-kind-0').value,'directory');
  assert.equal(p.document.getElementById('tpl-map-local-0').value,'/srv/input');
+ assert.match(p.html('modal'),/会删除远程映射目录内多余文件和子目录/);
  p.click('configuration-mapping-add');assert.equal(p.run('ui.modal.editor.mappings.length'),2);
  p.click('configuration-mapping-remove',{index:0});assert.equal(p.run('ui.modal.editor.mappings.length'),1);
  assert.match(p.run('configurationMappingError([{kind:"file",localPath:"relative",remotePath:"/srv/output"}])'),/绝对路径/);

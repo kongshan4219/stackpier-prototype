@@ -33,6 +33,7 @@ try{
    assert.deepEqual(await fields(page),await fields(reference),width+' '+type+'字段与实际界面一致');checks.push(width+' '+type+'字段顺序、必填、只读和数值范围一致');
    check(width+' '+type+'弹窗宽度一致',Math.abs((await page.locator('#modal').boundingBox()).width-(await reference.getByRole('dialog').boundingBox()).width)<2);
    if(type==='systemd')check(width+' systemd 弹窗高度一致',Math.abs((await page.locator('#modal').boundingBox()).height-(await reference.getByRole('dialog').boundingBox()).height)<2);
+   if(type==='compose')check(width+' Compose 删除规则提示一致',await page.getByText('会删除远程映射目录内多余文件和子目录',{exact:false}).isVisible()&&await reference.getByText('会删除远程映射目录内多余文件和子目录',{exact:false}).isVisible());
    await fitting(page,width+' '+type);
    await capture(reference,'actual-'+type+'-'+width);await capture(page,'prototype-'+type+'-'+width);
    await page.keyboard.press('Escape');check(width+' '+type+' Escape 关闭',await page.locator('#modal').evaluate(el=>!el.open));
@@ -80,6 +81,9 @@ try{
   check(width+' 返回编辑保留 Compose 草稿',(await page.getByLabel('Compose YAML 正文').inputValue()).endsWith('# draft\n'));
   await page.getByRole('button',{name:'保存并返回部署',exact:true}).click();
   check(width+' 保存后返回且仍需预览',await page.getByRole('button',{name:'检查并预览',exact:true}).isVisible());
+  await page.getByRole('button',{name:'检查并预览',exact:true}).click();
+  check(width+' 固定预览显示目录完全同步',(await page.locator('#modal').innerText()).includes('完全同步，删除多余条目'));
+  await capture(page,'prototype-mirror-preview-'+width);
   await page.keyboard.press('Escape');await boot(page,'#templates?dialog=templateedit&type=frp');
   await page.getByLabel('认证 Token',{exact:true}).fill('DEMO_UNSAVED_BROWSER_TOKEN');
   await page.getByLabel('FRP 服务角色').selectOption('client');
