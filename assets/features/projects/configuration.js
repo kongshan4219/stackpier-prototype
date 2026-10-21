@@ -16,7 +16,8 @@ function projectFileObservation(file){
 }
 function projectFilesView(p){
  const check=p.fileCheck,busy=projectFileReads.has(p.id);
- return `<section class="stack project-file-check" aria-label="已部署文件核对"><div class="flex wrap"><h3>已部署文件核对</h3><button type="button" class="btn" data-action="checkprojectfiles" data-id="${h(p.id)}" ${busy?'disabled':''}>${busy?'核对中…':'核对受管文件'}</button></div><p class="muted">对照本项目成功部署参照，只读取程序、配置和 unit 的摘要。核对不应用配置，也不启停服务。</p>
+ const description=projectUsesUnitBody(p,p.appliedSnapshot?.cfg)?'仅模拟对照已保存的 unit 正文摘要；文件与目录映射未读取内容，无法核对摘要。这里不会访问服务器、应用配置或启停服务。':'对照本项目成功部署参照，只读取程序、配置和 unit 的摘要。核对不应用配置，也不启停服务。';
+ return `<section class="stack project-file-check" aria-label="已部署文件核对"><div class="flex wrap"><h3>已部署文件核对</h3><button type="button" class="btn" data-action="checkprojectfiles" data-id="${h(p.id)}" ${busy?'disabled':''}>${busy?'核对中…':projectUsesUnitBody(p)?'模拟核对 unit':'核对受管文件'}</button></div><p class="muted">${description}</p>
  ${check?.error?notice('本次核对未确认：'+check.error+'。下方保留的结果为历史观测。','','error'):''}
  ${check?.reference&&check.reference!==projectReferenceKey(p)?notice('此观测对应旧部署参照，已过期；请重新核对受管文件。'):''}
  ${check?.checked?`<p class="muted">最近核对尝试：${fmt(check.checked)}；结果仅代表观测时刻。</p>`:''}
@@ -39,6 +40,7 @@ function projectDraftBody(p){
 registerPrototypeHandlers(prototypeActions,['projectdraft'],(event,target,data)=>openModal('projectdraft',{id:data.id}));
 registerPrototypeHandlers(prototypeModals,['projectdraft'],function(m,p){
  if(!p)return closeModal();
+ if(projectUsesUnitBody(p))return layout('项目更新 · '+p.name,'当前项目保留首次部署的固定正文与映射。',notice('项目更新后续单独设计','本次只提供新配置与首次模拟部署；保存公共配置不会改变此项目。'),btn('返回项目','closemodal'));
  layout('项目草稿与更新 · '+p.name,'原型保留的配置采用与应用流程；只修改此项目，执行仍需单独确认。',projectIsFrp(p)?frpProjectDraftBody(p):projectDraftBody(p),btn('返回项目','closemodal'),true);
 });
 registerPrototypeHandlers(prototypeActions,['adopttemplate'],(event,target,data)=>openModal('assetupdate',{id:data.id}));

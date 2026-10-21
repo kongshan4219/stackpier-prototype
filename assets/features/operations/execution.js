@@ -32,7 +32,7 @@ function applyRuntimeObservation(p,assessment,{kind,operationId}={}){
  if(p.runtime==='running')p.stopVerified=false;
  if(assessment.baselineVerified)p.desired=p.runtime;
  if(assessment.status==='success'&&assessment.targetReached&&kind==='stop')p.stopVerified=true;
- p.health=p.runtime==='running'?(p.frpService?'unknown':'healthy'):p.runtime==='stopped'&&p.stopVerified?'na':'unhealthy';
+ p.health=p.runtime==='running'?(p.frpService||projectUsesUnitBody(p)?'unknown':'healthy'):p.runtime==='stopped'&&p.stopVerified?'na':'unhealthy';
  return true;
 }
 
@@ -60,6 +60,7 @@ function startOperation(p,kind,input={},outcome='success',options={}){
  if(p&&kind==='deploy'&&!p.applied){options={...options,newProject:true};p.creationPending=true;}
  let mappedFiles=[];
  if(p){
+  if(projectUsesUnitBody(p)&&['apply','update'].includes(kind))return rejectOperation(p,kind,'服务文件正文与路径映射的项目更新后续单独设计；此项目保留原部署参照。');
   const targetError=serverOperationError(p.server);if(targetError)return rejectOperation(p,kind,targetError);
   if(['apply','update','start','stop','restart','uninstall'].includes(kind)&&!['installed',...(kind==='uninstall'?['uninstalling']:[])].includes(p.life))return rejectOperation(p,kind,'当前项目不是完整已部署状态，不能直接执行此操作。请先处理现有部署事实。');
   if(p.unsafe&&['start','restart'].includes(kind))return rejectOperation(p,kind,'已有部分覆盖尚未处理，不能用普通启动掩盖不安全的数据状态。');

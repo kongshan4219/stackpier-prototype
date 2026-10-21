@@ -14,13 +14,15 @@ function deploymentCleanupTargets(project,cfg=project.cfg){
   add('file',`${root}/app.conf`,'应用配置');
  }
  for(const mapping of cfg.fileMappings||[])add('file',mapping.targetPath,`映射文件 · ${mapping.file||mapping.program}`,resourceOwnership(mapping));
+ if(projectUsesUnitBody(project,cfg))for(const mapping of cfg.pathMappings||[])add(mapping.kind,mapping.remotePath,'外部映射目标（保留）','external');
  if(cfg.dataDir)add('directory',cfg.dataDir,'项目数据目录');
  return targets;
 }
 
 function deploymentSnapshot(project,cfg=project.cfg){
  const server=sr(project.server);
- return {project:{...clone(project),cfg:clone(cfg)},server:server?{id:server.id,name:server.name,host:server.host,port:server.port,fp:server.fp}:null,templateName:tpl(project.template)?.name||'未保留部署配置名称',targets:deploymentCleanupTargets(project,cfg).filter(t=>!t.shared)};
+ const targets=deploymentCleanupTargets(project,cfg),preserveExternal=projectUsesUnitBody(project,cfg),external=preserveExternal?targets.filter(t=>t.ownership==='external'):[];
+ return {project:{...clone(project),cfg:clone(cfg)},server:server?{id:server.id,name:server.name,host:server.host,port:server.port,fp:server.fp}:null,templateName:tpl(project.template)?.name||'未保留部署配置名称',targets:targets.filter(t=>!t.shared&&(!preserveExternal||t.ownership!=='external')),...(external.length?{preserved:clone(external)}:{})};
 }
 
 function failedProject(id){return (S.failedProjects||[]).find(item=>item.id===id);}
@@ -67,7 +69,9 @@ function cleanupTargetsOverlap(first,second){
 }
 
 function deploymentScopesOverlap(first,second){
- return first.project.server===second.project.server&&first.targets.some(a=>second.targets.some(b=>cleanupTargetsOverlap(a,b)));
+ const withMappings=projectUsesUnitBody(first.project)||projectUsesUnitBody(second.project);
+ const targets=scope=>[...scope.targets,...(scope.preserved||[]),...(withMappings?(scope.project.cfg?.pathMappings||[]).map(row=>({kind:row.kind,path:row.remotePath})):[])];
+ return first.project.server===second.project.server&&targets(first).some(a=>targets(second).some(b=>cleanupTargetsOverlap(a,b)));
 }
 
 function activeDeploymentConflict(deployment,ignoreId=''){

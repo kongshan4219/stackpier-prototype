@@ -4,6 +4,10 @@
 function configurationProjectDraft(t,draft){
  if(!t.editorSchema)return draft;
  if(t.type==='systemd'&&!t.frpRole){
+  if(t.editorSchema===2){
+   draft.cfg={...draft.cfg,systemdMode:'unit',source:t.tpl,pathMappings:clone(t.pathMappings||[]).map(row=>({...row,...(row.kind==='directory'?{deleteExtraneous:true}:{})})),program:'',programRef:null,configRef:null,port:null,appConfig:'',fileMappings:[]};
+   return draft;
+  }
   const root='/srv/stackpier-demo/'+draft.name,program=configurationVersion(configurationVersionValue(t.programRef?.pins?.[0])),config=configurationVersion(configurationVersionValue(t.configRef?.pins?.[0]));
   draft.cfg.source=`[Unit]\nDescription=${draft.name}\nAfter=network.target\n[Service]\nExecStart=${root}/program\nEnvironment=STACKPIER_CONFIG=${root}/config.json\nRestart=on-failure\n[Install]\nWantedBy=multi-user.target`;
   draft.cfg.fileMappings=[{...clone(t.programRef),file:program?.name||'程序版本已失效',targetPath:root+'/program'},{...clone(t.configRef),file:config?.name||'配置版本已失效',targetPath:root+'/config.json'}];

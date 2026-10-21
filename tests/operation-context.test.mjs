@@ -26,10 +26,10 @@ test('firewall copy confirmation is complete and fixed, original preserved',()=>
 });
 test('configuration editing preserves selected server/name and existing project snapshots',()=>{
  const a=prototype(),before=a.run('JSON.stringify(S.projects)');a.click('newproject',{template:'t1',server:'s4'});a.submit('newproject',{'np-template':'t1','np-server':'s4','np-name':'qa-adapt'});a.click('deployment-config-manage');
- a.submit('templateedit',{'tpl-name':'QA edited configuration','tpl-program':'bin1@1','tpl-config':'file1@1','tpl-port':'18080'});
+ a.submit('templateedit',{'tpl-name':'QA edited configuration','tpl-source':'[Service]\nExecStart=/srv/qa-adapt/program\n'});
  assert.equal(a.run('ui.modal.kind'),'newproject');assert.equal(a.document.getElementById('np-server').value,'s4');assert.equal(a.document.getElementById('np-name').value,'qa-adapt');
  assert.equal(a.run('JSON.stringify(S.projects.map(p=>p.applied))'),JSON.stringify(JSON.parse(before).map(p=>p.applied)));a.submit('newproject',{'np-template':'t1','np-server':'s4','np-name':'qa-adapt'});
- assert.match(a.run('ui.modal.draft.cfg.source'),/ExecStart=\/srv\/stackpier-demo\/qa-adapt\/program/);assert.equal(a.run('ui.modal.draft.cfg.port'),18080);
+ assert.equal(a.run('ui.modal.draft.cfg.source'),'[Service]\nExecStart=/srv/qa-adapt/program\n');assert.equal(a.run('ui.modal.draft.cfg.port'),null);
 });
 test('hash history restores page/object/tab/filter; invalid references are safe',()=>{
  const a=prototype();a.click('navigate',{page:'frp'});a.click('frp-node',{id:'n3'});a.click('navigate',{page:'dns'});a.back();assert.equal(a.run('ui.page'),'frp');assert.equal(a.run('FRP.node'),'n3');assert.equal(a.run('FRP.tab'),'node');a.forward();assert.equal(a.run('ui.page'),'dns');a.click('project',{id:'p1'});a.click('tab',{id:'config'});const hash=a.run('location.hash');assert.match(hash,/project=p1/);const b=prototype(a.saved(),{hash});assert.equal(b.run('ui.tab'),'config');const missing=prototype(a.saved(),{hash:'#frp?tab=files&node=deleted&token=secret'});assert.match(missing.html('app'),/FRP 连接关联失效/);assert.doesNotMatch(missing.run('location.hash'),/secret|token/);assert.equal(a.history().length,new Set(a.history()).size);

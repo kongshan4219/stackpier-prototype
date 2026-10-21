@@ -6,14 +6,14 @@ function projectNameError(name){
  return '';
 }
 
-const deploymentTypes={systemd:{name:'systemd 项目',icon:'config',description:'选择程序与配置文件的部署配置。'},compose:{name:'Docker Compose',icon:'box',description:'选择已保存的 Compose 部署配置。'},frp:{name:'FRP 服务',icon:'link',description:'选择 FRPS、FRPC 或 visitor 部署配置。'}};
+const deploymentTypes={systemd:{name:'systemd 项目',icon:'config',description:'选择服务文件正文与文件／目录映射的部署配置。'},compose:{name:'Docker Compose',icon:'box',description:'选择已保存的 Compose 部署配置。'},frp:{name:'FRP 服务',icon:'link',description:'选择 FRPS、FRPC 或 visitor 部署配置。'}};
 function deploymentType(template){return template?.frpRole?'frp':template?.type;}
 function deploymentTypeModal(m){
  layout('部署项目','选择运行方式，再选择目标服务器和部署配置。',`<div class="deployment-types">${Object.entries(deploymentTypes).map(([type,item])=>`<button type="button" class="deployment-type" data-action="deployment-type" data-type="${type}"><span class="icon-box">${I(item.icon)}</span><span class="grow"><strong>${item.name}</strong><span class="small muted">${item.description}</span></span>${I('arrow')}</button>`).join('')}</div>`,btn('取消','closemodal'));
 }
 function deploymentConfigurationSummary(id){
  const t=tpl(id);if(!t)return '<p class="small muted">配置正文和文件在「部署配置」统一维护。</p>';
- return `<p class="small muted deployment-config-summary">已保存修订 C${t.rev} · ${t.frpRole?'程序资产与生成模板':t.fileMappings?.length?t.fileMappings.length+' 项附带文件':'无附带文件'}</p>`;
+ return `<p class="small muted deployment-config-summary">已保存修订 C${t.rev} · ${t.frpRole?'程序资产与生成模板':t.editorSchema?configurationFileSummary(t):t.fileMappings?.length?t.fileMappings.length+' 项附带文件':'无附带文件'}</p>`;
 }
 function newProjectSelection(m=ui.modal){
  return {deploymentType:m.deploymentType,template:document.getElementById('np-template')?.value??m.template??'',server:document.getElementById('np-server')?.value??m.server??'',name:document.getElementById('np-name')?.value??m.name??''};

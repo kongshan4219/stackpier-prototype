@@ -11,7 +11,7 @@ function failedCleanupTargets(failure){
  return `<div class="server-file-list">${failure.deployment.targets.map(target=>{
   const result=failure.cleanup.items.find(item=>item.kind===target.kind&&item.path===target.path)?.status;
   return `<div class="server-file-item"><div class="between"><strong>${h(target.label)}</strong>${badge(result==='success'?'已清理':result==='failed'?'清理失败':result==='unknown'?'待核对':'待清理',result==='success'?'success':'warning')}</div><p class="cell-sub mono">${h(target.kind==='runtime'?(failure.deployment.project.type==='systemd'?failure.deployment.project.name+'.service':failure.deployment.project.name):target.path)}</p></div>`;
- }).join('')}</div>`;
+ }).join('')}</div>${failure.deployment.preserved?.length?'<h3>保留的映射目标</h3>'+failure.deployment.preserved.map(item=>`<p><code>${h(item.path)}</code> · 已同步内容可能变化，清理不会删除或恢复。</p>`).join(''):''}`;
 }
 
 function failedProjectsPage(){

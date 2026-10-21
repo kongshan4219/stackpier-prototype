@@ -11,7 +11,7 @@ function digestProjectText(text){
  }).finally(()=>projectDigestRequests.delete(text)));
  return projectDigestRequests.get(text);
 }
-function projectIsFrp(p){return !!(p.frpService||p.frpRef||p.frpInstallation||['frpc','frps'].includes(p.software));}
+function projectIsFrp(p){return !projectUsesUnitBody(p)&&!!(p.frpService||p.frpRef||p.frpInstallation||['frpc','frps'].includes(p.software));}
 function projectSnapshot(p,observed=false){return observed?p.serverReadSnapshot:p.appliedSnapshot;}
 function projectReferenceKey(p){return JSON.stringify([p.id,p.server,p.name,p.appliedSnapshot||null,p.frpApplied||null]);}
 function projectFixedFiles(p,snapshot=projectSnapshot(p)){
@@ -22,6 +22,7 @@ function projectFixedFiles(p,snapshot=projectSnapshot(p)){
  const programMapping=program?.id?mappings.find(item=>item.binary?.id===program.id):null;
  const directory=cfg.dataDir?.replace(/\/data\/?$/,'')||`/srv/stackpier-demo/${p.name}`;
  const source=typeof cfg.source==='string'?cfg.source:null;
+ if(projectUsesUnitBody(p,cfg))return [{kind:'unit',path:'/etc/systemd/system/'+p.name+'.service',name:p.name+'.service',sha256:snapshot.unitSHA256||projectTextSHA(source),size:source===null?null:new TextEncoder().encode(source).length}];
  const assetFile=(kind,file,path)=>({kind,path,name:file?.filename||file?.name||'历史文件信息缺失',sha256:file?.sha256||'',size:file?.bytes??null});
  return [
   assetFile('program',program,programMapping?.targetPath||directory+'/'+(cfg.program||'program')),
@@ -47,10 +48,10 @@ async function checkProjectFiles(p,scenario=p.fileCheckScenario||'same'){
    let state='unknown',reason='',sha256='',size=null;
    if(failed)reason='unavailable';
    else if(!file.sha256)reason='reference';
-   else if(file.kind==='config'&&scenario==='missing')state='missing';
+   else if((file.kind==='config'||projectUsesUnitBody(p)&&file.kind==='unit')&&scenario==='missing')state='missing';
    else if(seen?.sha256){sha256=seen.sha256;size=seen.size;state=sha256===file.sha256?'same':'changed';}
    else reason='unreadable';
-   if(!failed&&file.kind==='config'&&scenario==='changed'&&file.sha256){state='changed';sha256=projectTextSHA('虚构的远端独立变更');size=new TextEncoder().encode('虚构的远端独立变更').length;}
+   if(!failed&&(file.kind==='config'||projectUsesUnitBody(p)&&file.kind==='unit')&&scenario==='changed'&&file.sha256){state='changed';sha256=projectTextSHA('虚构的远端独立变更');size=new TextEncoder().encode('虚构的远端独立变更').length;}
    const previous=state==='unknown'?(old?.state==='unknown'?old.previous:old):null;
    return {kind:file.kind,path:file.path,expectedSHA256:file.sha256,state,reason,sha256,size,checked,...(previous?{previous:clone(previous)}:{})};
   });

@@ -29,11 +29,12 @@ test('旧存储迁移保留用户正文、项目草稿、历史交付身份和�
 test('核对失败保留成功快照、时间与内容，公共修改和采用均不刷新服务器结果',async()=>{
  const p=prototype(),snapshot=p.run('JSON.stringify(pr("p1").serverReadSnapshot)');await p.run('checkProjectFiles(pr("p1"),"unknown")');assert.equal(p.run('JSON.stringify(pr("p1").serverReadSnapshot)'),snapshot);assert.equal(p.run('pr("p1").fileCheck.files[0].state'),'unknown');p.click('project',{id:'p1'});p.click('tab',{id:'config'});assert.match(p.html('app'),/本次核对未确认/);replacement(p);p.click('asset-update',{id:'p1'});p.click('asset-update-adopt',{id:'p1'});assert.equal(p.run('JSON.stringify(pr("p1").serverReadSnapshot)'),snapshot);
 });
-test('新编辑器保存的固定文件保持公共引用与历史项目引用',()=>{
+test('正文配置新修订移除旧公共文件引用，历史项目引用保留',()=>{
  const p=prototype();p.click('templateedit',{id:'t1'});
  const before=p.run('JSON.stringify(pr("p1").appliedSnapshot)');
- p.submit('templateedit',{'tpl-name':'固定文件配置','tpl-program':'bin1@1','tpl-config':'file1@1','tpl-port':'18080'});
- assert.ok(p.run('assetReferences("file1",1).configurations.some(x=>x.template.id==="t1")'));
+ p.submit('templateedit',{'tpl-name':'固定文件配置','tpl-source':'[Service]\nExecStart=/srv/qa/program\n'});
+ assert.equal(p.run('assetReferences("file1",1).configurations.some(x=>x.template.id==="t1")'),false);
+ assert.ok(p.run('assetReferences("file1",1).projects.length')>0);
  assert.equal(p.run('JSON.stringify(pr("p1").appliedSnapshot)'),before);
  assert.equal(p.run('tpl("t1").revisions[0].fileMappings.length'),2);
 });

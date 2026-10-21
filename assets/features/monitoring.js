@@ -26,12 +26,13 @@ function monitorMethodResult(p,inactive,stop){
 
 function probes(p){
  const server=sr(p.server),stop=isExpectedStop(p),inactive=['uninstalled','draft'].includes(p.life),result=monitorMethodResult(p,inactive,stop);
- const files=!p.applied?'尚无服务器文件':server?.state!=='online'?'读取待核对':p.components.length?'读取到部分变更':'已读取';
+ const files=!p.applied?'尚无服务器文件':server?.state!=='online'?'读取待核对':p.components.length?'读取到部分变更':projectUsesUnitBody(p)?'unit 模拟参照；映射未读取':'已读取';
  const list=[
   ['SSH 连接',server?.state==='online'?'可达':'无法确认',server?.state==='online'?'success':'warning',server?.checked],
   [monitorMethodLabel(p),result[0],result[1],p.lastCheck],
   ['项目文件',files,!p.applied?'':server?.state!=='online'||p.components.length?'warning':'success',p.configurationReadAt||p.observed],
  ];
+ if(projectUsesUnitBody(p)&&monitorMethod(p)!=='http')list.push(['业务健康检查','未配置','',null]);
  return list.map(([name,value,tone,time])=>`<div class="probe"><div><div class="probe-name">${h(name)}</div><div class="probe-time">${fmt(time)}</div></div>${badge(value,tone)}</div>`).join('');
 }
 
@@ -63,7 +64,7 @@ function runProjectCheck(p,observation){
  }else{
   const current=observation?.runtime||(p.runtimeCheckStatus==='unknown'?'unknown':p.runtime);
   if(server?.state==='online'&&['running','stopped','partial'].includes(current)){
-   p.runtime=current;p.observed=observation?.observedAt||now();p.runtimeCheckStatus='verified';if(current==='running')p.stopVerified=false;p.health=current==='running'?(p.frpService?'unknown':'healthy'):isExpectedStop(p)?'na':'unhealthy';
+   p.runtime=current;p.observed=observation?.observedAt||now();p.runtimeCheckStatus='verified';if(current==='running')p.stopVerified=false;p.health=current==='running'?(p.frpService||projectUsesUnitBody(p)?'unknown':'healthy'):isExpectedStop(p)?'na':'unhealthy';
   }else{p.runtimeCheckStatus='unknown';p.health='unknown';}
  }
  const failures=[];

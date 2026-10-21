@@ -10,9 +10,11 @@ function configurationSaveError(t,v,token){
  if(t&&t.rev!==v.revision)return '部署配置已更新，请重新读取后编辑；本次未覆盖保存';
  if(t&&deploymentType(t)!==v.type)return '已有部署配置不能更换类型，请新建对应类型的配置';
  if(t?.frpRole&&t.frpRole!==v.role)return '已有 FRP 配置不能更换角色，请新建配置';
- if(v.type!=='compose'&&!configurationVersions('program',v.type).some(file=>configurationVersionValue({fileId:file.id,revision:file.revision})===v.programVersion))return '请选择有效的程序固定版本。';
+ if(v.type==='frp'&&!configurationVersions('program',v.type).some(file=>configurationVersionValue({fileId:file.id,revision:file.revision})===v.programVersion))return '请选择有效的程序固定版本。';
  if(v.type==='systemd'){
-  if(!configurationVersions('config',v.type).some(file=>configurationVersionValue({fileId:file.id,revision:file.revision})===v.configVersion)||!Number.isInteger(v.port)||v.port<1024||v.port>65535)return '配置需程序、配置文件及 1024–65535 健康检查端口';
+  if(!v.source.trim())return '请填写服务文件正文。';
+  if(v.source.includes('\0'))return '服务文件正文不能包含空字符。';
+  return configurationMappingError(v.mappings||[]);
  }
  if(v.type==='compose'){
   if(!v.source.trim())return '请填写 Compose YAML 正文。';
@@ -29,10 +31,13 @@ registerPrototypeHandlers(prototypeForms,['templateedit'],(event,form,fd,get,has
  const error=configurationSaveError(t,v,token);m.editor=v;cacheTemplateDraft();if(error)return modalError(error);
  const common={...t,id:t?.id||uid('template'),name:v.name.trim(),type:v.type,editorSchema:1,rev:(t?.rev||0)+1};
  let n;
- if(v.type==='systemd')n={...common,programRef:configurationPin(v.programVersion),configRef:configurationPin(v.configVersion),program:configurationVersion(v.programVersion).name,port:v.port,software:t?.software||'custom',tpl:'',contentMode:'managed',fileMappings:[],desc:'固定程序、配置文件与健康检查端口'};
+ if(v.type==='systemd')n={...common,editorSchema:2,tpl:v.source,pathMappings:configurationNormalizeMappings(v.mappings||[]),programRef:null,configRef:null,program:'',port:null,software:t?.software||'custom',contentMode:'file',fileMappings:[],desc:'服务文件正文与文件／目录映射；默认核验服务运行状态'};
  else if(v.type==='compose')n={...common,tpl:v.source,variables:v.variables,composeFiles:clone(v.files),pathMappings:configurationNormalizeMappings(v.mappings||[]),fileMappings:[],programRef:null,program:'',port:null,contentMode:'file',desc:'已保存 Compose 正文、显式变量与文件／目录映射'};
  else n={...common,...configurationFrpTemplate(t,v,token)};
- n.revisions=[...(t?.revisions||[]),clone({...n,revisions:undefined})];
+ const revisions=clone(t?.revisions||[]);
+ // 部分早期自定义配置没有修订数组，首次保存时仍须保留旧正文与引用。
+ if(t&&!revisions.some(record=>record.rev===t.rev))revisions.push(clone({...t,revisions:undefined}));
+ n.revisions=[...revisions,clone({...n,revisions:undefined})];
  m.saving=true;
  const templates=t?S.templates.map(item=>item.id===t.id?n:item):[...S.templates,n],next={...S,templates};delete next.configurationEditorReturn;
  // 附件可能超过浏览器配额，先确认持久化成功，再替换当前配置与清除草稿。

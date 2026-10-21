@@ -16,7 +16,7 @@ function configurationVersions(kind,type){
 function configurationInitial(t,type='systemd'){
  const role=t?.frpRole||'server',config=t?.configRef||t?.fileMappings?.find(mapping=>mapping.pins?.some(pin=>storedFileKind(assetRevision(pin.fileId,pin.revision)||{})!=='elf'));
  return {name:t?.name||'',type:t?deploymentType(t):type,revision:t?.rev||0,programVersion:configurationVersionValue(t?.programRef?.pins?.[0]),configVersion:configurationVersionValue(config?.pins?.[0]),port:t?.port||18080,
-  source:t?.tpl||'',variables:t?.variables||'{}',files:clone(t?.composeFiles||[]),mappings:clone(t?.pathMappings||[]),role,frp:configurationFrpDefaults(t,role)};
+  source:t?.tpl||'',variables:t?.variables||'{}',files:clone(t?.composeFiles||[]),mappings:clone(t?.pathMappings||[]),legacySystemd:!!t&&deploymentType(t)==='systemd'&&t.editorSchema!==2,role,frp:configurationFrpDefaults(t,role)};
 }
 function readConfigurationDraft(m,fd){
  const v=clone(m.editor),value=(name,fallback)=>fd.has(name)?String(fd.get(name)):fallback;

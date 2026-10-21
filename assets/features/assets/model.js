@@ -1,5 +1,7 @@
 'use strict';
 
+function projectUsesUnitBody(project,cfg=project.cfg){return project.type==='systemd'&&!project.frpService&&cfg?.systemdMode==='unit';}
+
 // 文件实体按稳定 ID 保留每次内容修订；分组只在迁移/首次上传时按逻辑名称建立。
 function projectProgramFile(project){const file=project.cfg.programRef?pinnedMappingFile(project.cfg.fileMappings?.find(mapping=>mapping.groupId===project.cfg.programRef.groupId)||project.cfg.programRef,sr(project.server)):executableFileFor(project.cfg.program,sr(project.server));return file&&storedFileKind(file)==='elf'&&storedFileArchitecture(file)===sr(project.server)?.arch?file:null;}
 
@@ -32,13 +34,13 @@ function initializeAssets(){
  const migrating=!S.assetSchema;
  for(const file of S.programs)ensureAsset(file);
  for(const template of S.templates){
-  if(['frpc','frps'].includes(template.software))continue;
+  if(['frpc','frps'].includes(template.software)&&template.editorSchema!==2)continue;
   template.fileMappings=(template.fileMappings||[]).map(pinMapping);
   if(template.program&&!template.programRef)template.programRef=pinMapping({file:template.program});
   if(!template.revisions)template.revisions=[clone({...template,revisions:undefined})];
  }
  for(const project of S.projects){
-  if(project.frpRef||project.frpInstallation||project.frpService||['frpc','frps'].includes(project.software))continue;
+  if(!projectUsesUnitBody(project)&&(project.frpRef||project.frpInstallation||project.frpService||['frpc','frps'].includes(project.software)))continue;
   project.cfg.fileMappings=(project.cfg.fileMappings||[]).map(pinMapping);
   if(project.cfg.program&&!project.cfg.programRef)project.cfg.programRef=pinMapping({file:project.cfg.program});
   if(project.applied){
@@ -68,15 +70,28 @@ function templateProjects(id){return S.projects.filter(project=>project.template
 function newerAssetPins(mapping){return {...mapping,file:mappingName(mapping),pins:assetGroups().find(group=>group.id===mapping.groupId)?.files.map(file=>({fileId:file.id,revision:file.revision}))||(mapping.pins||[])};}
 function mappingHasUpdate(mapping,server=null){if(server){const before=pinnedMappingFile(mapping,server),after=pinnedMappingFile(newerAssetPins(mapping),server);return before?.id!==after?.id||before?.revision!==after?.revision;}return (mapping.pins||[]).some(pin=>assetById(pin.fileId)?.revision>pin.revision)||assetGroups().find(group=>group.id===mapping.groupId)?.files.some(file=>!(mapping.pins||[]).some(pin=>pin.fileId===file.id))||false;}
 function markAssetUpdates(){for(const project of S.projects){
-  if(project.frpRef||project.frpInstallation||project.frpService||['frpc','frps'].includes(project.software))continue;project.templateUpdate=(tpl(project.template)?.rev||0)>(project.cfg.templateRev||0);project.programUpdate=(project.cfg.fileMappings||[]).some(mapping=>mappingHasUpdate(mapping,sr(project.server)))||!!project.cfg.programRef&&mappingHasUpdate(project.cfg.programRef,sr(project.server));}}
+  if(!projectUsesUnitBody(project)&&(project.frpRef||project.frpInstallation||project.frpService||['frpc','frps'].includes(project.software)))continue;project.templateUpdate=(tpl(project.template)?.rev||0)>(project.cfg.templateRev||0);project.programUpdate=(project.cfg.fileMappings||[]).some(mapping=>mappingHasUpdate(mapping,sr(project.server)))||!!project.cfg.programRef&&mappingHasUpdate(project.cfg.programRef,sr(project.server));}}
 function projectUpdateCfg(project){const template=tpl(project.template);if(template?.editorSchema&&!template.frpRole)return {...clone(project.cfg),...configurationProjectDraft(template,newProjectDraft(template,sr(project.server),project.name)).cfg};return {...clone(project.cfg),...(template?{source:template.tpl,variables:template.variables||'{}',templateRev:template.rev}:{}),programRef:template?.programRef?newerAssetPins(template.programRef):project.cfg.programRef,fileMappings:(template?.fileMappings||project.cfg.fileMappings||[]).map(newerAssetPins)};}
-function adoptProjectUpdate(project){project.cfg=projectUpdateCfg(project);project.draftRev++;markAssetUpdates();persist();}
+function adoptProjectUpdate(project){const next=projectUpdateCfg(project);if(projectUsesUnitBody(project)||projectUsesUnitBody(project,next))return;project.cfg=next;project.draftRev++;markAssetUpdates();persist();}
 function deploymentLocation(project){
  if(project.frpService)return frpServiceLocation(project);
  const server=sr(project.server),mainPath=project.type==='compose'?`/srv/stackpier-demo/${project.name}/compose.yaml`:`/etc/systemd/system/${project.name}.service`;
  const files=resolvedFileMappings(project.cfg.fileMappings,server),errors=[],warnings=[],targets=new Set([mainPath]);
  for(const file of project.cfg.composeFiles||[])files.push({file:file.path,targetPath:`/srv/stackpier-demo/${project.name}/${file.path}`,binary:{filename:file.path,size:file.size+' B',bytes:file.size,revision:project.cfg.templateRev,arch:'any',identity:'已固定的浏览器附件；摘要未核对'}});
  const targetError=serverOperationError(project.server);if(targetError)errors.push(targetError);
+ if(projectUsesUnitBody(project)){
+  if(!project.cfg.source?.trim())errors.push('请先保存 systemd 服务文件正文。');
+  const mappingError=configurationMappingError(project.cfg.pathMappings||[]);if(mappingError)errors.push(mappingError);
+  const root=`/srv/stackpier-demo/${project.name}`;
+  for(const mapping of project.cfg.pathMappings||[]){
+   const target={kind:mapping.kind,path:mapping.remotePath};
+   if(cleanupTargetsOverlap(target,{kind:'file',path:mainPath})||cleanupTargetsOverlap(target,{kind:'directory',path:root}))errors.push('映射目标与项目受管文件或目录冲突：'+mapping.remotePath);
+   for(const other of S.projects.filter(other=>other.id!==project.id&&other.server===project.server&&other.life==='installed')){
+    const cfg=other.applied||other.cfg,owned=[...deploymentCleanupTargets(other,cfg),{kind:'directory',path:`/srv/stackpier-demo/${other.name}`},...(cfg.pathMappings||[]).map(row=>({kind:row.kind,path:row.remotePath}))];
+    if(owned.some(resource=>cleanupTargetsOverlap(target,resource)))errors.push('映射目标已由 '+other.name+' 使用：'+mapping.remotePath);
+   }
+  }
+ }
  if(project.type==='systemd'&&project.cfg.program&&!projectProgramFile(project))errors.push('主程序缺少匹配架构 '+(server?.arch||'未知')+'。');
  for(const mapping of files){const error=targetFilePathError(mapping.targetPath);if(error)errors.push(error);if(targets.has(mapping.targetPath))errors.push('路径冲突：'+mapping.targetPath);targets.add(mapping.targetPath);if(!mapping.binary)errors.push(mappingName(mapping)+'：文件无效、占位或缺少匹配架构 '+(server?.arch||'未知'));}
  if(project.type==='compose'&&!server?.docker)errors.push('目标缺少 Docker / Compose（模拟环境状态）。');

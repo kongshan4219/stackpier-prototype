@@ -8,9 +8,9 @@ const error=p=>p.document.getElementById('modal-error').textContent;
 function open(p,type){p.run(`openModal('templateedit',{initialType:${JSON.stringify(type)}})`);}
 function upload(p,name,text){return p.run(`configurationUploadFiles(ui.modal,[{name:${JSON.stringify(name)},size:${Buffer.byteLength(text)},arrayBuffer:async()=>new TextEncoder().encode(${JSON.stringify(text)}).buffer}])`);}
 
-test('三类编辑器只展示正式字段，已有类型和 FRP 角色固定',()=>{
+test('三类编辑器展示各自字段，已有类型和 FRP 角色固定',()=>{
  const p=prototype();
- for(const [id,fields] of [['t1',['程序固定版本','配置固定版本','健康检查端口']],['t5',['Compose YAML 正文','显式变量（JSON）','文件与目录映射']],['frp-template-client',['FRP 程序固定版本','回环管理端口','允许映射端口起点']]]){
+ for(const [id,fields] of [['t1',['服务文件正文','文件与目录映射']],['t5',['Compose YAML 正文','显式变量（JSON）','文件与目录映射']],['frp-template-client',['FRP 程序固定版本','回环管理端口','允许映射端口起点']]]){
   p.click('templateedit',{id});const html=p.html('modal');
   for(const field of fields)assert.ok(html.includes(field));
   assert.doesNotMatch(html,/systemd 正文|架构选择规则|生成模板与|运行用户|连接到已部署 FRPS/);
@@ -22,7 +22,7 @@ test('三类编辑器只展示正式字段，已有类型和 FRP 角色固定',(
 });
 test('新配置按类型保留内存草稿，刷新只恢复已保存配置',()=>{
  const p=prototype();open(p,'compose');p.document.getElementById('tpl-name').value='draft-only';p.document.getElementById('tpl-source').value=source;
- p.run('configurationSwitchType(ui.modal,"systemd")');p.document.getElementById('tpl-port').value='19000';p.run('configurationSwitchType(ui.modal,"compose")');
+ p.run('configurationSwitchType(ui.modal,"systemd")');p.document.getElementById('tpl-source').value='[Service]\nExecStart=/srv/demo/program';p.run('configurationSwitchType(ui.modal,"compose")');
  assert.equal(p.document.getElementById('tpl-source').value,source);
  p.click('closemodal');open(p,'compose');assert.equal(p.document.getElementById('tpl-name').value,'draft-only');
  assert.ok(!p.saved().includes('draft-only'));
@@ -39,15 +39,40 @@ test('明确重置演示同时清空配置编辑会话草稿',()=>{
  const p=prototype();open(p,'compose');p.document.getElementById('tpl-name').value='reset-this-draft';p.click('closemodal');
  p.run('resetSample()');open(p,'compose');assert.equal(p.document.getElementById('tpl-name').value,'');
 });
-test('systemd 固定单一文件修订，保存不改变项目，部署生成独立落点',()=>{
- const p=prototype();p.click('templateedit',{id:'t1'});const before=p.run('JSON.stringify(S.projects)');
- p.submit('templateedit',{'tpl-name':'固定服务','tpl-program':'bin1@1','tpl-config':'file1@1','tpl-port':'18080'});
- assert.equal(p.run('JSON.stringify(S.projects.map(p=>p.appliedSnapshot))'),p.run(`JSON.stringify(${before}.map(p=>p.appliedSnapshot))`));
- assert.equal(p.run('tpl("t1").programRef.pins.length'),1);
+test('systemd 正文与路径映射原样保存，旧修订与项目快照保留',()=>{
+ const p=prototype();p.click('templateedit',{id:'t1'});
+ const before=p.run('JSON.stringify(S.projects.map(p=>[p.cfg,p.appliedSnapshot,p.serverReadSnapshot]))'),history=p.run('JSON.stringify(tpl("t1").revisions)');
+ const unit='  # 保留正文\n[Service]\nExecStart=/srv/fixture/program --literal=${VALUE}\n\n';
+ p.click('configuration-mapping-add');
+ p.submit('templateedit',{'tpl-name':'正文服务','tpl-source':unit,'tpl-map-kind-0':'directory','tpl-map-local-0':'/srv/source/','tpl-map-remote-0':'/srv/fixture/'});
+ assert.equal(p.run('tpl("t1").tpl'),unit);assert.equal(p.run('tpl("t1").editorSchema'),2);
+ assert.equal(p.run('JSON.stringify(S.projects.map(p=>[p.cfg,p.appliedSnapshot,p.serverReadSnapshot]))'),before);
+ assert.equal(p.run('JSON.stringify(tpl("t1").revisions.slice(0,-1))'),history);
+ assert.equal(p.run('tpl("t1").pathMappings[0].remotePath'),'/srv/fixture');
  p.click('newproject',{template:'t1',server:'s4'});p.submit('newproject',{'np-template':'t1','np-server':'s4','np-name':'qa-editor'});
  assert.equal(p.run('deploymentLocation(ui.modal.draft).errors.length'),0);
- assert.equal(p.run('ui.modal.draft.cfg.fileMappings[1].targetPath'),'/srv/stackpier-demo/qa-editor/config.json');
+ assert.equal(p.run('ui.modal.draft.cfg.source'),unit);assert.equal(p.run('ui.modal.draft.cfg.systemdMode'),'unit');
+ assert.equal(p.run('ui.modal.draft.cfg.fileMappings.length'),0);
+ assert.equal(p.run('ui.modal.draft.cfg.pathMappings[0].deleteExtraneous'),true);
  assert.equal(p.run('S.projects.some(p=>p.name==="qa-editor")'),false);
+});
+test('systemd 旧固定配置打开不迁移，不伪造正文或本机路径',()=>{
+ const p=prototype();p.run('Object.assign(tpl("t1"),{editorSchema:1,tpl:"",programRef:{pins:[{fileId:"bin1",revision:1}]},configRef:{pins:[{fileId:"file1",revision:1}]}})');
+ const before=p.run('JSON.stringify(tpl("t1"))');p.click('templateedit',{id:'t1'});
+ assert.equal(p.document.getElementById('tpl-source').value,'');assert.match(p.html('modal'),/旧配置|固定程序/);
+ assert.equal(p.run('ui.modal.editor.mappings.length'),0);
+ p.submit('templateedit',{'tpl-name':'不能空正文','tpl-source':'   '});assert.match(error(p),/正文/);
+ assert.equal(p.run('JSON.stringify(tpl("t1"))'),before);
+});
+test('systemd 路径错误与正文空值拒绝保存，切换类型保留各自草稿',()=>{
+ const p=prototype();open(p,'systemd');
+ p.submit('templateedit',{'tpl-name':'invalid-unit','tpl-source':'  '});assert.match(error(p),/正文/);
+ p.document.getElementById('tpl-source').value='[Service]\nExecStart=/srv/unit/program';p.click('configuration-mapping-add');
+ p.submit('templateedit',{'tpl-name':'invalid-unit','tpl-map-kind-0':'file','tpl-map-local-0':'relative','tpl-map-remote-0':'/srv/unit/program'});assert.match(error(p),/绝对路径/);
+ p.run('configurationSwitchType(ui.modal,"compose")');p.document.getElementById('tpl-source').value=source;p.run('configurationSwitchType(ui.modal,"systemd")');
+ assert.equal(p.document.getElementById('tpl-source').value,'[Service]\nExecStart=/srv/unit/program');
+ assert.equal(p.document.getElementById('tpl-map-local-0').value,'relative');
+ assert.equal(p.run('S.templates.some(t=>t.name==="invalid-unit")'),false);
 });
 test('Compose 变量大小、名称与字符串类型限制和实际编辑器一致',()=>{
  const p=prototype();open(p,'compose');

@@ -70,9 +70,11 @@ test('普通文件与空文件均按通用范围保存，并显示文件类型',
   assert.match(p.html('app'), /<h1[^>]*>文件<\/h1>/);
   assert.match(p.html('app'), /通用/);
   assert.match(p.html('app'), /text\/yaml/);
+  assert.match(p.html('app'), /settings\.yaml/);
+  assert.match(p.html('app'), /empty\.conf/);
   p.click('templateedit');
-  assert.match(p.html('modal'), /settings\.yaml/);
-  assert.doesNotMatch(p.html('modal'), /empty\.conf/);
+  assert.match(p.html('modal'), /服务文件正文|文件与目录映射/);
+  assert.doesNotMatch(p.html('modal'), /name="tpl-config"|settings\.yaml|empty\.conf/);
 });
 
 test('相同文件名的不同适用范围可并存，同范围同名不同内容拒绝覆盖', async () => {

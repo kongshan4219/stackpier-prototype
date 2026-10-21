@@ -123,17 +123,17 @@ test('共享配置正文原样保存；显式采用不改变服务器文件或�
   assert.equal(reloaded.run('configText(pr("p3"))'), source);
 });
 
-test('systemd 编辑固定文件，失效版本不能覆盖已保存配置', () => {
+test('systemd 空正文不能覆盖配置，保存后以原文部署', () => {
   const p=prototype();p.click('templateedit',{id:'t1'});
-  const before=p.run('JSON.stringify(tpl("t1"))');
-  p.submit('templateedit',{'tpl-name':'固定服务','tpl-program':'missing@1','tpl-config':'file1@1','tpl-port':'18080'});
+  const before=p.run('JSON.stringify(tpl("t1"))'),source='[Service]\nExecStart=/srv/qa/program\n';
+  p.submit('templateedit',{'tpl-name':'正文服务','tpl-source':' '});
   assert.equal(p.run('JSON.stringify(tpl("t1"))'),before);
-  assert.match(p.document.getElementById('modal-error').textContent,/程序固定版本/);
-  p.submit('templateedit',{'tpl-name':'固定服务','tpl-program':'bin1@1','tpl-config':'file1@1','tpl-port':'18080'});
+  assert.match(p.document.getElementById('modal-error').textContent,/正文/);
+  p.submit('templateedit',{'tpl-name':'正文服务','tpl-source':source});
   assert.equal(p.run('tpl("t1").rev'),2);
-  p.click('newproject',{template:'t1',server:'s4'});p.submit('newproject',{'np-template':'t1','np-name':'qa-fixed-config','np-server':'s4'});
-  assert.match(p.run('ui.modal.draft.cfg.source'),/STACKPIER_CONFIG=.*qa-fixed-config/);
-  assert.equal(p.run('ui.modal.draft.cfg.fileMappings.length'),2);
+  p.click('newproject',{template:'t1',server:'s4'});p.submit('newproject',{'np-template':'t1','np-name':'qa-unit-config','np-server':'s4'});
+  assert.equal(p.run('ui.modal.draft.cfg.source'),source);
+  assert.equal(p.run('ui.modal.draft.cfg.fileMappings.length'),0);
 });
 
 test('FRP 三角色仍生成配对 TOML 与 unit，地址、程序和转义保持一致', () => {

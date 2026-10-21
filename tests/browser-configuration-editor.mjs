@@ -26,27 +26,19 @@ try{
    const name=new URL(route.request().url()).pathname.split('/').at(-1);
    return route.fulfill({json:name==='assets'?[{id:'qa-program',name:'fixture-program',kind:'program',arch:'x86_64',sha256:'a'.repeat(64)},{id:'qa-config',name:'fixture-config.json',kind:'config',sha256:'b'.repeat(64)}]:[]});
   });
-  for(const type of ['systemd','compose','frp']){
+  // systemd 已进入正文与路径映射设计阶段，独立浏览器回归不再与旧正式编辑器对照。
+  for(const type of ['compose','frp']){
    await reference.goto(actual+'/deployment-configurations?edit=new&type='+type);
    await reference.getByRole('heading',{name:'新增部署配置',exact:true}).waitFor();
    await boot(page,'#templates?dialog=templateedit&type='+type);
    assert.deepEqual(await fields(page),await fields(reference),width+' '+type+'字段与实际界面一致');checks.push(width+' '+type+'字段顺序、必填、只读和数值范围一致');
    check(width+' '+type+'弹窗宽度一致',Math.abs((await page.locator('#modal').boundingBox()).width-(await reference.getByRole('dialog').boundingBox()).width)<2);
-   if(type==='systemd')check(width+' systemd 弹窗高度一致',Math.abs((await page.locator('#modal').boundingBox()).height-(await reference.getByRole('dialog').boundingBox()).height)<2);
    if(type==='compose')check(width+' Compose 删除规则提示一致',await page.getByText('会删除远程映射目录内多余文件和子目录',{exact:false}).isVisible()&&await reference.getByText('会删除远程映射目录内多余文件和子目录',{exact:false}).isVisible());
    await fitting(page,width+' '+type);
    await capture(reference,'actual-'+type+'-'+width);await capture(page,'prototype-'+type+'-'+width);
    await page.keyboard.press('Escape');check(width+' '+type+' Escape 关闭',await page.locator('#modal').evaluate(el=>!el.open));
   }
-  await boot(page);await action(page,'templateedit',{id:'t1'});
-  check(width+' 编辑类型固定',await page.getByLabel('配置类型',{exact:true}).isDisabled());
-  check(width+' systemd 不提供任意正文',await page.locator('#tpl-source').count()===0);
-  await page.getByLabel('健康检查端口').fill('19080');await page.getByRole('button',{name:'取消',exact:true}).click();await action(page,'templateedit',{id:'t1'});
-  check(width+' 取消保留会话草稿',await page.getByLabel('健康检查端口').inputValue()==='19080');
-  await page.reload();await page.waitForFunction(()=>prototypeLoading.ready);check(width+' 刷新恢复保存版本',await page.getByLabel('健康检查端口').inputValue()==='8080');
-  const before=await page.evaluate(()=>JSON.stringify(S.projects.map(p=>[p.cfg,p.appliedSnapshot,p.serverReadSnapshot])));
-  await page.getByLabel('健康检查端口').fill('19080');await page.getByRole('button',{name:'保存部署配置',exact:true}).click();
-  check(width+' 保存不改变项目快照',before===await page.evaluate(()=>JSON.stringify(S.projects.map(p=>[p.cfg,p.appliedSnapshot,p.serverReadSnapshot]))));
+  await boot(page);
   await action(page,'templateedit',{id:'t5'});await page.getByLabel('Compose YAML 正文').fill(source);
   await page.getByLabel('显式变量（JSON）').fill('{"MODE":3}');await page.getByRole('button',{name:'保存部署配置',exact:true}).click();
   check(width+' 变量错误留在编辑器',await page.getByRole('alert').innerText().then(text=>text.includes('字符串')));

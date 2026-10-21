@@ -24,6 +24,11 @@ function projectAppliedPlan(p){
   return projectPlanDetails(items);
  }
  const directory=cfg.dataDir?.replace(/\/data\/?$/,'')||`/srv/stackpier-demo/${p.name}`;
+ if(projectUsesUnitBody(p,cfg)){
+  items.push(['运行方式','systemd'],['服务',h(p.name+'.service')],['服务文件',`<code>/etc/systemd/system/${h(p.name)}.service</code>`],
+   ['固定正文摘要',projectPlanDigest(snapshot.unitSHA256||projectTextSHA(cfg.source))],['成功条件','服务文件与映射按固定输入交付、unit 校验通过，再核验 systemd 运行状态（浏览器模拟）。'],['业务健康检查','未配置；后续单独配置。']);
+  return projectPlanDetails(items)+`<details><summary>已应用服务文件正文 · 原样保存</summary><pre class="code asset-text">${h(cfg.source)}</pre></details><h3>固定文件与目录映射</h3>`+(cfg.pathMappings?.length?configurationMappingSummary(cfg.pathMappings,true):'<p class="muted">未配置文件与目录映射。</p>')+notice('映射内容未读取','浏览器保留本次路径与同步规则，不读取管理端文件，不生成映射内容摘要，也不执行 rsync。');
+ }
  if(p.type==='compose'){
   const compose=snapshot.compose;
   items.push(['运行方式','Docker Compose'],['项目范围',`<code>${h(compose?.projectName||p.name)}</code>`],
