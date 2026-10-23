@@ -1,0 +1,7 @@
+.firewall-port-card .row, .firewall-port-card .card-foot {display:flex;align-items:center;flex-wrap:wrap;gap:8px;}
+.firewall-port-card .card-head {gap:12px;flex-wrap:wrap;}
+.firewall-port-card .card-foot {padding:14px 18px;border-top:1px solid var(--line);}
+.firewall-port-card .toolbar {gap:10px;}
+.firewall-port-card table {min-width:900px;}
+.firewall-port-card td {overflow-wrap:anywhere;}
+@media(max-width:640px){.firewall-port-card .searchbox{width:100%;}.firewall-port-card .toolbar>.grow{display:none;}}

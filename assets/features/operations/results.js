@@ -31,7 +31,8 @@ function finishRuntimeOperation(o,result='success',{recheck=false}={}){
 }
 
 function finishOperation(o,result='success'){
- if(o?.input?.netType==='firewall'&&result==='success'&&JSON.stringify(S.firewalls.find(r=>r.id===o.input.targetId)||null)!==JSON.stringify(o.input.before||null))result='unknown';
+ if(o?.input?.action==='port-batch'&&result==='success'&&firewallBatchError(o.input))result='unknown';
+ if(o?.input?.netType==='firewall'&&o.input.action!=='port-batch'&&result==='success'&&JSON.stringify(S.firewalls.find(r=>r.id===o.input.targetId)||null)!==JSON.stringify(o.input.before||null))result='unknown';
  const host=o?.input?.serverTarget?.id;if(host&&result==='success'&&serverSnapshotError(o.input.serverTarget))result='unknown';
  if(o?.kind==='network'&&o.input?.netType==='dns')return finishCloudflareOperation(o,result);
  if(o?.kind==='failed-cleanup')return finishFailedCleanup(o,result);

@@ -1,8 +1,8 @@
 'use strict';
 
-document.addEventListener('input',event=>{const el=event.target;if(el.closest('form[data-form=templateedit]'))document.getElementById('modal-error').hidden=true;cacheFormInput(el);if(el.dataset.filter==='q'){ui.q=el.value;render();}});
+document.addEventListener('input',event=>{const el=event.target;if(el.closest('form[data-form=templateedit]'))document.getElementById('modal-error').hidden=true;cacheFormInput(el);if(el.dataset.filter==='q'){ui.q=el.value;if(ui.page==='firewall'){ui.fwSelected=[];ui.fwPage=1;}render();}});
 
-document.addEventListener('change',event=>{const el=event.target;cacheFormInput(el);if(el.id==='mon-method')syncMonitorMethodField(el);if(el.dataset.filter&&el.dataset.filter!=='q'){ui[el.dataset.filter]=el.value;render();}});
+document.addEventListener('change',event=>{const el=event.target;cacheFormInput(el);if(el.id==='mon-method')syncMonitorMethodField(el);if(el.dataset.filter&&el.dataset.filter!=='q'){ui[el.dataset.filter]=el.value;if(ui.page==='firewall'){ui.fwSelected=[];ui.fwPage=1;}render();}});
 
 dialog.addEventListener('cancel',event=>{event.preventDefault();closeModal();});
 
