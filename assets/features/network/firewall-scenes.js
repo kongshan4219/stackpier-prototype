@@ -7,6 +7,8 @@ function loadFirewallScene(id){
  // 场景入口已明确重置演示数据；成功迁移样例仅包含范围明确的主机入站规则。
  S.firewalls=S.firewalls.filter(rule=>rule.server!==server||rule.scope!=='host'||rule.direction!=='out');
  host.state='needs-setup';host.manager='UFW';host.backend='待统一';host.configuration='unknown';host.defaultPolicy='DROP';host.serviceManager='systemd';host.reason='已识别 UFW 主机入站规则及启动来源；可预览迁移。';host.blockers=[];host.inventoryIssues=[];host.readErrors=[];host.readFails=false;
+ delete host.setupChecks;
+ if(id==='firewall-setup-error'){host.manager='原生 nftables';host.defaultPolicy='ACCEPT';host.zones[0].interfaces=['docker0','ens33'];host.blockers=['依赖下载来源未核实','桥接接口与完整规则归属未证明'];host.reason='可查看失败预览及具体诊断；尚不能接入。';host.setupChecks={packages:'failed',scope:'failed',conversion:'not-evaluated',target:'not-evaluated',ipv4:'ACCEPT',ipv6:'',issues:[{id:'packages',code:'apt-uri-protocol',stage:'packages',object:'python3-firewall',field:'scheme',protocol:'file'},{id:'scope',code:'scope-unproven',stage:'scope',object:'docker0'},{id:'conversion',code:'conversion-dependent',stage:'conversion',dependsOn:['scope']},{id:'target',code:'target-unproven',stage:'target',dependsOn:['conversion']}]};}
  if(['firewall-ready','firewall-multi-zone'].includes(id)){host.state='ready';host.manager='firewalld';host.backend='nftables';host.configuration='consistent';host.reason='已完成统一接入，运行和永久配置一致（模拟）。';}
  if(id==='firewall-multi-zone'){firewallHostRules(server).forEach(rule=>{rule.zone='public';});host.zones.push({name:'internal',interfaces:['eth1'],sources:['198.51.100.0/24'],target:'DROP'});}
  if(id==='firewall-install'){host.manager='未安装';host.defaultPolicy='ACCEPT';host.zones.forEach(zone=>{zone.target='ACCEPT';});host.reason='只读盘点未发现主机防火墙管理器；可以查看安装计划。';}

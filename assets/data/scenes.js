@@ -11,6 +11,7 @@ const scenes=[
  {id:'firewall-unknown',title:'统一防火墙：断连后恢复',desc:'保留原操作与保护；核对不足时可以请求恢复原配置。'},
  {id:'firewall-recheck',title:'统一防火墙：核对原操作成功',desc:'原响应丢失，随后取得新 SSH 与配置证据，沿原操作确认完成。'},
  {id:'firewall-read-error',title:'统一防火墙：检查未完成',desc:'定位读取阶段、路径与超限数量；保留旧观测且只允许重新检查。'},
+ {id:'firewall-setup-error',title:'统一防火墙：接入预览失败',desc:'依赖来源失败、桥接归属未证明和IPv6未核实；预览不提供确认执行。'},
  {id:'saved',title:'保存了配置，但还没有应用',desc:'新端口留在草稿，远端旧端口并不因此异常。'},
  {id:'files-changed',title:'受管配置被远端修改',desc:'只核对摘要，标记远端被改，不覆盖项目草稿或成功参照。'},
  {id:'files-missing',title:'受管配置文件缺失',desc:'缺失与无法读取分开呈现，核对不会补发文件。'},

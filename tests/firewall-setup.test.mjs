@@ -3,6 +3,17 @@ import assert from 'node:assert/strict';
 import { prototype } from './prototype-harness.mjs';
 
 const scene=id=>{const a=prototype();a.click('loadscene',{id:'firewall-'+id});return a;};
+test('失败预览定位包来源和桥接，双栈目标未确定且不能确认',()=>{
+ const a=scene('setup-error');a.click('fw-setup',{server:'s2'});const html=a.html('modal');
+ for(const text of ['接入检查未通过','python3-firewall','scheme','docker0','依赖计划生成失败','受前置问题影响的检查','IPV6','未核实','尚未确定'])assert.ok(html.includes(text),text);
+ assert.doesNotMatch(html,/name="fw-setup-ack"|type="submit"/);
+ a.submit('fw-setup',{'fw-setup-ack':'on'});assert.equal(a.run("S.operations.some(o=>o.input?.action==='setup')"),false);
+ a.run("firewallHost('s2').blockers=[];delete firewallHost('s2').setupChecks");a.click('fw-setup-repreview',{server:'s2'});assert.equal(a.document.querySelectorAll('[name=fw-setup-ack]')[0].checked,false);
+});
+test('未知接入诊断不回显内部字段，检查状态不允许伪造放行',()=>{
+ const a=scene('setup-error');a.run("ui.modal=null;firewallHost('s2').setupChecks.issues=[{code:'future-code',object:'private-marker',field:'private-field'}]");a.click('fw-setup',{server:'s2'});assert.match(a.html('modal'),/未识别的问题/);assert.doesNotMatch(a.html('modal'),/private-marker|private-field/);
+ a.run('ui.modal.plan.blockers=[]');a.submit('fw-setup',{'fw-setup-ack':'on'});assert.equal(a.run("S.operations.some(o=>o.input?.action==='setup')"),false);
+});
 test('唯一入口为 firewalld，待迁移服务器不开放端口写入',()=>{
  const a=scene('migrate');assert.equal(a.run("firewallHost(ui.server).state"),'needs-setup');assert.match(a.html('app'),/迁移到 firewalld/);assert.doesNotMatch(a.html('app'),/防火墙后端/);
  a.click('firewalledit');a.submit('firewalledit',{'fw-server':'s2','fw-protocol':'TCP','fw-port':'8088','fw-family':'ipv4','fw-address':'0.0.0.0/0','fw-action':'allow','network-ack':'on'});assert.equal(a.run('ui.modal.kind'),'firewalledit');assert.equal(a.run("S.operations.some(o=>o.status==='running')"),false);

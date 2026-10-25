@@ -109,6 +109,13 @@ try{
   check(width+'盘点问题定位阶段路径及数量限制',stateText.includes('定时任务')&&stateText.includes('/var/spool/cron/crontabs')&&stateText.includes('4097')&&stateText.includes('4096'));
   await layout(page,width+'读取失败');await shot(page,'firewall-inventory-'+width);await context.close();
  }
+ for(const width of [1440,390,320]){
+  const context=await browser.newContext({viewport:{width,height:1000}}),page=await context.newPage();await page.goto(base);await scene(page,'firewall-setup-error');await click(page,'fw-setup',{server:'s2'});
+  const text=await page.locator('#modal').innerText();
+  check(width+'失败预览定位依赖桥接与未核实双栈',text.includes('接入检查未通过')&&text.includes('python3-firewall')&&text.includes('docker0')&&text.includes('依赖计划生成失败')&&text.includes('尚未确定'));
+  check(width+'失败预览无确认或执行入口',await page.locator('#modal [name="fw-setup-ack"],#modal button[type="submit"]').count()===0);
+  await layout(page,width+'接入预览失败');await shot(page,'firewall-setup-error-'+width);await context.close();
+ }
  check('无浏览器脚本或资源错误',errors.length===0);
  await writeFile(path.join(out,'report.json'),JSON.stringify({checks,errors},null,2)+'\n');
  console.log('PASS '+checks.length+' checks');
