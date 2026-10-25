@@ -104,7 +104,10 @@ try{
   const captured=await page.evaluate(()=>firewallHost(ui.server).captured);
   await click(page,'fw-refresh',{},'#main');
   check(width+'读取失败保留采集时间且禁止写入',captured===await page.evaluate(()=>firewallHost(ui.server).captured)&&await page.locator('#main [data-action="firewalledit"]').first().isDisabled());
-  await layout(page,width+'读取失败');await context.close();
+  const stateText=await page.locator('.firewall-state-card').innerText();
+  check(width+'只读检查失败区别于操作结果未知',stateText.includes('检查未完成')&&!stateText.includes('结果待核对')&&stateText.includes('重新检查'));
+  check(width+'盘点问题定位阶段路径及数量限制',stateText.includes('定时任务')&&stateText.includes('/var/spool/cron/crontabs')&&stateText.includes('4097')&&stateText.includes('4096'));
+  await layout(page,width+'读取失败');await shot(page,'firewall-inventory-'+width);await context.close();
  }
  check('无浏览器脚本或资源错误',errors.length===0);
  await writeFile(path.join(out,'report.json'),JSON.stringify({checks,errors},null,2)+'\n');

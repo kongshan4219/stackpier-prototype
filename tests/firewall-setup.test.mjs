@@ -37,7 +37,17 @@ test('外部漂移后的恢复不能盲目覆盖',()=>{
  const a=scene('unknown'),id=a.run('S.operations[0].id');a.run("S.firewalls.find(r=>r.server==='s2').description='外部更新'");a.click('fw-setup-recover',{id});a.submit('fw-setup-recover',{'fw-recover-ack':'on'});assert.equal(a.run('S.operations[0].status'),'unknown');assert.equal(a.run("S.firewalls.find(r=>r.server==='s2').description"),'外部更新');assert.equal(a.run('S.operations[0].protectionReleased'),false);
 });
 test('读取失败保留旧采集时间与规则，不能写入或迁移',()=>{
- const a=scene('read-error');a.run("var oldTime=firewallHost('s2').captured,oldRules=JSON.stringify(S.firewalls)");a.click('fw-refresh');assert.equal(a.run("firewallHost('s2').captured"),a.run('oldTime'));assert.equal(a.run('JSON.stringify(S.firewalls)'),a.run('oldRules'));assert.ok(a.run("firewallWriteError('s2')"));
+ const a=scene('read-error');a.run("var oldTime=firewallHost('s2').captured,oldRules=JSON.stringify(S.firewalls),oldCount=S.operations.length");a.click('fw-refresh');assert.equal(a.run("firewallHost('s2').captured"),a.run('oldTime'));assert.equal(a.run('JSON.stringify(S.firewalls)'),a.run('oldRules'));assert.ok(a.run("firewallWriteError('s2')"));assert.equal(a.run('S.operations.length'),a.run('oldCount'));
+ const html=a.run("firewallStateCard('s2')");assert.match(html,/检查未完成/);assert.doesNotMatch(html,/结果待核对|查看原操作/);for(const text of ['定时任务','/var/spool/cron/crontabs','系统服务','4097','4096','读取期间发生变化','重新检查'])assert.ok(html.includes(text),text);
+});
+test('检查问题安全表达并精确去重，未结构化说明不丢失',()=>{
+ const a=scene('read-error');a.run("firewallHost('s2').blockers=['同一个读取原因'];firewallHost('s2').readErrors=['同一个读取原因','另一个读取原因'];firewallHost('s2').inventoryIssues.push({code:'future-code',stage:'private-command-marker',object:'<script>example</script>',actual:0,retryable:false})");const html=a.run("firewallStateCard('s2')");assert.equal(html.match(/同一个读取原因/g).length,1);assert.match(html,/另一个读取原因/);assert.match(html,/盘点未完成，请核对检查说明/);assert.doesNotMatch(html,/private-command-marker|<script>/);assert.match(html,/&lt;script&gt;/);
+});
+test('重新检查通过回到待迁移，不能因读取错误消失直接开放端口',()=>{
+ const a=scene('read-error');a.run("firewallHost('s2').readFails=false");a.click('fw-discover',{server:'s2'});assert.equal(a.run("firewallHost('s2').state"),'needs-setup');assert.equal(a.run("firewallHost('s2').inventoryIssues.length"),0);assert.match(a.html('app'),/迁移到 firewalld/);assert.ok(a.run("firewallWriteError('s2')"));assert.equal(a.run("S.operations.some(o=>o.input?.action==='setup')"),false);
+});
+test('原操作未知优先于新盘点问题，保护和核对入口保留',()=>{
+ const a=scene('unknown'),id=a.run('S.operations[0].id');a.run("firewallHost('s2').inventoryIssues=[{code:'access-denied',stage:'cron',object:'/var/spool/cron/crontabs',retryable:true}]");const html=a.run("firewallStateCard('s2')");assert.match(html,/结果待核对/);assert.doesNotMatch(html,/检查未完成|data-action="fw-discover"/);assert.match(html,/查看原操作/);a.click('fw-refresh');assert.equal(a.run('S.operations[0].id'),id);assert.equal(a.run('S.operations[0].status'),'unknown');assert.equal(a.run('S.operations[0].protectionReleased'),false);a.click('opdetail',{id});assert.match(a.html('modal'),/核对原操作/);assert.match(a.html('modal'),/请求恢复原配置/);
 });
 test('新机器初始策略不预选，选择后固定到预览与成功状态',()=>{
  const a=scene('install');a.click('fw-setup',{server:'s4'});a.submit('fw-setup',{});assert.match(a.document.getElementById('modal-error').textContent,/明确选择/);assert.equal(a.run("S.operations.some(o=>o.input?.action==='setup')"),false);

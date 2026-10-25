@@ -10,7 +10,7 @@ const scenes=[
  {id:'firewall-failed',title:'统一防火墙：失败并恢复',desc:'切换失败后核实恢复原配置和服务，保留失败记录。'},
  {id:'firewall-unknown',title:'统一防火墙：断连后恢复',desc:'保留原操作与保护；核对不足时可以请求恢复原配置。'},
  {id:'firewall-recheck',title:'统一防火墙：核对原操作成功',desc:'原响应丢失，随后取得新 SSH 与配置证据，沿原操作确认完成。'},
- {id:'firewall-read-error',title:'统一防火墙：只读盘点失败',desc:'保留旧规则与采集时间，不把读取失败当成没有防火墙。'},
+ {id:'firewall-read-error',title:'统一防火墙：检查未完成',desc:'定位读取阶段、路径与超限数量；保留旧观测且只允许重新检查。'},
  {id:'saved',title:'保存了配置，但还没有应用',desc:'新端口留在草稿，远端旧端口并不因此异常。'},
  {id:'files-changed',title:'受管配置被远端修改',desc:'只核对摘要，标记远端被改，不覆盖项目草稿或成功参照。'},
  {id:'files-missing',title:'受管配置文件缺失',desc:'缺失与无法读取分开呈现，核对不会补发文件。'},
