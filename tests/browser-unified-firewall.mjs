@@ -116,6 +116,15 @@ try{
   check(width+'失败预览无确认或执行入口',await page.locator('#modal [name="fw-setup-ack"],#modal button[type="submit"]').count()===0);
   await layout(page,width+'接入预览失败');await shot(page,'firewall-setup-error-'+width);await context.close();
  }
+ {
+  const context=await browser.newContext({viewport:{width:1440,height:1000}}),page=await context.newPage();await page.goto(base);await scene(page,'firewall-legacy-receipt');
+  await page.locator('#modal summary').filter({hasText:'固定接入计划与保留范围'}).click();const text=await page.locator('#modal').innerText();
+  check('旧历史计划按原记录显示策略',text.includes('历史计划未记录分阶段诊断')&&text.includes('DROP（原计划）'));
+  check('旧历史回执不要求重新生成预览',!text.includes('缺少新版阶段证据'));
+  const id=await page.evaluate(()=>S.operations[0].id),count=await page.evaluate(()=>S.operations.length);await click(page,'fw-setup-recover',{id},'#modal');await page.locator('[name="fw-recover-ack"]').check();await submit(page);
+  check('旧历史恢复沿原操作且不新增操作',await page.evaluate(({id,count})=>S.operations[0].id===id&&S.operations[0].status==='rolled-back'&&S.operations.length===count,{id,count}));
+  await shot(page,'firewall-legacy-receipt');await context.close();
+ }
  check('无浏览器脚本或资源错误',errors.length===0);
  await writeFile(path.join(out,'report.json'),JSON.stringify({checks,errors},null,2)+'\n');
  console.log('PASS '+checks.length+' checks');

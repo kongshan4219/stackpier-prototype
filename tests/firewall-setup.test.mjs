@@ -3,6 +3,11 @@ import assert from 'node:assert/strict';
 import { prototype } from './prototype-harness.mjs';
 
 const scene=id=>{const a=prototype();a.click('loadscene',{id:'firewall-'+id});return a;};
+test('旧历史计划没有新诊断时保持原操作恢复，不要求生成新预览',()=>{
+ const a=scene('legacy-receipt'),id=a.run('S.operations[0].id'),count=a.run('S.operations.length');a.click('opdetail',{id});
+ assert.match(a.html('modal'),/历史计划未记录分阶段诊断/);assert.match(a.html('modal'),/DROP（原计划）/);assert.doesNotMatch(a.html('modal'),/缺少新版阶段证据/);
+ a.click('fw-setup-recover',{id});a.submit('fw-setup-recover',{'fw-recover-ack':'on'});assert.equal(a.run('S.operations[0].status'),'rolled-back');assert.equal(a.run('S.operations.length'),count);
+});
 test('失败预览定位包来源和桥接，双栈目标未确定且不能确认',()=>{
  const a=scene('setup-error');a.click('fw-setup',{server:'s2'});const html=a.html('modal');
  for(const text of ['接入检查未通过','python3-firewall','scheme','docker0','依赖计划生成失败','受前置问题影响的检查','IPV6','未核实','尚未确定','接口拓扑与归属','docker0 / bridge','尚未证明'])assert.ok(html.includes(text),text);

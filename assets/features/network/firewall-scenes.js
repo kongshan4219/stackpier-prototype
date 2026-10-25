@@ -16,10 +16,11 @@ function loadFirewallScene(id){
  if(id==='firewall-blocked'){host.os='Alpine Linux（示例）';host.serviceManager='OpenRC';host.state='blocked';host.blockers=['未检测到可用的独立恢复服务，尚不能安全自动切换。','存在无法等价转换的自定义主机规则；需先核对其用途。'];host.reason='自动探测完成，当前条件不能安全完成自动接入。';}
  if(id==='firewall-read-error'){host.state='unknown';host.readFails=true;host.reason='本次只读检查未取得完整证据；保留旧规则和原采集时间，不用于写入。';host.inventoryIssues=[{code:'access-denied',stage:'cron',object:'/var/spool/cron/crontabs',retryable:true},{code:'limit-exceeded',stage:'services',object:'systemd 服务清单',actual:4097,limit:4096,retryable:false},{code:'changed',stage:'startup',object:'/etc/network/if-pre-up.d/bridge',retryable:true}];}
  navigate('firewall');ui.server=server;ui.fwSelected=[];ui.fwPage=1;render();
- if(['firewall-failed','firewall-unknown','firewall-recheck','firewall-pending'].includes(id)){
+ if(['firewall-failed','firewall-unknown','firewall-recheck','firewall-pending','firewall-legacy-receipt'].includes(id)){
   const outcome=id==='firewall-failed'?'failed':id==='firewall-pending'?'success':'unknown';
   const o=startFirewallSetup(firewallSetupPlan(server),outcome,{hold:true});
   if(o&&id!=='firewall-pending')finishFirewallSetup(o,outcome);
+  if(o&&id==='firewall-legacy-receipt'){delete o.input.plan.checks;if(ui.modal?.kind==='opdetail')renderModal();}
   ui.firewallRecheck=id==='firewall-recheck'?'success':'unknown';
  }
  persist();toast('已装载统一防火墙模拟场景；不会连接真实服务器。');

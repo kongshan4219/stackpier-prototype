@@ -30,7 +30,7 @@ function finishFirewallSetup(o,result='success'){
 }
 function firewallSetupOperationSummary(o){
  if(o.input?.action!=='setup')return '';
- return `<details><summary>固定接入计划与保留范围</summary>${firewallSetupSummary(o.input.plan)}</details>${o.firewallChecks?.length?'<ul>'+o.firewallChecks.map(check=>`<li>${fmt(check.at)} · ${h(check.message)}</li>`).join('')+'</ul>':''}<p>${o.protectionReleased?'本次恢复保护已核实解除。':'远端恢复保护仍保留；关闭页面不会取消。'}</p>${o.status==='unknown'?'<div class="row">'+btn('核对原操作','fw-setup-inspect',{id:o.id},'primary')+btn('请求恢复原配置','fw-setup-recover',{id:o.id},'danger')+'</div>':''}`;
+ return `<details><summary>固定接入计划与保留范围</summary>${firewallSetupSummary(o.input.plan,true)}</details>${o.firewallChecks?.length?'<ul>'+o.firewallChecks.map(check=>`<li>${fmt(check.at)} · ${h(check.message)}</li>`).join('')+'</ul>':''}<p>${o.protectionReleased?'本次恢复保护已核实解除。':'远端恢复保护仍保留；关闭页面不会取消。'}</p>${o.status==='unknown'?'<div class="row">'+btn('核对原操作','fw-setup-inspect',{id:o.id},'primary')+btn('请求恢复原配置','fw-setup-recover',{id:o.id},'danger')+'</div>':''}`;
 }
 function firewallSetupDetail(o){
  const completed=o.steps.filter(step=>step.status==='success').length;
