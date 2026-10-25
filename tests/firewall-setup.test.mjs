@@ -5,10 +5,10 @@ import { prototype } from './prototype-harness.mjs';
 const scene=id=>{const a=prototype();a.click('loadscene',{id:'firewall-'+id});return a;};
 test('失败预览定位包来源和桥接，双栈目标未确定且不能确认',()=>{
  const a=scene('setup-error');a.click('fw-setup',{server:'s2'});const html=a.html('modal');
- for(const text of ['接入检查未通过','python3-firewall','scheme','docker0','依赖计划生成失败','受前置问题影响的检查','IPV6','未核实','尚未确定'])assert.ok(html.includes(text),text);
+ for(const text of ['接入检查未通过','python3-firewall','scheme','docker0','依赖计划生成失败','受前置问题影响的检查','IPV6','未核实','尚未确定','接口拓扑与归属','docker0 / bridge','尚未证明'])assert.ok(html.includes(text),text);
  assert.doesNotMatch(html,/name="fw-setup-ack"|type="submit"/);
  a.submit('fw-setup',{'fw-setup-ack':'on'});assert.equal(a.run("S.operations.some(o=>o.input?.action==='setup')"),false);
- a.run("firewallHost('s2').blockers=[];delete firewallHost('s2').setupChecks");a.click('fw-setup-repreview',{server:'s2'});assert.equal(a.document.querySelectorAll('[name=fw-setup-ack]')[0].checked,false);
+ a.run("firewallHost('s2').blockers=[];delete firewallHost('s2').setupChecks;delete firewallHost('s2').setupTopology");a.click('fw-setup-repreview',{server:'s2'});assert.equal(a.document.querySelectorAll('[name=fw-setup-ack]')[0].checked,false);
 });
 test('未知接入诊断不回显内部字段，检查状态不允许伪造放行',()=>{
  const a=scene('setup-error');a.run("ui.modal=null;firewallHost('s2').setupChecks.issues=[{code:'future-code',object:'private-marker',field:'private-field'}]");a.click('fw-setup',{server:'s2'});assert.match(a.html('modal'),/未识别的问题/);assert.doesNotMatch(a.html('modal'),/private-marker|private-field/);

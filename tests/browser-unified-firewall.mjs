@@ -112,7 +112,7 @@ try{
  for(const width of [1440,390,320]){
   const context=await browser.newContext({viewport:{width,height:1000}}),page=await context.newPage();await page.goto(base);await scene(page,'firewall-setup-error');await click(page,'fw-setup',{server:'s2'});
   const text=await page.locator('#modal').innerText();
-  check(width+'失败预览定位依赖桥接与未核实双栈',text.includes('接入检查未通过')&&text.includes('python3-firewall')&&text.includes('docker0')&&text.includes('依赖计划生成失败')&&text.includes('尚未确定'));
+  check(width+'失败预览定位依赖桥接与未核实双栈',text.includes('接入检查未通过')&&text.includes('python3-firewall')&&text.includes('docker0')&&text.includes('依赖计划生成失败')&&text.includes('尚未确定')&&text.includes('接口拓扑与归属')&&text.includes('docker0 / bridge'));
   check(width+'失败预览无确认或执行入口',await page.locator('#modal [name="fw-setup-ack"],#modal button[type="submit"]').count()===0);
   await layout(page,width+'接入预览失败');await shot(page,'firewall-setup-error-'+width);await context.close();
  }

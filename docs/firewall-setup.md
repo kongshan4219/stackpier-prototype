@@ -64,3 +64,5 @@
 浏览器脚本为 `tests/browser-unified-firewall.mjs`：通过 `STACKPIER_PREVIEW_URL` 指定回环静态服务，`STACKPIER_SCREENSHOTS` 指定 `/srv/cache/stackpier-tmp/` 下任务目录，`STACKPIER_PLAYWRIGHT_MODULE` 指向主仓库锁定的 Playwright 模块，`CHROMIUM` 指定浏览器；`TMPDIR` 使用约定缓存。验证结束后关闭本任务服务，保留必要截图。
 
 接入预览新增阶段诊断：直接失败与连带检查分开，依赖失败不显示无需安装；未证明双栈策略显示未核实／尚未确定。失败标题为“接入检查未通过”，隐藏确认框和执行按钮，重新检查须重新确认。本次 278 项组件、127 项浏览器检查通过；仍仅为原型模拟。
+
+失败预览补充只读接口拓扑表，显示真实类型、双栈地址／路由计数与“尚未证明”的归属；不通过名称推断 Docker 所有权，也不因取得拓扑观测开放接入。新增表格已纳入失败场景的组件和浏览器断言。
