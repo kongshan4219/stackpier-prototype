@@ -1,6 +1,16 @@
 'use strict';
 
 const scenes=[
+ {id:'firewall-ready',title:'统一防火墙：已接入',desc:'直接维护 firewalld 持久化端口规则，不再切换底层工具。'},
+ {id:'firewall-multi-zone',title:'统一防火墙：多个作用范围',desc:'公网与内网网卡分别绑定 Zone，新建和导入规则必须明确选择。'},
+ {id:'firewall-migrate',title:'统一防火墙：迁移已有规则',desc:'只读盘点后预览 UFW → firewalld，保留 Docker / VPN 规则。'},
+ {id:'firewall-install',title:'统一防火墙：新机器安装',desc:'自动识别系统与恢复条件，再确认依赖安装、策略与作用范围。'},
+ {id:'firewall-blocked',title:'统一防火墙：接入条件不足',desc:'64 位 ARM 机器使用其他服务管理器，复杂规则与恢复条件阻止自动切换。'},
+ {id:'firewall-pending',title:'统一防火墙：迁移执行中',desc:'按固定计划显示安装、切换与核验阶段；同机端口写入保持锁定。'},
+ {id:'firewall-failed',title:'统一防火墙：失败并恢复',desc:'切换失败后核实恢复原配置和服务，保留失败记录。'},
+ {id:'firewall-unknown',title:'统一防火墙：断连后恢复',desc:'保留原操作与保护；核对不足时可以请求恢复原配置。'},
+ {id:'firewall-recheck',title:'统一防火墙：核对原操作成功',desc:'原响应丢失，随后取得新 SSH 与配置证据，沿原操作确认完成。'},
+ {id:'firewall-read-error',title:'统一防火墙：只读盘点失败',desc:'保留旧规则与采集时间，不把读取失败当成没有防火墙。'},
  {id:'saved',title:'保存了配置，但还没有应用',desc:'新端口留在草稿，远端旧端口并不因此异常。'},
  {id:'files-changed',title:'受管配置被远端修改',desc:'只核对摘要，标记远端被改，不覆盖项目草稿或成功参照。'},
  {id:'files-missing',title:'受管配置文件缺失',desc:'缺失与无法读取分开呈现，核对不会补发文件。'},
