@@ -27,8 +27,8 @@
 
 - [凭据正文输入](docs/credential-input.md)：FRP、STCP 与通知输入只接受虚构值，编辑留空保留且不回填。
 
-- [防火墙端口规则](docs/firewall-port-rules.md)：已有规则编辑、批量删除和 JSON 导入导出的模拟交互。
-- [统一防火墙接入](docs/firewall-setup.md)：自动盘点、策略选择、固定安装／迁移预览、失败与恢复的模拟交互。
+- [防火墙端口规则](docs/firewall-port-rules.md)：firewalld 服务启停、已有规则编辑、批量删除和 JSON 导入导出的模拟交互。
+- [统一防火墙接入](docs/firewall-setup.md)：历史盘点、安装／迁移与恢复模拟；当前主页面不再提供自动迁移入口。
 - [服务器状态](docs/server-status.md)：登记信息持久化、页面内模拟轮询与离页停止。
 - [界面规则](docs/interface-guidelines.md)：文字层级、公共组件、响应式与键盘操作。
 - [文件](docs/files.md)：任意类型文件的上传、架构识别、命名、去重与替换规则。

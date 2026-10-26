@@ -40,35 +40,16 @@ try{
   check(width+'策略筛选文字有足够空间',(await page.locator('#main [data-filter="fwPolicy"]').boundingBox()).width>=120);
   await layout(page,width+'已接入');await shot(page,'firewall-ready-'+width);
 
-  await scene(page,'firewall-install');await click(page,'fw-setup',{},'#main');
-  check(width+'新机初始策略无预选',await page.locator('#fw-initial-policy').inputValue()==='');
-  await submit(page);check(width+'未选策略不能生成计划',await page.locator('#fw-initial-policy').count()===1&&await page.locator('[name="fw-setup-ack"]').count()===0);
-  await page.locator('#fw-initial-policy').selectOption('DROP');await submit(page);
-  check(width+'固定预览展示策略和依赖',await page.locator('#modal').innerText().then(text=>text.includes('DROP')&&text.includes('Python')&&text.includes('Docker')));
-  check(width+'新机Zone策略与选择一致',await page.evaluate(()=>ui.modal.plan.zones.every(zone=>zone.target==='DROP')));
-  const before=await page.evaluate(()=>JSON.stringify([S.operations,S.firewallHosts,S.firewalls]));
-  await layout(page,width+'安装预览');await shot(page,'firewall-install-preview-'+width);await close(page);
-  check(width+'取消预览不修改规则或操作',before===await page.evaluate(()=>JSON.stringify([S.operations,S.firewallHosts,S.firewalls])));
-
-  await scene(page,'firewall-docker');await click(page,'fw-setup',{server:'s2'});
-  check(width+'Docker共存及标准保护差异',await page.locator('#modal').innerText().then(text=>text.includes('Docker 共存范围（模拟）')&&text.includes('INVALID')&&text.includes('RFC3964')&&text.includes('docker0')&&text.includes('300 秒')));
-  await layout(page,width+'Docker共存');await shot(page,'firewall-docker-'+width);await close(page);
-
+  await click(page,'fw-service',{serviceaction:'stop'},'#main');
+  const before=await page.evaluate(()=>JSON.stringify(S.firewallHosts));
+  await layout(page,width+'服务预览');await shot(page,'firewall-service-'+width);await close(page);
+  check(width+'取消不修改服务',before===await page.evaluate(()=>JSON.stringify(S.firewallHosts)));
+  await click(page,'fw-service',{serviceaction:'stop'},'#main');await page.locator('[name="fw-service-confirm"]').check();await submit(page);
+  check(width+'停止后规则只读',await page.locator('#main [data-action="firewalledit"]').first().isDisabled());
+  await click(page,'fw-service',{serviceaction:'start'},'#main');await page.locator('[name="fw-service-confirm"]').check();await submit(page);
+  check(width+'启动恢复端口管理',await page.locator('#main [data-action="firewalledit"]').first().isEnabled());
   await scene(page,'firewall-migrate');
-  check(width+'待迁移禁止端口写入',await page.locator('#main [data-action="firewalledit"]').first().isDisabled());
-  await click(page,'fw-setup',{},'#main');
-  check(width+'迁移计划保留原策略',await page.locator('#modal').innerText().then(text=>text.includes('UFW')&&text.includes('原入站默认策略')&&text.includes('目标入站默认策略'))&&await page.evaluate(()=>ui.modal.plan.currentPolicy==='DROP'&&ui.modal.plan.targetPolicy==='DROP'));
-  await page.locator('[name="fw-setup-ack"]').check();await submit(page);
-  check(width+'迁移使用独立操作',await page.evaluate(()=>S.operations[0].input.action==='setup'&&S.operations[0].status==='running'));
-  await layout(page,width+'执行中');await click(page,'finishdemo',{},'#modal');
-  check(width+'成功后完成统一接入',await page.evaluate(()=>S.operations[0].status==='success'&&firewallHost(ui.server).state==='ready'));
-  await close(page);await click(page,'firewalledit',{},'#main');
-  await page.locator('#fw-port').fill('18443');await page.locator('#fw-description').fill('虚构业务端口');
-  await page.locator('[name="network-ack"]').check();await submit(page);
-  check(width+'规则确认使用持久化语义',await page.locator('[name="fw-runtime"]').count()===0&&await page.locator('#modal').innerText().then(text=>text.includes('永久配置')));
-  await page.locator('[name="fw-confirm"]').check();await submit(page);await click(page,'finishdemo',{},'#modal');
-  check(width+'统一后可创建规则',await page.evaluate(()=>S.firewalls.some(r=>r.server===ui.server&&r.port==='18443')));await close(page);
-
+  check(width+'服务冲突无自动迁移入口',await page.locator('#main [data-action="fw-setup"]').count()===0&&await page.locator('#main [data-action="firewalledit"]').first().isDisabled());
   await scene(page,'firewall-multi-zone');await click(page,'firewalledit',{},'#main');
   check(width+'多Zone必须明确选择',await page.locator('#fw-zone').inputValue()==='');
   await page.locator('#fw-zone').selectOption('internal');
@@ -110,15 +91,8 @@ try{
   check(width+'读取失败保留采集时间且禁止写入',captured===await page.evaluate(()=>firewallHost(ui.server).captured)&&await page.locator('#main [data-action="firewalledit"]').first().isDisabled());
   const stateText=await page.locator('.firewall-state-card').innerText();
   check(width+'只读检查失败区别于操作结果未知',stateText.includes('检查未完成')&&!stateText.includes('结果待核对')&&stateText.includes('重新检查'));
-  check(width+'盘点问题定位阶段路径及数量限制',stateText.includes('定时任务')&&stateText.includes('/var/spool/cron/crontabs')&&stateText.includes('4097')&&stateText.includes('4096'));
+  check(width+'主机服务不展示整机盘点门槛',!stateText.includes('/var/spool/cron/crontabs'));
   await layout(page,width+'读取失败');await shot(page,'firewall-inventory-'+width);await context.close();
- }
- for(const width of [1440,390,320]){
-  const context=await browser.newContext({viewport:{width,height:1000}}),page=await context.newPage();await page.goto(base);await scene(page,'firewall-setup-error');await click(page,'fw-setup',{server:'s2'});
-  const text=await page.locator('#modal').innerText();
-  check(width+'失败预览定位依赖桥接与未核实双栈',text.includes('接入检查未通过')&&text.includes('python3-firewall')&&text.includes('docker0')&&text.includes('依赖计划生成失败')&&text.includes('尚未确定')&&text.includes('接口拓扑与归属')&&text.includes('docker0 / bridge'));
-  check(width+'失败预览无确认或执行入口',await page.locator('#modal [name="fw-setup-ack"],#modal button[type="submit"]').count()===0);
-  await layout(page,width+'接入预览失败');await shot(page,'firewall-setup-error-'+width);await context.close();
  }
  {
   const context=await browser.newContext({viewport:{width:1440,height:1000}}),page=await context.newPage();await page.goto(base);await scene(page,'firewall-legacy-receipt');

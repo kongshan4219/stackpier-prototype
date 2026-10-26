@@ -26,7 +26,7 @@ test('未知接入诊断不回显内部字段，检查状态不允许伪造放�
  a.run('ui.modal.plan.blockers=[]');a.submit('fw-setup',{'fw-setup-ack':'on'});assert.equal(a.run("S.operations.some(o=>o.input?.action==='setup')"),false);
 });
 test('唯一入口为 firewalld，待迁移服务器不开放端口写入',()=>{
- const a=scene('migrate');assert.equal(a.run("firewallHost(ui.server).state"),'needs-setup');assert.match(a.html('app'),/迁移到 firewalld/);assert.doesNotMatch(a.html('app'),/防火墙后端/);
+ const a=scene('migrate');assert.equal(a.run("firewallHost(ui.server).state"),'needs-setup');assert.match(a.html('app'),/服务冲突/);assert.doesNotMatch(a.html('app'),/data-action="fw-setup"/);assert.doesNotMatch(a.html('app'),/防火墙后端/);
  a.click('firewalledit');a.submit('firewalledit',{'fw-server':'s2','fw-protocol':'TCP','fw-port':'8088','fw-family':'ipv4','fw-address':'0.0.0.0/0','fw-action':'allow','network-ack':'on'});assert.equal(a.run('ui.modal.kind'),'firewalledit');assert.equal(a.run("S.operations.some(o=>o.status==='running')"),false);
 });
 test('刷新只读盘点，安装预览取消不产生操作或改动规则',()=>{
@@ -60,13 +60,13 @@ test('外部漂移后的恢复不能盲目覆盖',()=>{
 });
 test('读取失败保留旧采集时间与规则，不能写入或迁移',()=>{
  const a=scene('read-error');a.run("var oldTime=firewallHost('s2').captured,oldRules=JSON.stringify(S.firewalls),oldCount=S.operations.length");a.click('fw-refresh');assert.equal(a.run("firewallHost('s2').captured"),a.run('oldTime'));assert.equal(a.run('JSON.stringify(S.firewalls)'),a.run('oldRules'));assert.ok(a.run("firewallWriteError('s2')"));assert.equal(a.run('S.operations.length'),a.run('oldCount'));
- const html=a.run("firewallStateCard('s2')");assert.match(html,/检查未完成/);assert.doesNotMatch(html,/结果待核对|查看原操作/);for(const text of ['定时任务','/var/spool/cron/crontabs','系统服务','4097','4096','读取期间发生变化','重新检查'])assert.ok(html.includes(text),text);
+ const html=a.run("firewallStateCard('s2')");assert.match(html,/检查未完成/);assert.doesNotMatch(html,/结果待核对|查看原操作/);for(const text of ['定时任务','/var/spool/cron/crontabs','系统服务','4097','4096','读取期间发生变化','重新检查'])assert.ok(a.run("firewallInventoryIssues(firewallHost('s2'))").includes(text)||html.includes(text),text);
 });
 test('检查问题安全表达并精确去重，未结构化说明不丢失',()=>{
- const a=scene('read-error');a.run("firewallHost('s2').blockers=['同一个读取原因'];firewallHost('s2').readErrors=['同一个读取原因','另一个读取原因'];firewallHost('s2').inventoryIssues.push({code:'future-code',stage:'private-command-marker',object:'<script>example</script>',actual:0,retryable:false})");const html=a.run("firewallStateCard('s2')");assert.equal(html.match(/同一个读取原因/g).length,1);assert.match(html,/另一个读取原因/);assert.match(html,/盘点未完成，请核对检查说明/);assert.doesNotMatch(html,/private-command-marker|<script>/);assert.match(html,/&lt;script&gt;/);
+ const a=scene('read-error');a.run("firewallHost('s2').blockers=['同一个读取原因'];firewallHost('s2').readErrors=['同一个读取原因','另一个读取原因'];firewallHost('s2').inventoryIssues.push({code:'future-code',stage:'private-command-marker',object:'<script>example</script>',actual:0,retryable:false})");const html=a.run("firewallInventoryIssues(firewallHost('s2'))");assert.equal(html.match(/同一个读取原因/g).length,1);assert.match(html,/另一个读取原因/);assert.match(html,/盘点未完成，请核对检查说明/);assert.doesNotMatch(html,/private-command-marker|<script>/);assert.match(html,/&lt;script&gt;/);
 });
 test('重新检查通过回到待迁移，不能因读取错误消失直接开放端口',()=>{
- const a=scene('read-error');a.run("firewallHost('s2').readFails=false");a.click('fw-discover',{server:'s2'});assert.equal(a.run("firewallHost('s2').state"),'needs-setup');assert.equal(a.run("firewallHost('s2').inventoryIssues.length"),0);assert.match(a.html('app'),/迁移到 firewalld/);assert.ok(a.run("firewallWriteError('s2')"));assert.equal(a.run("S.operations.some(o=>o.input?.action==='setup')"),false);
+ const a=scene('read-error');a.run("firewallHost('s2').readFails=false");a.click('fw-discover',{server:'s2'});assert.equal(a.run("firewallHost('s2').state"),'needs-setup');assert.equal(a.run("firewallHost('s2').inventoryIssues.length"),0);assert.match(a.html('app'),/服务冲突/);assert.doesNotMatch(a.html('app'),/data-action="fw-setup"/);assert.ok(a.run("firewallWriteError('s2')"));assert.equal(a.run("S.operations.some(o=>o.input?.action==='setup')"),false);
 });
 test('原操作未知优先于新盘点问题，保护和核对入口保留',()=>{
  const a=scene('unknown'),id=a.run('S.operations[0].id');a.run("firewallHost('s2').inventoryIssues=[{code:'access-denied',stage:'cron',object:'/var/spool/cron/crontabs',retryable:true}]");const html=a.run("firewallStateCard('s2')");assert.match(html,/结果待核对/);assert.doesNotMatch(html,/检查未完成|data-action="fw-discover"/);assert.match(html,/查看原操作/);a.click('fw-refresh');assert.equal(a.run('S.operations[0].id'),id);assert.equal(a.run('S.operations[0].status'),'unknown');assert.equal(a.run('S.operations[0].protectionReleased'),false);a.click('opdetail',{id});assert.match(a.html('modal'),/核对原操作/);assert.match(a.html('modal'),/请求恢复原配置/);
@@ -93,4 +93,11 @@ test('动态路由续期保留身份，缩短租期或变更网关拒绝执行',
  a.run(kind==='renew'?"firewallHost('s2').networkTiming.entries[0].seconds=1800":kind==='short'?"firewallHost('s2').networkTiming.entries[0].seconds=30":"firewallHost('s2').networkTiming.entries[0].gateway='fe80::2'");
  a.submit('fw-setup',{'fw-setup-ack':'on'});assert.equal(a.run("S.operations.some(o=>o.input?.action==='setup')"),kind==='renew');
  }
+});
+
+test('主机服务确认后启停，取消和状态漂移不写入',()=>{
+ const a=scene('ready');a.click('fw-service',{server:'s2',serviceaction:'stop'});
+ a.submit('fw-service',{});assert.equal(a.run("firewallHost('s2').state"),'ready');
+ a.submit('fw-service',{'fw-service-confirm':'on'});assert.equal(a.run("firewallHost('s2').state"),'stopped');
+ a.click('fw-service',{server:'s2',serviceaction:'start'});a.run("firewallHost('s2').revision++");a.submit('fw-service',{'fw-service-confirm':'on'});assert.equal(a.run("firewallHost('s2').state"),'stopped');assert.match(a.document.getElementById('modal-error').textContent,/变化/);
 });
