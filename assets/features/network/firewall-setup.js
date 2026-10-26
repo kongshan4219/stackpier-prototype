@@ -10,6 +10,8 @@ function firewallSetupCheckSummary(plan,historical=false){
 }
 
 function firewallSetupTopology(plan){
+ const docker=plan.before.docker;
+ if(docker)return '<section aria-label="Docker 共存范围"><h3>Docker 共存范围（模拟）</h3>'+detail([['主机端口管理',h(docker.hostInterface)+' → stackpier Zone'],['Docker 保留范围',h(docker.bridges.join('、'))+' → docker Zone；'+docker.containers+' 个运行容器，'+docker.publishedPorts+' 个发布绑定'],['IPv6 路径',docker.ipv6Tables?'已核实 IPv6 转发、NAT 与端口代理（模拟）':'已逐项核实 IPv6 发布代理及内核路径（模拟）']])+'<p>Docker 的发布、出站、互访与隔离规则保留原归属；仅管理主机 Zone 的端口。</p><h3>标准基础保护与策略差异</h3><ul><li>双栈主机入站默认 ACCEPT 保留，新增 INVALID 状态丢弃。</li><li>新增默认 IPv6 反向路径检查及 RFC3964 地址保护，非对称 IPv6 路由及特殊地址流量可能被拒绝。</li><li>桥接采用 docker Zone 与标准 docker-forwarding policy，Docker 规则继续由 Docker 维护。</li></ul><p>执行前再次核对完整归属。容器、网络或规则变化会使固定计划失效；恢复保留未知外部变化，不重放 Docker 快照。</p></section>';
  const links=plan.before.setupTopology;if(!links?.length)return '';
  return '<section aria-label="接口拓扑与归属"><h3>接口拓扑与归属</h3><p>已取得接口、地址和路由观测；尚未证明接口持久归属、完整规则保留及切换恢复条件。接口名称不能证明 Docker 归属。</p><div class="table-scroll"><table aria-label="接口拓扑证据"><thead><tr><th>接口 / 类型</th><th>IPv4 地址 / 路由数</th><th>IPv6 地址 / 路由数</th><th>归属</th></tr></thead><tbody>'+links.map(link=>'<tr><td>'+h(link.name+' / '+link.kind)+'</td><td>'+h(link.ipv4Addresses+' / '+link.ipv4Routes)+'</td><td>'+h(link.ipv6Addresses+' / '+link.ipv6Routes)+'</td><td>尚未证明</td></tr>').join('')+'</tbody></table></div></section>';
 }
@@ -30,6 +32,7 @@ function firewallSetupPlan(id,targetPolicy=''){
  const plan={id:uid('fw-plan'),server:serverOperationSnapshot(id),before:clone(host),rules:firewallHostRules(id).map(rule=>({...clone(rule),zone:firewallRuleZone(rule)})),allRules:clone(S.firewalls.filter(r=>r.server===id)),expires:new Date(Date.now()+300000).toISOString(),mode:host.manager==='未安装'?'install':'migrate',currentPolicy:host.manager==='firewalld'?'按各 Zone 保留':host.defaultPolicy,targetPolicy:host.manager==='未安装'?targetPolicy:host.manager==='firewalld'?'按各 Zone 保留':host.defaultPolicy,packages:['firewalld（发行版软件源）','nftables 与发行版所需 Python / D-Bus 依赖'],disable:host.manager==='未安装'?[]:[host.manager+' 主机防火墙管理服务及已识别的启动加载器'],zones:host.zones.map(zone=>({...clone(zone),target:host.manager==='未安装'?targetPolicy:zone.target})),preserved:clone(host.preserved),blockers};
  plan.checks=host.setupChecks?clone(host.setupChecks):{packages:host.manager==='firewalld'?'not-needed':'ready',scope:'ready',conversion:blockers.length?'failed':'ready',target:blockers.length||host.manager==='未安装'&&!targetPolicy?'not-evaluated':'ready',ipv4:host.defaultPolicy,ipv6:host.defaultPolicy,issues:[]};
  if(plan.checks.packages==='failed')plan.packages=[];
+ if(host.docker){plan.disable=[];plan.preserved=['Docker 发布端口、双栈转发、NAT、互访和隔离规则（模拟归属证明）'];}
  return plan;
 }
 function firewallSetupPlanError(plan){

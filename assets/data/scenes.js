@@ -12,6 +12,7 @@ const scenes=[
  {id:'firewall-recheck',title:'统一防火墙：核对原操作成功',desc:'原响应丢失，随后取得新 SSH 与配置证据，沿原操作确认完成。'},
  {id:'firewall-read-error',title:'统一防火墙：检查未完成',desc:'定位读取阶段、路径与超限数量；保留旧观测且只允许重新检查。'},
  {id:'firewall-setup-error',title:'统一防火墙：接入预览失败',desc:'依赖来源失败、桥接归属未证明和IPv6未核实；预览不提供确认执行。'},
+ {id:'firewall-docker',title:'统一防火墙：Docker 共存',desc:'模拟已证明的双栈 Docker 范围，明确标准保护差异与并发变化限制。'},
  {id:'firewall-legacy-receipt',title:'统一防火墙：旧历史回执',desc:'旧计划未记录分阶段诊断，仍按原记录展示并沿原操作恢复。'},
  {id:'saved',title:'保存了配置，但还没有应用',desc:'新端口留在草稿，远端旧端口并不因此异常。'},
  {id:'files-changed',title:'受管配置被远端修改',desc:'只核对摘要，标记远端被改，不覆盖项目草稿或成功参照。'},
