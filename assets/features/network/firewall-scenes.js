@@ -10,7 +10,9 @@ function loadFirewallScene(id){
  delete host.setupChecks;
  delete host.setupTopology;
  delete host.docker;
+ delete host.networkTiming;
  if(id==='firewall-docker'){
+  host.networkTiming={requiredSeconds:1436,recoverySeconds:416,entries:[{family:'IPv6',kind:'默认路由',interface:'ens3',destination:'::/0',gateway:'fe80::1',protocol:'RA',seconds:1764}]};
   host.manager='原生 nftables';host.defaultPolicy='ACCEPT';host.os='Debian 13（示例）';host.arch='amd64';
   host.zones=[{name:'stackpier',interfaces:['ens3'],sources:[],target:'ACCEPT'}];
   S.firewalls=S.firewalls.filter(rule=>rule.server!==server||rule.scope!=='host');

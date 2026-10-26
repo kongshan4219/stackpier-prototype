@@ -5,7 +5,7 @@ import { prototype } from './prototype-harness.mjs';
 const scene=id=>{const a=prototype();a.click('loadscene',{id:'firewall-'+id});return a;};
 test('Docker 共存展示标准保护差异，端点变化后拒绝旧确认',()=>{
  const a=scene('docker');a.click('fw-setup',{server:'s2'});
- for(const text of ['Docker 共存范围（模拟）','INVALID','IPv6 反向路径','RFC3964','4 个运行容器','docker0','300 秒'])assert.ok(a.html('modal').includes(text),text);
+ for(const text of ['Docker 共存范围（模拟）','INVALID','IPv6 反向路径','RFC3964','4 个运行容器','docker0','300 秒','网络有效期（模拟）','1436 秒','416 秒','1764 秒','fe80::1'])assert.ok(a.html('modal').includes(text),text);
  a.run("firewallHost('s2').docker.containers=5");a.submit('fw-setup',{'fw-setup-ack':'on'});
  assert.equal(a.run("S.operations.some(o=>o.input?.action==='setup')"),false);assert.match(a.document.getElementById('modal-error').textContent,/变化/);
 });
@@ -86,4 +86,11 @@ test('多个 Zone 不默认选 public，端口写入绑定已选择的作用范�
 });
 test('导入按选定 Zone 判断重复，另一个 Zone 的同样规则可独立维护',()=>{
  const a=scene('multi-zone');a.run("var existing=firewallHostRules('s2')[0],transfer=JSON.stringify({format:'stackpier-port-rules',version:1,rules:[firewallTransferRule(existing)]})");assert.throws(()=>a.run("firewallParseImport(transfer,'s2','public')"));assert.equal(a.run("firewallParseImport(transfer,'s2','internal')[0].zone"),'internal');
+});
+
+test('动态路由续期保留身份，缩短租期或变更网关拒绝执行',()=>{
+ for(const kind of ['renew','short','gateway']){const a=scene('docker');a.click('fw-setup',{server:'s2'});
+ a.run(kind==='renew'?"firewallHost('s2').networkTiming.entries[0].seconds=1800":kind==='short'?"firewallHost('s2').networkTiming.entries[0].seconds=30":"firewallHost('s2').networkTiming.entries[0].gateway='fe80::2'");
+ a.submit('fw-setup',{'fw-setup-ack':'on'});assert.equal(a.run("S.operations.some(o=>o.input?.action==='setup')"),kind==='renew');
+ }
 });

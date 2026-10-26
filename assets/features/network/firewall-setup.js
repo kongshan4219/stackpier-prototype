@@ -9,6 +9,11 @@ function firewallSetupCheckSummary(plan,historical=false){
  return '<section aria-label="接入检查结果"><h3>接入检查</h3>'+detail(Object.entries(labels).map(([key,label])=>[label,h(status[checks[key]]||'尚未核实')]))+direct.map(render).join('')+(dependent.length?'<details><summary>受前置问题影响的检查（'+dependent.length+'）</summary>'+dependent.map(render).join('')+'</details>':'')+'<div class="table-scroll"><table aria-label="双栈默认策略"><thead><tr><th>地址族</th><th>原默认策略</th><th>目标策略</th></tr></thead><tbody>'+['ipv4','ipv6'].map(family=>'<tr><td>'+family.toUpperCase()+'</td><td>'+h(checks.target==='ready'?checks[family]:'未核实')+'</td><td>'+h(checks.target==='ready'?plan.targetPolicy:'尚未确定')+'</td></tr>').join('')+'</tbody></table></div></section>';
 }
 
+function firewallNetworkTiming(timing){
+ if(!timing)return "";
+ return '<section aria-label="网络有效期"><h3>网络有效期（模拟）</h3><p>本阶段要求 '+timing.requiredSeconds+' 秒，其中恢复预算 '+timing.recoverySeconds+' 秒。采集时快照，执行前重新核验；续期不延长操作截止。</p>'+detail(timing.entries.map(entry=>[entry.family+" "+entry.kind,h(entry.interface+" · "+entry.destination+" · 网关 "+entry.gateway+" · 来源 "+entry.protocol+" · 剩余 "+entry.seconds+" 秒")]))+'<p>重新检查只更新诊断，不执行迁移。</p></section>';
+}
+
 function firewallSetupTopology(plan){
  const docker=plan.before.docker;
  if(docker)return '<section aria-label="Docker 共存范围"><h3>Docker 共存范围（模拟）</h3>'+detail([['主机端口管理',h(docker.hostInterface)+' → stackpier Zone'],['Docker 保留范围',h(docker.bridges.join('、'))+' → docker Zone；'+docker.containers+' 个运行容器，'+docker.publishedPorts+' 个发布绑定'],['IPv6 路径',docker.ipv6Tables?'已核实 IPv6 转发、NAT 与端口代理（模拟）':'已逐项核实 IPv6 发布代理及内核路径（模拟）']])+'<p>Docker 的发布、出站、互访与隔离规则保留原归属；仅管理主机 Zone 的端口。</p><h3>标准基础保护与策略差异</h3><ul><li>双栈主机入站默认 ACCEPT 保留，新增 INVALID 状态丢弃。</li><li>新增默认 IPv6 反向路径检查及 RFC3964 地址保护，非对称 IPv6 路由及特殊地址流量可能被拒绝。</li><li>桥接采用 docker Zone 与标准 docker-forwarding policy，Docker 规则继续由 Docker 维护。</li></ul><p>执行前再次核对完整归属。容器、网络或规则变化会使固定计划失效；恢复保留未知外部变化，不重放 Docker 快照。</p></section>';
@@ -16,9 +21,17 @@ function firewallSetupTopology(plan){
  return '<section aria-label="接口拓扑与归属"><h3>接口拓扑与归属</h3><p>已取得接口、地址和路由观测；尚未证明接口持久归属、完整规则保留及切换恢复条件。接口名称不能证明 Docker 归属。</p><div class="table-scroll"><table aria-label="接口拓扑证据"><thead><tr><th>接口 / 类型</th><th>IPv4 地址 / 路由数</th><th>IPv6 地址 / 路由数</th><th>归属</th></tr></thead><tbody>'+links.map(link=>'<tr><td>'+h(link.name+' / '+link.kind)+'</td><td>'+h(link.ipv4Addresses+' / '+link.ipv4Routes)+'</td><td>'+h(link.ipv6Addresses+' / '+link.ipv6Routes)+'</td><td>尚未证明</td></tr>').join('')+'</tbody></table></div></section>';
 }
 
+function firewallNetworkTimingError(timing){
+ const item=timing?.entries.find(entry=>entry.seconds<timing.requiredSeconds);
+ return item?item.family+" "+item.kind+"有效期不足："+item.interface+"，剩余 "+item.seconds+" 秒，要求 "+timing.requiredSeconds+" 秒":"";
+}
+function firewallNetworkIdentity(host){
+ const value=clone(host);if(value.networkTiming)value.networkTiming.entries.forEach(entry=>{entry.seconds="finite";});return value;
+}
 function firewallSetupPlan(id,targetPolicy=''){
  const host=firewallHost(id);if(!host)throw Error('请先检查目标防火墙。');
  const blockers=[...host.blockers],error=serverOperationError(id);if(error)blockers.push(error);
+ const timingError=firewallNetworkTimingError(host.networkTiming);if(timingError)blockers.push(timingError);
  if(host.setupTopology?.some(link=>link.owner!=='proved'))blockers.push('桥接拓扑已观测，持久归属及完整迁移证明仍未完成。');
  if(host.serviceManager!=='systemd')blockers.push('尚未核实此服务管理器的独立恢复能力。');
  if(!['x86_64','aarch64','amd64','arm64'].includes(host.arch))blockers.push('尚未识别受支持的 64 位 Linux 架构。');
@@ -44,14 +57,15 @@ function firewallSetupPlanError(plan){
  if(plan.blockers.length)return plan.blockers.join('；');
  if(!plan.checks||!['ready','not-needed'].includes(plan.checks.packages)||['scope','conversion','target'].some(stage=>plan.checks[stage]!=='ready'))return '接入检查未通过，请重新生成预览。';
  if(serverSnapshotError(plan.server))return '服务器连接或身份已变化，请重新检查。';
- if(JSON.stringify(firewallHost(plan.server.id))!==JSON.stringify(plan.before)||JSON.stringify(S.firewalls.filter(r=>r.server===plan.server.id))!==JSON.stringify(plan.allRules))return '原配置或规则在预览后变化，请重新检查。';
+ const timingError=firewallNetworkTimingError(firewallHost(plan.server.id).networkTiming);if(timingError)return timingError;
+ if(JSON.stringify(firewallNetworkIdentity(firewallHost(plan.server.id)))!==JSON.stringify(firewallNetworkIdentity(plan.before))||JSON.stringify(S.firewalls.filter(r=>r.server===plan.server.id))!==JSON.stringify(plan.allRules))return '原配置或规则在预览后变化，请重新检查。';
  if(firewallActiveOperation(plan.server.id))return '已有未完成防火墙操作，请核对原操作。';
  return '';
 }
 function firewallSetupSummary(plan,historical=false){
  const legacy=historical&&!plan.checks;
  const list=values=>`<ul>${values.map(value=>`<li>${h(value)}</li>`).join('')}</ul>`;
- return `<div class="stack">${firewallSetupCheckSummary(plan,historical)}${firewallSetupTopology(plan)}${notice('切换／确认窗口',(plan.switchWindowSeconds||120)+' 秒。切换开始后固定截止时间；到期未完成新 SSH 确认时，独立计时器沿原操作恢复。已签发回执的截止时间不会延长。')}${detail([['固定服务器',h(plan.server.name+' · '+plan.server.host+':'+plan.server.port)],['当前 → 目标',h(plan.before.manager)+' → firewalld / nftables'],['系统与架构',h(plan.before.os+' / '+plan.before.arch)],['服务管理器',h(plan.before.serviceManager)],['原入站默认策略',h(plan.checks?.target==='ready'||legacy?plan.currentPolicy:'未核实')],['目标入站默认策略',h(plan.checks?.target==='ready'||legacy?plan.targetPolicy+(legacy?'（原计划）':''):'尚未确定')]])}<div><h3>安装依赖</h3>${plan.checks?.packages==='failed'?'<p>依赖计划生成失败；尚未固定完整安装清单。</p>':plan.checks?.packages==='not-needed'?'<p>无需安装软件包，已核实现有依赖。</p>':list(plan.packages)}</div><div><h3>切换范围</h3>${plan.disable.length?list(plan.disable):'<p>没有已识别的主机防火墙管理器需要停用。</p>'}<p>仅停用冲突的主机管理入口；底层查看工具和其他软件所需组件可以保留。</p></div><div><h3>规则与作用范围</h3><p>${plan.rules.length} 条可解释的主机入站规则将保留并转入 firewalld；SSH 管理通路持续受保护。</p>${list(plan.zones.map(zone=>zone.name+' · '+(zone.interfaces.join('、')||'无网卡绑定')+' · '+(zone.sources.join('、')||'所有来源')+' · 原策略 '+(plan.mode==='install'?'未安装（入站 '+plan.currentPolicy+'）':plan.before.zones.find(old=>old.name===zone.name)?.target||'未知')+' → 目标策略 '+(plan.checks?.target==='ready'||legacy?zone.target+(legacy?'（原计划）':''):'尚未确定')))}${plan.rules.length?firewallBatchSummary({records:plan.rules,serverTarget:plan.server}):''}</div><div><h3>保留其他软件规则</h3>${list(plan.preserved)}</div>${notice('独立恢复保护','先保存配置、规则归属与服务状态，再装设恢复保护。安装、切换或新 SSH 核验失败时沿原操作恢复；不会清空整机规则集。')}${plan.blockers.map(reason=>notice('无法执行',reason,'error')).join('')}<p class="tiny muted">预览有效至 ${fmt(plan.expires)}。实际接口、安装步骤与系统支持以正式实施结果为准；当前只模拟流程。</p></div>`;
+ return `<div class="stack">${firewallSetupCheckSummary(plan,historical)}${firewallSetupTopology(plan)}${firewallNetworkTiming(plan.before.networkTiming)}${notice('切换／确认窗口',(plan.switchWindowSeconds||120)+' 秒。切换开始后固定截止时间；到期未完成新 SSH 确认时，独立计时器沿原操作恢复。已签发回执的截止时间不会延长。')}${detail([['固定服务器',h(plan.server.name+' · '+plan.server.host+':'+plan.server.port)],['当前 → 目标',h(plan.before.manager)+' → firewalld / nftables'],['系统与架构',h(plan.before.os+' / '+plan.before.arch)],['服务管理器',h(plan.before.serviceManager)],['原入站默认策略',h(plan.checks?.target==='ready'||legacy?plan.currentPolicy:'未核实')],['目标入站默认策略',h(plan.checks?.target==='ready'||legacy?plan.targetPolicy+(legacy?'（原计划）':''):'尚未确定')]])}<div><h3>安装依赖</h3>${plan.checks?.packages==='failed'?'<p>依赖计划生成失败；尚未固定完整安装清单。</p>':plan.checks?.packages==='not-needed'?'<p>无需安装软件包，已核实现有依赖。</p>':list(plan.packages)}</div><div><h3>切换范围</h3>${plan.disable.length?list(plan.disable):'<p>没有已识别的主机防火墙管理器需要停用。</p>'}<p>仅停用冲突的主机管理入口；底层查看工具和其他软件所需组件可以保留。</p></div><div><h3>规则与作用范围</h3><p>${plan.rules.length} 条可解释的主机入站规则将保留并转入 firewalld；SSH 管理通路持续受保护。</p>${list(plan.zones.map(zone=>zone.name+' · '+(zone.interfaces.join('、')||'无网卡绑定')+' · '+(zone.sources.join('、')||'所有来源')+' · 原策略 '+(plan.mode==='install'?'未安装（入站 '+plan.currentPolicy+'）':plan.before.zones.find(old=>old.name===zone.name)?.target||'未知')+' → 目标策略 '+(plan.checks?.target==='ready'||legacy?zone.target+(legacy?'（原计划）':''):'尚未确定')))}${plan.rules.length?firewallBatchSummary({records:plan.rules,serverTarget:plan.server}):''}</div><div><h3>保留其他软件规则</h3>${list(plan.preserved)}</div>${notice('独立恢复保护','先保存配置、规则归属与服务状态，再装设恢复保护。安装、切换或新 SSH 核验失败时沿原操作恢复；不会清空整机规则集。')}${plan.blockers.map(reason=>notice('无法执行',reason,'error')).join('')}<p class="tiny muted">预览有效至 ${fmt(plan.expires)}。实际接口、安装步骤与系统支持以正式实施结果为准；当前只模拟流程。</p></div>`;
 }
 registerPrototypeHandlers(prototypeActions,['fw-setup'],(event,target,d)=>{
  const server=d.server||selectedServer();if(!server){toast('请先选择服务器。','warning');return;}
