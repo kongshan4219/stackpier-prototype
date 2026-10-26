@@ -5,7 +5,7 @@ import { prototype } from './prototype-harness.mjs';
 const scene=id=>{const a=prototype();a.click('loadscene',{id:'firewall-'+id});return a;};
 test('Docker 共存展示标准保护差异，端点变化后拒绝旧确认',()=>{
  const a=scene('docker');a.click('fw-setup',{server:'s2'});
- for(const text of ['Docker 共存范围（模拟）','INVALID','IPv6 反向路径','RFC3964','4 个运行容器','docker0'])assert.ok(a.html('modal').includes(text),text);
+ for(const text of ['Docker 共存范围（模拟）','INVALID','IPv6 反向路径','RFC3964','4 个运行容器','docker0','300 秒'])assert.ok(a.html('modal').includes(text),text);
  a.run("firewallHost('s2').docker.containers=5");a.submit('fw-setup',{'fw-setup-ack':'on'});
  assert.equal(a.run("S.operations.some(o=>o.input?.action==='setup')"),false);assert.match(a.document.getElementById('modal-error').textContent,/变化/);
 });

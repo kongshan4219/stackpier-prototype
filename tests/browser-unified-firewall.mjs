@@ -51,7 +51,7 @@ try{
   check(width+'取消预览不修改规则或操作',before===await page.evaluate(()=>JSON.stringify([S.operations,S.firewallHosts,S.firewalls])));
 
   await scene(page,'firewall-docker');await click(page,'fw-setup',{server:'s2'});
-  check(width+'Docker共存及标准保护差异',await page.locator('#modal').innerText().then(text=>text.includes('Docker 共存范围（模拟）')&&text.includes('INVALID')&&text.includes('RFC3964')&&text.includes('docker0')));
+  check(width+'Docker共存及标准保护差异',await page.locator('#modal').innerText().then(text=>text.includes('Docker 共存范围（模拟）')&&text.includes('INVALID')&&text.includes('RFC3964')&&text.includes('docker0')&&text.includes('300 秒')));
   await layout(page,width+'Docker共存');await shot(page,'firewall-docker-'+width);await close(page);
 
   await scene(page,'firewall-migrate');
