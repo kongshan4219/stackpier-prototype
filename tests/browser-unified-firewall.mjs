@@ -35,19 +35,17 @@ try{
   page.on('response',response=>{if(response.status()>=400)errors.push(response.status()+' '+response.url());});
   await page.goto(base+'/#firewall');await page.waitForFunction(()=>prototypeLoading.ready);
   await scene(page,'firewall-ready');
-  check(width+'唯一管理方式且无后端选择',await page.locator('#main').innerText().then(text=>text.includes('firewalld')&&text.includes('nftables'))&&await page.getByLabel('防火墙后端').count()===0);
+  check(width+'唯一管理方式且无后端选择',await page.locator('.firewall-state-card').innerText().then(text=>text.includes('firewalld')&&!text.includes('nftables'))&&await page.getByLabel('防火墙后端').count()===0);
   check(width+'已接入开放创建',await page.locator('#main [data-action="firewalledit"]').first().isEnabled());
   check(width+'策略筛选文字有足够空间',(await page.locator('#main [data-filter="fwPolicy"]').boundingBox()).width>=120);
   await layout(page,width+'已接入');await shot(page,'firewall-ready-'+width);
 
-  await click(page,'fw-service',{serviceaction:'stop'},'#main');
-  const before=await page.evaluate(()=>JSON.stringify(S.firewallHosts));
-  await layout(page,width+'服务预览');await shot(page,'firewall-service-'+width);await close(page);
-  check(width+'取消不修改服务',before===await page.evaluate(()=>JSON.stringify(S.firewallHosts)));
-  await click(page,'fw-service',{serviceaction:'stop'},'#main');await page.locator('[name="fw-service-confirm"]').check();await submit(page);
-  check(width+'停止后规则只读',await page.locator('#main [data-action="firewalledit"]').first().isDisabled());
-  await click(page,'fw-service',{serviceaction:'start'},'#main');await page.locator('[name="fw-service-confirm"]').check();await submit(page);
-  check(width+'启动恢复端口管理',await page.locator('#main [data-action="firewalledit"]').first().isEnabled());
+  check(width+'主页面不提供服务启停或切换',await page.locator('#main [data-action="fw-service"]').count()===0);
+  const disclosure=page.locator('#main details').filter({has:page.locator('summary').filter({hasText:'检查详情'})});
+  check(width+'检查详情默认折叠',!(await disclosure.evaluate(el=>el.open)));
+  await disclosure.locator('summary').click();
+  check(width+'详情保留底层接口',await disclosure.innerText().then(text=>text.includes('nftables')));
+  await disclosure.locator('summary').click();
   await scene(page,'firewall-migrate');
   check(width+'服务冲突无自动迁移入口',await page.locator('#main [data-action="fw-setup"]').count()===0&&await page.locator('#main [data-action="firewalledit"]').first().isDisabled());
   await scene(page,'firewall-multi-zone');await click(page,'firewalledit',{},'#main');

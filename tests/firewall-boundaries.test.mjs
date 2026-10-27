@@ -55,8 +55,8 @@ test('跨 Zone 导出被阻止，单 Zone 文件可以导入另一明确目标',
 test('旧存储没有统一观测时不自动成为 ready，规则和历史保持',()=>{
  const a=prototype();a.run('var oldRules=JSON.stringify(S.firewalls),oldOperations=JSON.stringify(S.operations);delete S.firewallHosts;persist()');const b=prototype(a.saved());assert.equal(b.run("firewallHost('s1').state"),'unknown');assert.equal(b.run("firewallHost('s4').state"),'unknown');assert.ok(b.run("firewallWriteError('s1')"));assert.equal(b.run('JSON.stringify(S.firewalls)'),a.run('oldRules'));assert.equal(b.run('JSON.stringify(S.operations)'),a.run('oldOperations'));assert.equal(prototype().run("firewallHost('s1').state"),'ready');
 });
-test('待迁移列表标记原管理方式和只读，不显示已持久化接入',()=>{
- const a=scene('migrate');assert.match(a.html('app'),/原管理方式 · UFW/);assert.match(a.html('app'),/原规则 · 只读/);assert.doesNotMatch(a.html('app'),/持久化规则/);
+test('现有管理器列表标记 UFW 和只读，不显示已持久化接入',()=>{
+ const a=scene('migrate');assert.match(a.html('app'),/>UFW</);assert.match(a.html('app'),/原规则 · 只读/);assert.doesNotMatch(a.html('app'),/持久化规则/);
 });
 test('未知或已消失 Zone 规则只读，直接编辑删除与旧批量选择不泄露异常',()=>{
  for(const zone of ['', 'removed-zone']){

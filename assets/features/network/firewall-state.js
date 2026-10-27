@@ -31,7 +31,7 @@ function firewallInventoryIssues(host){
 function firewallStateCard(id){
  if(!id||id==='all')return '';
  const host=firewallHost(id),operation=firewallActiveOperation(id),unknown=!host||host.state==='unknown',installed=host?.manager==='firewalld',running=installed&&host.state==='ready',conflict=host&&!['firewalld','未安装','未知'].includes(host.manager);
- return `<section class="card firewall-state-card" aria-label="防火墙管理状态"><div class="card-head"><h2>防火墙管理</h2>${badge(operation?'结果待核对':unknown?'检查未完成':running?'运行中':installed?'已停止':conflict?'现有管理方式':'未读取',running?'success':'unknown')}</div><div class="card-body stack">${detail([['现有管理方式',h(host?.manager||'待探测')],['规则后端',h(host?.backend||'待检查')],['开机启动',host?.enabled===false?'未启用':installed?'已启用':'待检查']])}<p>管理主机入站端口。Docker、VPN、NAT 和转发规则由各自软件管理，不在此处接管。</p>${!operation&&unknown?notice('检查未完成',host?.reason||'请重新检查服务状态。','warning'):conflict?notice('只读范围',h(host.manager)+' 已识别。持久化写入与恢复尚未开放；无需安装 firewalld，不迁移或停用现有管理器。','warning'):''}<div class="row">${operation?btn('查看原操作','opdetail',{id:operation.id},'primary'):installed&&!unknown?btn(running?'停止防火墙':'启动防火墙','fw-service',{server:id,serviceaction:running?'stop':'start'})+btn(host.enabled===false?'启用开机启动':'关闭开机启动','fw-service',{server:id,serviceaction:host.enabled===false?'enable':'disable'}):''}${operation?'':btn('重新检查','fw-discover',{server:id})}<span class="tiny muted">${host?.captured?'最近观测 '+fmt(host.captured):'尚未取得观测'} · 浏览器模拟</span></div></div></section>`;
+ return `<section class="card firewall-state-card" aria-label="防火墙管理状态"><div class="card-head"><h2>${h(host?.state==='conflict'?'主机入站管理冲突':unknown?'暂无法确定管理方式':host.manager)}</h2>${badge(operation?'结果待核对':unknown?'检查未完成':running?'运行中':installed?'已停止':'规则已读取',running?'success':'unknown')}</div><div class="card-body stack"><p>${h(operation?'原操作尚未完成，请沿原身份核对。':host?.state==='conflict'?'多个管理器共同控制主机入站规则，已限制写入；证据见检查详情。':unknown?'检查未完成，请重新检查；读取失败不代表没有防火墙。':firewallWriteError(id)?'当前仅可查看，原因见检查详情。':'可管理已支持的主机入站端口规则。')}</p><p class="tiny muted">IPv4 / IPv6：${unknown?'尚未完整读取':'已读取（模拟）'}</p>${operation?btn('查看原操作','opdetail',{id:operation.id},'primary'):''}</div></section>`;
 }
 registerPrototypeHandlers(prototypeActions,['fw-service'],(event,target,d)=>{
  const host=firewallHost(d.server);if(!host||firewallActiveOperation(d.server))return;
@@ -50,7 +50,7 @@ registerPrototypeHandlers(prototypeForms,['fw-service'],(event,form,fd,get,has,a
 
 function firewallDiagnostics(id){
  const host=firewallHost(id);if(!host)return '<p>选择服务器后检查实际管理方式、依赖与规则来源。</p>';
- return detail([['管理方式',h(host.manager)],['底层规则接口',h(host.backend)],['服务管理器',h(host.serviceManager)],['采集时间',fmt(host.captured)]])+`<p>${h(host.reason)}</p><p>其他工具仅供诊断；不会作为并行写入入口。Docker / VPN 等软件规则保留其原有归属。</p><ul>${host.preserved.map(value=>`<li>${h(value)}</li>`).join('')}</ul>`;
+ return firewallInventoryIssues(host)+detail([['管理方式',h(host.manager)],['底层规则接口',h(host.backend)],['服务管理器',h(host.serviceManager)],['采集时间',fmt(host.captured)]])+`<p>${h(host.reason)}</p><p>其他工具仅供诊断；不会作为并行写入入口。Docker / VPN 等软件规则保留其原有归属。</p><ul>${host.preserved.map(value=>`<li>${h(value)}</li>`).join('')}</ul>`;
 }
 function firewallDiscover(id){
  initializeUnifiedFirewall();const host=firewallHost(id);if(!host)return;
