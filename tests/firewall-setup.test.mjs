@@ -25,8 +25,8 @@ test('未知接入诊断不回显内部字段，检查状态不允许伪造放�
  const a=scene('setup-error');a.run("ui.modal=null;firewallHost('s2').setupChecks.issues=[{code:'future-code',object:'private-marker',field:'private-field'}]");a.click('fw-setup',{server:'s2'});assert.match(a.html('modal'),/未识别的问题/);assert.doesNotMatch(a.html('modal'),/private-marker|private-field/);
  a.run('ui.modal.plan.blockers=[]');a.submit('fw-setup',{'fw-setup-ack':'on'});assert.equal(a.run("S.operations.some(o=>o.input?.action==='setup')"),false);
 });
-test('唯一入口为 firewalld，待迁移服务器不开放端口写入',()=>{
- const a=scene('migrate');assert.equal(a.run("firewallHost(ui.server).state"),'needs-setup');assert.match(a.html('app'),/服务冲突/);assert.doesNotMatch(a.html('app'),/data-action="fw-setup"/);assert.doesNotMatch(a.html('app'),/防火墙后端/);
+test('现有 UFW 被识别为只读，不误报冲突或要求迁移',()=>{
+ const a=scene('migrate');assert.equal(a.run("firewallHost(ui.server).state"),'needs-setup');assert.match(a.html('app'),/只读范围/);assert.doesNotMatch(a.html('app'),/data-action="fw-setup"/);assert.doesNotMatch(a.html('app'),/防火墙后端/);
  a.click('firewalledit');a.submit('firewalledit',{'fw-server':'s2','fw-protocol':'TCP','fw-port':'8088','fw-family':'ipv4','fw-address':'0.0.0.0/0','fw-action':'allow','network-ack':'on'});assert.equal(a.run('ui.modal.kind'),'firewalledit');assert.equal(a.run("S.operations.some(o=>o.status==='running')"),false);
 });
 test('刷新只读盘点，安装预览取消不产生操作或改动规则',()=>{
@@ -66,7 +66,7 @@ test('检查问题安全表达并精确去重，未结构化说明不丢失',()=
  const a=scene('read-error');a.run("firewallHost('s2').blockers=['同一个读取原因'];firewallHost('s2').readErrors=['同一个读取原因','另一个读取原因'];firewallHost('s2').inventoryIssues.push({code:'future-code',stage:'private-command-marker',object:'<script>example</script>',actual:0,retryable:false})");const html=a.run("firewallInventoryIssues(firewallHost('s2'))");assert.equal(html.match(/同一个读取原因/g).length,1);assert.match(html,/另一个读取原因/);assert.match(html,/盘点未完成，请核对检查说明/);assert.doesNotMatch(html,/private-command-marker|<script>/);assert.match(html,/&lt;script&gt;/);
 });
 test('重新检查通过回到待迁移，不能因读取错误消失直接开放端口',()=>{
- const a=scene('read-error');a.run("firewallHost('s2').readFails=false");a.click('fw-discover',{server:'s2'});assert.equal(a.run("firewallHost('s2').state"),'needs-setup');assert.equal(a.run("firewallHost('s2').inventoryIssues.length"),0);assert.match(a.html('app'),/服务冲突/);assert.doesNotMatch(a.html('app'),/data-action="fw-setup"/);assert.ok(a.run("firewallWriteError('s2')"));assert.equal(a.run("S.operations.some(o=>o.input?.action==='setup')"),false);
+ const a=scene('read-error');a.run("firewallHost('s2').readFails=false");a.click('fw-discover',{server:'s2'});assert.equal(a.run("firewallHost('s2').state"),'needs-setup');assert.equal(a.run("firewallHost('s2').inventoryIssues.length"),0);assert.match(a.html('app'),/只读范围/);assert.doesNotMatch(a.html('app'),/data-action="fw-setup"/);assert.ok(a.run("firewallWriteError('s2')"));assert.equal(a.run("S.operations.some(o=>o.input?.action==='setup')"),false);
 });
 test('原操作未知优先于新盘点问题，保护和核对入口保留',()=>{
  const a=scene('unknown'),id=a.run('S.operations[0].id');a.run("firewallHost('s2').inventoryIssues=[{code:'access-denied',stage:'cron',object:'/var/spool/cron/crontabs',retryable:true}]");const html=a.run("firewallStateCard('s2')");assert.match(html,/结果待核对/);assert.doesNotMatch(html,/检查未完成|data-action="fw-discover"/);assert.match(html,/查看原操作/);a.click('fw-refresh');assert.equal(a.run('S.operations[0].id'),id);assert.equal(a.run('S.operations[0].status'),'unknown');assert.equal(a.run('S.operations[0].protectionReleased'),false);a.click('opdetail',{id});assert.match(a.html('modal'),/核对原操作/);assert.match(a.html('modal'),/请求恢复原配置/);
