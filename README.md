@@ -4,7 +4,7 @@
 
 原型用于讨论产品需求和交互。页面中的模拟功能不自动成为正式应用的功能范围或实现方案，正式前后端按本轮确认的需求设计。
 
-本地 Ant Design 改造稿待用户确认：[页面与适配清单](docs/ant-design-redesign.md) · [验证报告](docs/ant-design-validation.md)。正式前端尚未迁移。
+已确认采用的 Ant Design 基线：[页面与适配清单](docs/ant-design-redesign.md) · [验证报告](docs/ant-design-validation.md)。正式 React 前端按此基线迁移，验证结果由主仓库单独维护；原型模拟不代表正式能力。
 
 ## 组件目录
 
