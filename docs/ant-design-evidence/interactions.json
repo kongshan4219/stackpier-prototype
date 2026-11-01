@@ -1,0 +1,197 @@
+{
+  "results": [
+    {
+      "theme": "light",
+      "width": 1440,
+      "test": "server-create-select-back-validation-single-submit",
+      "pass": true
+    },
+    {
+      "theme": "light",
+      "width": 1440,
+      "test": "delete-cancel-confirm",
+      "pass": true
+    },
+    {
+      "theme": "light",
+      "width": 1440,
+      "test": "escape-close",
+      "pass": true
+    },
+    {
+      "theme": "light",
+      "width": 1440,
+      "test": "loading-empty-error-recover",
+      "pass": true
+    },
+    {
+      "theme": "light",
+      "width": 1440,
+      "test": "history-return",
+      "pass": true
+    },
+    {
+      "theme": "light",
+      "width": 1440,
+      "test": "asset-drawer-escape",
+      "pass": true
+    },
+    {
+      "theme": "light",
+      "width": 1440,
+      "test": "frp-tab-and-save-mapping",
+      "pass": true
+    },
+    {
+      "theme": "light",
+      "width": 1440,
+      "test": "frp-direct-validation-modal",
+      "pass": true
+    },
+    {
+      "theme": "light",
+      "width": 390,
+      "test": "server-create-select-back-validation-single-submit",
+      "pass": true
+    },
+    {
+      "theme": "light",
+      "width": 390,
+      "test": "delete-cancel-confirm",
+      "pass": true
+    },
+    {
+      "theme": "light",
+      "width": 390,
+      "test": "escape-close",
+      "pass": true
+    },
+    {
+      "theme": "light",
+      "width": 390,
+      "test": "loading-empty-error-recover",
+      "pass": true
+    },
+    {
+      "theme": "light",
+      "width": 390,
+      "test": "history-return",
+      "pass": true
+    },
+    {
+      "theme": "light",
+      "width": 390,
+      "test": "asset-drawer-escape",
+      "pass": true
+    },
+    {
+      "theme": "light",
+      "width": 390,
+      "test": "frp-tab-and-save-mapping",
+      "pass": true
+    },
+    {
+      "theme": "light",
+      "width": 390,
+      "test": "frp-direct-validation-modal",
+      "pass": true
+    },
+    {
+      "theme": "dark",
+      "width": 1440,
+      "test": "server-create-select-back-validation-single-submit",
+      "pass": true
+    },
+    {
+      "theme": "dark",
+      "width": 1440,
+      "test": "delete-cancel-confirm",
+      "pass": true
+    },
+    {
+      "theme": "dark",
+      "width": 1440,
+      "test": "escape-close",
+      "pass": true
+    },
+    {
+      "theme": "dark",
+      "width": 1440,
+      "test": "loading-empty-error-recover",
+      "pass": true
+    },
+    {
+      "theme": "dark",
+      "width": 1440,
+      "test": "history-return",
+      "pass": true
+    },
+    {
+      "theme": "dark",
+      "width": 1440,
+      "test": "asset-drawer-escape",
+      "pass": true
+    },
+    {
+      "theme": "dark",
+      "width": 1440,
+      "test": "frp-tab-and-save-mapping",
+      "pass": true
+    },
+    {
+      "theme": "dark",
+      "width": 1440,
+      "test": "frp-direct-validation-modal",
+      "pass": true
+    },
+    {
+      "theme": "dark",
+      "width": 390,
+      "test": "server-create-select-back-validation-single-submit",
+      "pass": true
+    },
+    {
+      "theme": "dark",
+      "width": 390,
+      "test": "delete-cancel-confirm",
+      "pass": true
+    },
+    {
+      "theme": "dark",
+      "width": 390,
+      "test": "escape-close",
+      "pass": true
+    },
+    {
+      "theme": "dark",
+      "width": 390,
+      "test": "loading-empty-error-recover",
+      "pass": true
+    },
+    {
+      "theme": "dark",
+      "width": 390,
+      "test": "history-return",
+      "pass": true
+    },
+    {
+      "theme": "dark",
+      "width": 390,
+      "test": "asset-drawer-escape",
+      "pass": true
+    },
+    {
+      "theme": "dark",
+      "width": 390,
+      "test": "frp-tab-and-save-mapping",
+      "pass": true
+    },
+    {
+      "theme": "dark",
+      "width": 390,
+      "test": "frp-direct-validation-modal",
+      "pass": true
+    }
+  ],
+  "errors": []
+}

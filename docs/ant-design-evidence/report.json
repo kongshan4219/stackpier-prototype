@@ -1,0 +1,673 @@
+{
+  "results": [
+    {
+      "theme": "light",
+      "width": 1440,
+      "page": "overview",
+      "heading": "工作空间",
+      "overflow": false,
+      "buttons": 19
+    },
+    {
+      "theme": "light",
+      "width": 1440,
+      "page": "servers",
+      "heading": "服务器",
+      "overflow": false,
+      "buttons": 25
+    },
+    {
+      "theme": "light",
+      "width": 1440,
+      "page": "projects",
+      "heading": "项目",
+      "overflow": false,
+      "buttons": 43
+    },
+    {
+      "theme": "light",
+      "width": 1440,
+      "page": "templates",
+      "heading": "部署配置",
+      "overflow": false,
+      "buttons": 41
+    },
+    {
+      "theme": "light",
+      "width": 1440,
+      "page": "frp",
+      "heading": "FRP",
+      "overflow": false,
+      "buttons": 34
+    },
+    {
+      "theme": "light",
+      "width": 1440,
+      "page": "programs",
+      "heading": "文件",
+      "overflow": false,
+      "buttons": 40
+    },
+    {
+      "theme": "light",
+      "width": 1440,
+      "page": "monitor",
+      "heading": "巡检与通知",
+      "overflow": false,
+      "buttons": 51
+    },
+    {
+      "theme": "light",
+      "width": 1440,
+      "page": "firewall",
+      "heading": "主机防火墙",
+      "overflow": false,
+      "buttons": 13
+    },
+    {
+      "theme": "light",
+      "width": 1440,
+      "page": "dns",
+      "heading": "DNS 记录",
+      "overflow": false,
+      "buttons": 18
+    },
+    {
+      "theme": "light",
+      "width": 1440,
+      "page": "operations",
+      "heading": "操作记录",
+      "overflow": false,
+      "buttons": 12
+    },
+    {
+      "theme": "light",
+      "width": 1440,
+      "page": "settings",
+      "heading": "设置",
+      "overflow": false,
+      "buttons": 11
+    },
+    {
+      "theme": "light",
+      "width": 1440,
+      "page": "project/overview",
+      "heading": "catalog-api"
+    },
+    {
+      "theme": "light",
+      "width": 1440,
+      "page": "project/config",
+      "heading": "catalog-api"
+    },
+    {
+      "theme": "light",
+      "width": 1440,
+      "page": "project/monitor",
+      "heading": "catalog-api"
+    },
+    {
+      "theme": "light",
+      "width": 1440,
+      "page": "project/logs",
+      "heading": "catalog-api"
+    },
+    {
+      "theme": "light",
+      "width": 1440,
+      "page": "project/history",
+      "heading": "catalog-api"
+    },
+    {
+      "theme": "light",
+      "width": 1440,
+      "modal": "serveredit",
+      "visible": true,
+      "title": "接入服务器"
+    },
+    {
+      "theme": "light",
+      "width": 1440,
+      "modal": "newproject",
+      "visible": true,
+      "title": "部署项目"
+    },
+    {
+      "theme": "light",
+      "width": 1440,
+      "modal": "templateedit",
+      "visible": true,
+      "title": "新增部署配置"
+    },
+    {
+      "theme": "light",
+      "width": 1440,
+      "modal": "firewalledit",
+      "visible": true,
+      "title": "创建端口规则"
+    },
+    {
+      "theme": "light",
+      "width": 1440,
+      "modal": "dnsedit",
+      "visible": true,
+      "title": "新增 DNS 记录"
+    },
+    {
+      "theme": "light",
+      "width": 1440,
+      "modal": "about",
+      "visible": true,
+      "title": "原型说明"
+    },
+    {
+      "theme": "light",
+      "width": 1440,
+      "modal": "feedback",
+      "visible": true,
+      "title": "记下修改"
+    },
+    {
+      "theme": "light",
+      "width": 390,
+      "page": "overview",
+      "heading": "工作空间",
+      "overflow": false,
+      "buttons": 19
+    },
+    {
+      "theme": "light",
+      "width": 390,
+      "page": "servers",
+      "heading": "服务器",
+      "overflow": false,
+      "buttons": 25
+    },
+    {
+      "theme": "light",
+      "width": 390,
+      "page": "projects",
+      "heading": "项目",
+      "overflow": false,
+      "buttons": 43
+    },
+    {
+      "theme": "light",
+      "width": 390,
+      "page": "templates",
+      "heading": "部署配置",
+      "overflow": false,
+      "buttons": 41
+    },
+    {
+      "theme": "light",
+      "width": 390,
+      "page": "frp",
+      "heading": "FRP",
+      "overflow": false,
+      "buttons": 34
+    },
+    {
+      "theme": "light",
+      "width": 390,
+      "page": "programs",
+      "heading": "文件",
+      "overflow": false,
+      "buttons": 40
+    },
+    {
+      "theme": "light",
+      "width": 390,
+      "page": "monitor",
+      "heading": "巡检与通知",
+      "overflow": false,
+      "buttons": 51
+    },
+    {
+      "theme": "light",
+      "width": 390,
+      "page": "firewall",
+      "heading": "主机防火墙",
+      "overflow": false,
+      "buttons": 13
+    },
+    {
+      "theme": "light",
+      "width": 390,
+      "page": "dns",
+      "heading": "DNS 记录",
+      "overflow": false,
+      "buttons": 18
+    },
+    {
+      "theme": "light",
+      "width": 390,
+      "page": "operations",
+      "heading": "操作记录",
+      "overflow": false,
+      "buttons": 12
+    },
+    {
+      "theme": "light",
+      "width": 390,
+      "page": "settings",
+      "heading": "设置",
+      "overflow": false,
+      "buttons": 11
+    },
+    {
+      "theme": "light",
+      "width": 390,
+      "page": "project/overview",
+      "heading": "catalog-api"
+    },
+    {
+      "theme": "light",
+      "width": 390,
+      "page": "project/config",
+      "heading": "catalog-api"
+    },
+    {
+      "theme": "light",
+      "width": 390,
+      "page": "project/monitor",
+      "heading": "catalog-api"
+    },
+    {
+      "theme": "light",
+      "width": 390,
+      "page": "project/logs",
+      "heading": "catalog-api"
+    },
+    {
+      "theme": "light",
+      "width": 390,
+      "page": "project/history",
+      "heading": "catalog-api"
+    },
+    {
+      "theme": "light",
+      "width": 390,
+      "modal": "serveredit",
+      "visible": true,
+      "title": "接入服务器"
+    },
+    {
+      "theme": "light",
+      "width": 390,
+      "modal": "newproject",
+      "visible": true,
+      "title": "部署项目"
+    },
+    {
+      "theme": "light",
+      "width": 390,
+      "modal": "templateedit",
+      "visible": true,
+      "title": "新增部署配置"
+    },
+    {
+      "theme": "light",
+      "width": 390,
+      "modal": "firewalledit",
+      "visible": true,
+      "title": "创建端口规则"
+    },
+    {
+      "theme": "light",
+      "width": 390,
+      "modal": "dnsedit",
+      "visible": true,
+      "title": "新增 DNS 记录"
+    },
+    {
+      "theme": "light",
+      "width": 390,
+      "modal": "about",
+      "visible": true,
+      "title": "原型说明"
+    },
+    {
+      "theme": "light",
+      "width": 390,
+      "modal": "feedback",
+      "visible": true,
+      "title": "记下修改"
+    },
+    {
+      "theme": "dark",
+      "width": 1440,
+      "page": "overview",
+      "heading": "工作空间",
+      "overflow": false,
+      "buttons": 19
+    },
+    {
+      "theme": "dark",
+      "width": 1440,
+      "page": "servers",
+      "heading": "服务器",
+      "overflow": false,
+      "buttons": 25
+    },
+    {
+      "theme": "dark",
+      "width": 1440,
+      "page": "projects",
+      "heading": "项目",
+      "overflow": false,
+      "buttons": 43
+    },
+    {
+      "theme": "dark",
+      "width": 1440,
+      "page": "templates",
+      "heading": "部署配置",
+      "overflow": false,
+      "buttons": 41
+    },
+    {
+      "theme": "dark",
+      "width": 1440,
+      "page": "frp",
+      "heading": "FRP",
+      "overflow": false,
+      "buttons": 34
+    },
+    {
+      "theme": "dark",
+      "width": 1440,
+      "page": "programs",
+      "heading": "文件",
+      "overflow": false,
+      "buttons": 40
+    },
+    {
+      "theme": "dark",
+      "width": 1440,
+      "page": "monitor",
+      "heading": "巡检与通知",
+      "overflow": false,
+      "buttons": 51
+    },
+    {
+      "theme": "dark",
+      "width": 1440,
+      "page": "firewall",
+      "heading": "主机防火墙",
+      "overflow": false,
+      "buttons": 13
+    },
+    {
+      "theme": "dark",
+      "width": 1440,
+      "page": "dns",
+      "heading": "DNS 记录",
+      "overflow": false,
+      "buttons": 18
+    },
+    {
+      "theme": "dark",
+      "width": 1440,
+      "page": "operations",
+      "heading": "操作记录",
+      "overflow": false,
+      "buttons": 12
+    },
+    {
+      "theme": "dark",
+      "width": 1440,
+      "page": "settings",
+      "heading": "设置",
+      "overflow": false,
+      "buttons": 11
+    },
+    {
+      "theme": "dark",
+      "width": 1440,
+      "page": "project/overview",
+      "heading": "catalog-api"
+    },
+    {
+      "theme": "dark",
+      "width": 1440,
+      "page": "project/config",
+      "heading": "catalog-api"
+    },
+    {
+      "theme": "dark",
+      "width": 1440,
+      "page": "project/monitor",
+      "heading": "catalog-api"
+    },
+    {
+      "theme": "dark",
+      "width": 1440,
+      "page": "project/logs",
+      "heading": "catalog-api"
+    },
+    {
+      "theme": "dark",
+      "width": 1440,
+      "page": "project/history",
+      "heading": "catalog-api"
+    },
+    {
+      "theme": "dark",
+      "width": 1440,
+      "modal": "serveredit",
+      "visible": true,
+      "title": "接入服务器"
+    },
+    {
+      "theme": "dark",
+      "width": 1440,
+      "modal": "newproject",
+      "visible": true,
+      "title": "部署项目"
+    },
+    {
+      "theme": "dark",
+      "width": 1440,
+      "modal": "templateedit",
+      "visible": true,
+      "title": "新增部署配置"
+    },
+    {
+      "theme": "dark",
+      "width": 1440,
+      "modal": "firewalledit",
+      "visible": true,
+      "title": "创建端口规则"
+    },
+    {
+      "theme": "dark",
+      "width": 1440,
+      "modal": "dnsedit",
+      "visible": true,
+      "title": "新增 DNS 记录"
+    },
+    {
+      "theme": "dark",
+      "width": 1440,
+      "modal": "about",
+      "visible": true,
+      "title": "原型说明"
+    },
+    {
+      "theme": "dark",
+      "width": 1440,
+      "modal": "feedback",
+      "visible": true,
+      "title": "记下修改"
+    },
+    {
+      "theme": "dark",
+      "width": 390,
+      "page": "overview",
+      "heading": "工作空间",
+      "overflow": false,
+      "buttons": 19
+    },
+    {
+      "theme": "dark",
+      "width": 390,
+      "page": "servers",
+      "heading": "服务器",
+      "overflow": false,
+      "buttons": 25
+    },
+    {
+      "theme": "dark",
+      "width": 390,
+      "page": "projects",
+      "heading": "项目",
+      "overflow": false,
+      "buttons": 43
+    },
+    {
+      "theme": "dark",
+      "width": 390,
+      "page": "templates",
+      "heading": "部署配置",
+      "overflow": false,
+      "buttons": 41
+    },
+    {
+      "theme": "dark",
+      "width": 390,
+      "page": "frp",
+      "heading": "FRP",
+      "overflow": false,
+      "buttons": 34
+    },
+    {
+      "theme": "dark",
+      "width": 390,
+      "page": "programs",
+      "heading": "文件",
+      "overflow": false,
+      "buttons": 40
+    },
+    {
+      "theme": "dark",
+      "width": 390,
+      "page": "monitor",
+      "heading": "巡检与通知",
+      "overflow": false,
+      "buttons": 51
+    },
+    {
+      "theme": "dark",
+      "width": 390,
+      "page": "firewall",
+      "heading": "主机防火墙",
+      "overflow": false,
+      "buttons": 13
+    },
+    {
+      "theme": "dark",
+      "width": 390,
+      "page": "dns",
+      "heading": "DNS 记录",
+      "overflow": false,
+      "buttons": 18
+    },
+    {
+      "theme": "dark",
+      "width": 390,
+      "page": "operations",
+      "heading": "操作记录",
+      "overflow": false,
+      "buttons": 12
+    },
+    {
+      "theme": "dark",
+      "width": 390,
+      "page": "settings",
+      "heading": "设置",
+      "overflow": false,
+      "buttons": 11
+    },
+    {
+      "theme": "dark",
+      "width": 390,
+      "page": "project/overview",
+      "heading": "catalog-api"
+    },
+    {
+      "theme": "dark",
+      "width": 390,
+      "page": "project/config",
+      "heading": "catalog-api"
+    },
+    {
+      "theme": "dark",
+      "width": 390,
+      "page": "project/monitor",
+      "heading": "catalog-api"
+    },
+    {
+      "theme": "dark",
+      "width": 390,
+      "page": "project/logs",
+      "heading": "catalog-api"
+    },
+    {
+      "theme": "dark",
+      "width": 390,
+      "page": "project/history",
+      "heading": "catalog-api"
+    },
+    {
+      "theme": "dark",
+      "width": 390,
+      "modal": "serveredit",
+      "visible": true,
+      "title": "接入服务器"
+    },
+    {
+      "theme": "dark",
+      "width": 390,
+      "modal": "newproject",
+      "visible": true,
+      "title": "部署项目"
+    },
+    {
+      "theme": "dark",
+      "width": 390,
+      "modal": "templateedit",
+      "visible": true,
+      "title": "新增部署配置"
+    },
+    {
+      "theme": "dark",
+      "width": 390,
+      "modal": "firewalledit",
+      "visible": true,
+      "title": "创建端口规则"
+    },
+    {
+      "theme": "dark",
+      "width": 390,
+      "modal": "dnsedit",
+      "visible": true,
+      "title": "新增 DNS 记录"
+    },
+    {
+      "theme": "dark",
+      "width": 390,
+      "modal": "about",
+      "visible": true,
+      "title": "原型说明"
+    },
+    {
+      "theme": "dark",
+      "width": 390,
+      "modal": "feedback",
+      "visible": true,
+      "title": "记下修改"
+    }
+  ],
+  "errors": []
+}

@@ -1,0 +1,22 @@
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import {createRequire} from 'node:module';
+import {pathToFileURL} from 'node:url';
+const root=path.resolve(import.meta.dirname,'..');
+const deps=process.env.STACKPIER_PROTOTYPE_DEPS||root;
+const output=process.env.STACKPIER_PROTOTYPE_OUTPUT;
+if(!output||!path.isAbsolute(output)||output===root||output.startsWith(root+'/')||root.startsWith(output+'/'))throw Error('Set STACKPIER_PROTOTYPE_OUTPUT to an isolated absolute output directory');
+const req=createRequire(path.join(deps,'package.json'));
+const {build}=await import(pathToFileURL(req.resolve('vite')));
+const tokens=path.resolve(root,'../designs/ant-design-system/project/tokens.json');
+await fs.access(tokens);
+await fs.mkdir(output,{recursive:true});
+await fs.cp(path.join(root,'assets'),path.join(output,'assets'),{recursive:true});
+await fs.copyFile(path.join(root,'index.html'),path.join(output,'index.html'));
+const cssFiles=['styles/tokens.css','styles/base.css','styles/workspace.css','styles/responsive.css','styles/configuration.css','features/programs/programs.css','features/deployments/file-mappings.css','features/projects/deployment.css','features/frp/frp.css','features/assets/assets.css','features/network/dns.css','features/network/firewall.css'];
+let css='';for(const file of cssFiles)css+=await fs.readFile(path.join(root,'assets',file),'utf8')+'\n';
+// 将原有布局中硬编码的颜色统一转为语义变量；旧业务布局保留在低优先级 CSS layer。
+css=css.replace(/#[a-f\d]{3,8}\b/gi,hex=>{let h=hex.slice(1);if(h.length===3)h=h.split('').map(x=>x+x).join('');if(h.length!==6)return hex;const [r,g,b]=[0,2,4].map(i=>parseInt(h.slice(i,i+2),16));const max=Math.max(r,g,b),min=Math.min(r,g,b);if(max-min<30||b>=r&&b>=g){if(min>235)return 'var(--surface)';if(min>195)return 'var(--line-soft)';if(min>130)return 'var(--line)';if(max<90)return 'var(--text)';return 'var(--muted)';}if(r>g*1.2&&r>b*1.2)return min>170?'var(--error-surface)':'var(--error)';if(g>r&&g>b)return min>170?'var(--success-surface)':'var(--success)';return min>170?'var(--warning-surface)':'var(--warning)';});
+await build({configFile:false,root,resolve:{alias:{'@design-system/tokens':tokens,'react':path.join(deps,'node_modules/react'),'react-dom':path.join(deps,'node_modules/react-dom'),'antd':path.join(deps,'node_modules/antd'),'@ant-design/icons':path.join(deps,'node_modules/@ant-design/icons')}},define:{'process.env.NODE_ENV':'"production"'},build:{outDir:path.join(output,'assets/antd'),emptyOutDir:true,lib:{entry:path.join(root,'src/antd/index.jsx'),name:'StackPierAnt',formats:['iife'],fileName:()=> 'runtime.js',cssFileName:'runtime'},rollupOptions:{onwarn(warning,warn){if(warning.code!=='MODULE_LEVEL_DIRECTIVE')warn(warning)}}},cacheDir:'/srv/cache/stackpier-tmp/vite-cache/antd-prototype-redesign'});
+await fs.writeFile(path.join(output,'assets/antd/legacy.css'),'@layer legacy {\n'+css+'\n}');
+console.log('Prototype output: '+output);

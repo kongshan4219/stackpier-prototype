@@ -1,0 +1,859 @@
+{
+  "results": [
+    {
+      "theme": "light",
+      "width": 1440,
+      "kind": "serverdetail",
+      "id": "s1",
+      "overflow": false,
+      "footer": true,
+      "disabled": 0,
+      "title": "本地实验节点"
+    },
+    {
+      "theme": "light",
+      "width": 1440,
+      "kind": "servercheck",
+      "id": "s1",
+      "overflow": false,
+      "footer": true,
+      "disabled": 0,
+      "title": "刷新服务器状态"
+    },
+    {
+      "theme": "light",
+      "width": 1440,
+      "kind": "env",
+      "id": "s1",
+      "overflow": false,
+      "footer": true,
+      "disabled": 0,
+      "title": "环境检查与补齐"
+    },
+    {
+      "theme": "light",
+      "width": 1440,
+      "kind": "serverdelete",
+      "id": "s1",
+      "overflow": false,
+      "footer": true,
+      "disabled": 0,
+      "title": "删除服务器连接记录"
+    },
+    {
+      "theme": "light",
+      "width": 1440,
+      "kind": "projectdraft",
+      "id": "p1",
+      "overflow": false,
+      "footer": true,
+      "disabled": 0,
+      "title": "项目草稿与更新 · catalog-api"
+    },
+    {
+      "theme": "light",
+      "width": 1440,
+      "kind": "projectmore",
+      "id": "p1",
+      "overflow": false,
+      "footer": true,
+      "disabled": 0,
+      "title": "catalog-api · 更多操作"
+    },
+    {
+      "theme": "light",
+      "width": 1440,
+      "kind": "projectop",
+      "id": "p1",
+      "op": "uninstall",
+      "overflow": false,
+      "footer": true,
+      "disabled": 0,
+      "title": "卸载 · catalog-api"
+    },
+    {
+      "theme": "light",
+      "width": 1440,
+      "kind": "opdetail",
+      "id": "op-seed-2",
+      "overflow": false,
+      "footer": true,
+      "disabled": 0,
+      "title": "应用 mysql-primary 配置"
+    },
+    {
+      "theme": "light",
+      "width": 1440,
+      "kind": "programupload",
+      "overflow": false,
+      "footer": true,
+      "disabled": 1,
+      "title": "上传文件"
+    },
+    {
+      "theme": "light",
+      "width": 1440,
+      "kind": "fw-import",
+      "server": "s1",
+      "overflow": false,
+      "footer": true,
+      "disabled": 0,
+      "title": "导入端口规则"
+    },
+    {
+      "theme": "light",
+      "width": 1440,
+      "kind": "cfaccount",
+      "overflow": false,
+      "footer": true,
+      "disabled": 0,
+      "title": "管理 Cloudflare 连接"
+    },
+    {
+      "theme": "light",
+      "width": 1440,
+      "kind": "cfconnect",
+      "overflow": false,
+      "footer": true,
+      "disabled": 0,
+      "title": "新增 Cloudflare 连接"
+    },
+    {
+      "theme": "light",
+      "width": 1440,
+      "kind": "cfrename",
+      "id": "cf-connection-mvxgyczi-zxv7",
+      "overflow": false,
+      "footer": true,
+      "disabled": 0,
+      "title": "重命名连接"
+    },
+    {
+      "theme": "light",
+      "width": 1440,
+      "kind": "cfinspect",
+      "id": "cf-connection-mvxgyczi-zxv7",
+      "overflow": false,
+      "footer": true,
+      "disabled": 0,
+      "title": "模拟检查连接"
+    },
+    {
+      "theme": "light",
+      "width": 1440,
+      "kind": "cfremove",
+      "id": "cf-connection-mvxgyczi-zxv7",
+      "overflow": false,
+      "footer": true,
+      "disabled": 0,
+      "title": "移除账号连接"
+    },
+    {
+      "theme": "light",
+      "width": 1440,
+      "kind": "templateedit",
+      "initialType": "systemd",
+      "overflow": false,
+      "footer": true,
+      "disabled": 0,
+      "title": "新增部署配置"
+    },
+    {
+      "theme": "light",
+      "width": 1440,
+      "kind": "templateedit",
+      "initialType": "compose",
+      "overflow": false,
+      "footer": true,
+      "disabled": 0,
+      "title": "新增部署配置"
+    },
+    {
+      "theme": "light",
+      "width": 1440,
+      "kind": "templateedit",
+      "initialType": "frp",
+      "overflow": false,
+      "footer": true,
+      "disabled": 0,
+      "title": "新增部署配置"
+    },
+    {
+      "theme": "light",
+      "width": 1440,
+      "kind": "frp-nodeedit",
+      "overflow": false,
+      "footer": true,
+      "disabled": 0,
+      "title": "新增 FRP 连接"
+    },
+    {
+      "theme": "light",
+      "width": 1440,
+      "kind": "frp-settings",
+      "overflow": false,
+      "footer": true,
+      "disabled": 0,
+      "title": "FRP 公共运行配置"
+    },
+    {
+      "theme": "light",
+      "width": 1440,
+      "kind": "frp-proxyedit",
+      "node": "n1",
+      "overflow": false,
+      "footer": true,
+      "disabled": 0,
+      "title": "新增代理映射"
+    },
+    {
+      "theme": "light",
+      "width": 1440,
+      "kind": "login-error-success"
+    },
+    {
+      "theme": "light",
+      "width": 390,
+      "kind": "serverdetail",
+      "id": "s1",
+      "overflow": false,
+      "footer": true,
+      "disabled": 0,
+      "title": "本地实验节点"
+    },
+    {
+      "theme": "light",
+      "width": 390,
+      "kind": "servercheck",
+      "id": "s1",
+      "overflow": false,
+      "footer": true,
+      "disabled": 0,
+      "title": "刷新服务器状态"
+    },
+    {
+      "theme": "light",
+      "width": 390,
+      "kind": "env",
+      "id": "s1",
+      "overflow": false,
+      "footer": true,
+      "disabled": 0,
+      "title": "环境检查与补齐"
+    },
+    {
+      "theme": "light",
+      "width": 390,
+      "kind": "serverdelete",
+      "id": "s1",
+      "overflow": false,
+      "footer": true,
+      "disabled": 0,
+      "title": "删除服务器连接记录"
+    },
+    {
+      "theme": "light",
+      "width": 390,
+      "kind": "projectdraft",
+      "id": "p1",
+      "overflow": false,
+      "footer": true,
+      "disabled": 0,
+      "title": "项目草稿与更新 · catalog-api"
+    },
+    {
+      "theme": "light",
+      "width": 390,
+      "kind": "projectmore",
+      "id": "p1",
+      "overflow": false,
+      "footer": true,
+      "disabled": 0,
+      "title": "catalog-api · 更多操作"
+    },
+    {
+      "theme": "light",
+      "width": 390,
+      "kind": "projectop",
+      "id": "p1",
+      "op": "uninstall",
+      "overflow": false,
+      "footer": true,
+      "disabled": 0,
+      "title": "卸载 · catalog-api"
+    },
+    {
+      "theme": "light",
+      "width": 390,
+      "kind": "opdetail",
+      "id": "op-seed-2",
+      "overflow": false,
+      "footer": true,
+      "disabled": 0,
+      "title": "应用 mysql-primary 配置"
+    },
+    {
+      "theme": "light",
+      "width": 390,
+      "kind": "programupload",
+      "overflow": false,
+      "footer": true,
+      "disabled": 1,
+      "title": "上传文件"
+    },
+    {
+      "theme": "light",
+      "width": 390,
+      "kind": "fw-import",
+      "server": "s1",
+      "overflow": false,
+      "footer": true,
+      "disabled": 0,
+      "title": "导入端口规则"
+    },
+    {
+      "theme": "light",
+      "width": 390,
+      "kind": "cfaccount",
+      "overflow": false,
+      "footer": true,
+      "disabled": 0,
+      "title": "管理 Cloudflare 连接"
+    },
+    {
+      "theme": "light",
+      "width": 390,
+      "kind": "cfconnect",
+      "overflow": false,
+      "footer": true,
+      "disabled": 0,
+      "title": "新增 Cloudflare 连接"
+    },
+    {
+      "theme": "light",
+      "width": 390,
+      "kind": "cfrename",
+      "id": "cf-connection-mvxgyfq5-hl33",
+      "overflow": false,
+      "footer": true,
+      "disabled": 0,
+      "title": "重命名连接"
+    },
+    {
+      "theme": "light",
+      "width": 390,
+      "kind": "cfinspect",
+      "id": "cf-connection-mvxgyfq5-hl33",
+      "overflow": false,
+      "footer": true,
+      "disabled": 0,
+      "title": "模拟检查连接"
+    },
+    {
+      "theme": "light",
+      "width": 390,
+      "kind": "cfremove",
+      "id": "cf-connection-mvxgyfq5-hl33",
+      "overflow": false,
+      "footer": true,
+      "disabled": 0,
+      "title": "移除账号连接"
+    },
+    {
+      "theme": "light",
+      "width": 390,
+      "kind": "templateedit",
+      "initialType": "systemd",
+      "overflow": false,
+      "footer": true,
+      "disabled": 0,
+      "title": "新增部署配置"
+    },
+    {
+      "theme": "light",
+      "width": 390,
+      "kind": "templateedit",
+      "initialType": "compose",
+      "overflow": false,
+      "footer": true,
+      "disabled": 0,
+      "title": "新增部署配置"
+    },
+    {
+      "theme": "light",
+      "width": 390,
+      "kind": "templateedit",
+      "initialType": "frp",
+      "overflow": false,
+      "footer": true,
+      "disabled": 0,
+      "title": "新增部署配置"
+    },
+    {
+      "theme": "light",
+      "width": 390,
+      "kind": "frp-nodeedit",
+      "overflow": false,
+      "footer": true,
+      "disabled": 0,
+      "title": "新增 FRP 连接"
+    },
+    {
+      "theme": "light",
+      "width": 390,
+      "kind": "frp-settings",
+      "overflow": false,
+      "footer": true,
+      "disabled": 0,
+      "title": "FRP 公共运行配置"
+    },
+    {
+      "theme": "light",
+      "width": 390,
+      "kind": "frp-proxyedit",
+      "node": "n1",
+      "overflow": false,
+      "footer": true,
+      "disabled": 0,
+      "title": "新增代理映射"
+    },
+    {
+      "theme": "light",
+      "width": 390,
+      "kind": "login-error-success"
+    },
+    {
+      "theme": "light",
+      "width": 390,
+      "kind": "mobile-navigation-escape"
+    },
+    {
+      "theme": "dark",
+      "width": 1440,
+      "kind": "serverdetail",
+      "id": "s1",
+      "overflow": false,
+      "footer": true,
+      "disabled": 0,
+      "title": "本地实验节点"
+    },
+    {
+      "theme": "dark",
+      "width": 1440,
+      "kind": "servercheck",
+      "id": "s1",
+      "overflow": false,
+      "footer": true,
+      "disabled": 0,
+      "title": "刷新服务器状态"
+    },
+    {
+      "theme": "dark",
+      "width": 1440,
+      "kind": "env",
+      "id": "s1",
+      "overflow": false,
+      "footer": true,
+      "disabled": 0,
+      "title": "环境检查与补齐"
+    },
+    {
+      "theme": "dark",
+      "width": 1440,
+      "kind": "serverdelete",
+      "id": "s1",
+      "overflow": false,
+      "footer": true,
+      "disabled": 0,
+      "title": "删除服务器连接记录"
+    },
+    {
+      "theme": "dark",
+      "width": 1440,
+      "kind": "projectdraft",
+      "id": "p1",
+      "overflow": false,
+      "footer": true,
+      "disabled": 0,
+      "title": "项目草稿与更新 · catalog-api"
+    },
+    {
+      "theme": "dark",
+      "width": 1440,
+      "kind": "projectmore",
+      "id": "p1",
+      "overflow": false,
+      "footer": true,
+      "disabled": 0,
+      "title": "catalog-api · 更多操作"
+    },
+    {
+      "theme": "dark",
+      "width": 1440,
+      "kind": "projectop",
+      "id": "p1",
+      "op": "uninstall",
+      "overflow": false,
+      "footer": true,
+      "disabled": 0,
+      "title": "卸载 · catalog-api"
+    },
+    {
+      "theme": "dark",
+      "width": 1440,
+      "kind": "opdetail",
+      "id": "op-seed-2",
+      "overflow": false,
+      "footer": true,
+      "disabled": 0,
+      "title": "应用 mysql-primary 配置"
+    },
+    {
+      "theme": "dark",
+      "width": 1440,
+      "kind": "programupload",
+      "overflow": false,
+      "footer": true,
+      "disabled": 1,
+      "title": "上传文件"
+    },
+    {
+      "theme": "dark",
+      "width": 1440,
+      "kind": "fw-import",
+      "server": "s1",
+      "overflow": false,
+      "footer": true,
+      "disabled": 0,
+      "title": "导入端口规则"
+    },
+    {
+      "theme": "dark",
+      "width": 1440,
+      "kind": "cfaccount",
+      "overflow": false,
+      "footer": true,
+      "disabled": 0,
+      "title": "管理 Cloudflare 连接"
+    },
+    {
+      "theme": "dark",
+      "width": 1440,
+      "kind": "cfconnect",
+      "overflow": false,
+      "footer": true,
+      "disabled": 0,
+      "title": "新增 Cloudflare 连接"
+    },
+    {
+      "theme": "dark",
+      "width": 1440,
+      "kind": "cfrename",
+      "id": "cf-connection-mvxgyjsg-msk0",
+      "overflow": false,
+      "footer": true,
+      "disabled": 0,
+      "title": "重命名连接"
+    },
+    {
+      "theme": "dark",
+      "width": 1440,
+      "kind": "cfinspect",
+      "id": "cf-connection-mvxgyjsg-msk0",
+      "overflow": false,
+      "footer": true,
+      "disabled": 0,
+      "title": "模拟检查连接"
+    },
+    {
+      "theme": "dark",
+      "width": 1440,
+      "kind": "cfremove",
+      "id": "cf-connection-mvxgyjsg-msk0",
+      "overflow": false,
+      "footer": true,
+      "disabled": 0,
+      "title": "移除账号连接"
+    },
+    {
+      "theme": "dark",
+      "width": 1440,
+      "kind": "templateedit",
+      "initialType": "systemd",
+      "overflow": false,
+      "footer": true,
+      "disabled": 0,
+      "title": "新增部署配置"
+    },
+    {
+      "theme": "dark",
+      "width": 1440,
+      "kind": "templateedit",
+      "initialType": "compose",
+      "overflow": false,
+      "footer": true,
+      "disabled": 0,
+      "title": "新增部署配置"
+    },
+    {
+      "theme": "dark",
+      "width": 1440,
+      "kind": "templateedit",
+      "initialType": "frp",
+      "overflow": false,
+      "footer": true,
+      "disabled": 0,
+      "title": "新增部署配置"
+    },
+    {
+      "theme": "dark",
+      "width": 1440,
+      "kind": "frp-nodeedit",
+      "overflow": false,
+      "footer": true,
+      "disabled": 0,
+      "title": "新增 FRP 连接"
+    },
+    {
+      "theme": "dark",
+      "width": 1440,
+      "kind": "frp-settings",
+      "overflow": false,
+      "footer": true,
+      "disabled": 0,
+      "title": "FRP 公共运行配置"
+    },
+    {
+      "theme": "dark",
+      "width": 1440,
+      "kind": "frp-proxyedit",
+      "node": "n1",
+      "overflow": false,
+      "footer": true,
+      "disabled": 0,
+      "title": "新增代理映射"
+    },
+    {
+      "theme": "dark",
+      "width": 1440,
+      "kind": "login-error-success"
+    },
+    {
+      "theme": "dark",
+      "width": 390,
+      "kind": "serverdetail",
+      "id": "s1",
+      "overflow": false,
+      "footer": true,
+      "disabled": 0,
+      "title": "本地实验节点"
+    },
+    {
+      "theme": "dark",
+      "width": 390,
+      "kind": "servercheck",
+      "id": "s1",
+      "overflow": false,
+      "footer": true,
+      "disabled": 0,
+      "title": "刷新服务器状态"
+    },
+    {
+      "theme": "dark",
+      "width": 390,
+      "kind": "env",
+      "id": "s1",
+      "overflow": false,
+      "footer": true,
+      "disabled": 0,
+      "title": "环境检查与补齐"
+    },
+    {
+      "theme": "dark",
+      "width": 390,
+      "kind": "serverdelete",
+      "id": "s1",
+      "overflow": false,
+      "footer": true,
+      "disabled": 0,
+      "title": "删除服务器连接记录"
+    },
+    {
+      "theme": "dark",
+      "width": 390,
+      "kind": "projectdraft",
+      "id": "p1",
+      "overflow": false,
+      "footer": true,
+      "disabled": 0,
+      "title": "项目草稿与更新 · catalog-api"
+    },
+    {
+      "theme": "dark",
+      "width": 390,
+      "kind": "projectmore",
+      "id": "p1",
+      "overflow": false,
+      "footer": true,
+      "disabled": 0,
+      "title": "catalog-api · 更多操作"
+    },
+    {
+      "theme": "dark",
+      "width": 390,
+      "kind": "projectop",
+      "id": "p1",
+      "op": "uninstall",
+      "overflow": false,
+      "footer": true,
+      "disabled": 0,
+      "title": "卸载 · catalog-api"
+    },
+    {
+      "theme": "dark",
+      "width": 390,
+      "kind": "opdetail",
+      "id": "op-seed-2",
+      "overflow": false,
+      "footer": true,
+      "disabled": 0,
+      "title": "应用 mysql-primary 配置"
+    },
+    {
+      "theme": "dark",
+      "width": 390,
+      "kind": "programupload",
+      "overflow": false,
+      "footer": true,
+      "disabled": 1,
+      "title": "上传文件"
+    },
+    {
+      "theme": "dark",
+      "width": 390,
+      "kind": "fw-import",
+      "server": "s1",
+      "overflow": false,
+      "footer": true,
+      "disabled": 0,
+      "title": "导入端口规则"
+    },
+    {
+      "theme": "dark",
+      "width": 390,
+      "kind": "cfaccount",
+      "overflow": false,
+      "footer": true,
+      "disabled": 0,
+      "title": "管理 Cloudflare 连接"
+    },
+    {
+      "theme": "dark",
+      "width": 390,
+      "kind": "cfconnect",
+      "overflow": false,
+      "footer": true,
+      "disabled": 0,
+      "title": "新增 Cloudflare 连接"
+    },
+    {
+      "theme": "dark",
+      "width": 390,
+      "kind": "cfrename",
+      "id": "cf-connection-mvxgyn2t-w95g",
+      "overflow": false,
+      "footer": true,
+      "disabled": 0,
+      "title": "重命名连接"
+    },
+    {
+      "theme": "dark",
+      "width": 390,
+      "kind": "cfinspect",
+      "id": "cf-connection-mvxgyn2t-w95g",
+      "overflow": false,
+      "footer": true,
+      "disabled": 0,
+      "title": "模拟检查连接"
+    },
+    {
+      "theme": "dark",
+      "width": 390,
+      "kind": "cfremove",
+      "id": "cf-connection-mvxgyn2t-w95g",
+      "overflow": false,
+      "footer": true,
+      "disabled": 0,
+      "title": "移除账号连接"
+    },
+    {
+      "theme": "dark",
+      "width": 390,
+      "kind": "templateedit",
+      "initialType": "systemd",
+      "overflow": false,
+      "footer": true,
+      "disabled": 0,
+      "title": "新增部署配置"
+    },
+    {
+      "theme": "dark",
+      "width": 390,
+      "kind": "templateedit",
+      "initialType": "compose",
+      "overflow": false,
+      "footer": true,
+      "disabled": 0,
+      "title": "新增部署配置"
+    },
+    {
+      "theme": "dark",
+      "width": 390,
+      "kind": "templateedit",
+      "initialType": "frp",
+      "overflow": false,
+      "footer": true,
+      "disabled": 0,
+      "title": "新增部署配置"
+    },
+    {
+      "theme": "dark",
+      "width": 390,
+      "kind": "frp-nodeedit",
+      "overflow": false,
+      "footer": true,
+      "disabled": 0,
+      "title": "新增 FRP 连接"
+    },
+    {
+      "theme": "dark",
+      "width": 390,
+      "kind": "frp-settings",
+      "overflow": false,
+      "footer": true,
+      "disabled": 0,
+      "title": "FRP 公共运行配置"
+    },
+    {
+      "theme": "dark",
+      "width": 390,
+      "kind": "frp-proxyedit",
+      "node": "n1",
+      "overflow": false,
+      "footer": true,
+      "disabled": 0,
+      "title": "新增代理映射"
+    },
+    {
+      "theme": "dark",
+      "width": 390,
+      "kind": "login-error-success"
+    },
+    {
+      "theme": "dark",
+      "width": 390,
+      "kind": "mobile-navigation-escape"
+    }
+  ],
+  "errors": []
+}

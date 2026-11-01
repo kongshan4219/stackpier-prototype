@@ -1,8 +1,10 @@
 # 栈桥交互原型
 
-入口为 [index.html](index.html)。数据和操作均为浏览器内模拟，演示状态保存在当前站点的 localStorage，不连接真实服务器。
+源码入口为 [index.html](index.html)，需先构建 Ant Design 预览包。数据和操作均为浏览器内模拟，演示状态保存在当前站点的 localStorage，不连接真实服务器。
 
 原型用于讨论产品需求和交互。页面中的模拟功能不自动成为正式应用的功能范围或实现方案，正式前后端按本轮确认的需求设计。
+
+本地 Ant Design 改造稿待用户确认：[页面与适配清单](docs/ant-design-redesign.md) · [验证报告](docs/ant-design-validation.md)。正式前端尚未迁移。
 
 ## 组件目录
 
@@ -49,19 +51,23 @@
 
 ## 维护方法
 
-`index.html` 直接列出本地 CSS 和原生 JavaScript，按依赖顺序加载，不需要安装依赖或构建。
+`index.html` 按依赖顺序加载 Ant Design React 公共层与原有业务模拟脚本。`src/antd/` 维护统一主题、组件适配和新增文案；`scripts/build-antd.mjs` 构建本地 npm 依赖，不使用设计系统预览 bundle。设计系统从主仓库 `designs/ant-design-system/project/tokens.json` 直接读取，因此应在已初始化子模块的主仓库中构建。
 
 修改功能时，在对应组件中维护渲染和交互。公共弹窗容器负责打开、关闭、焦点和布局；功能通过 `registerPrototypeHandlers` 注册处理逻辑。新增组件同步维护入口加载顺序，避免聚合成单个大文件。
 
 ## 预览与验证
 
-在本目录启动仅监听回环地址的静态服务：
+依赖和构建包位于仓库外的任务缓存目录；首次安装依赖前复制本目录 package.json 与 package-lock.json 到专用缓存目录，并在那里执行 `npm ci`。已有依赖可直接使用：
 
 ```sh
-python3 -m http.server 4311 --bind 127.0.0.1
+STACKPIER_PROTOTYPE_DEPS=/srv/cache/stackpier-tmp/antd-prototype-redesign \
+STACKPIER_PROTOTYPE_OUTPUT=/srv/cache/stackpier-tmp/antd-prototype-redesign/preview \
+node scripts/build-antd.mjs
+python3 -m http.server 4327 --bind 127.0.0.1 \
+  --directory /srv/cache/stackpier-tmp/antd-prototype-redesign/preview
 ```
 
-浏览器访问 `http://127.0.0.1:4311/`，结束后停止自己启动的服务。
+浏览器访问 `http://127.0.0.1:4327/`。若端口占用，请为自己选择空闲端口，不停止其他人的服务。页面及所有组件依赖均由本地静态服务加载；不连接真实服务器。结束审阅后停止自己启动的服务。
 
 运行组件测试：
 

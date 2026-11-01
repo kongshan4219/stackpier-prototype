@@ -1,0 +1,192 @@
+[
+  {
+    "theme": "light",
+    "token": "colorText",
+    "contrast": 16.558445686376146,
+    "min": 4.5
+  },
+  {
+    "theme": "light",
+    "token": "colorTextSecondary",
+    "contrast": 6.977601437110393,
+    "min": 4.5
+  },
+  {
+    "theme": "light",
+    "token": "colorTextPlaceholder",
+    "contrast": 5.74183648145415,
+    "min": 4.5
+  },
+  {
+    "theme": "light",
+    "token": "colorLink",
+    "contrast": 6.159341084905322,
+    "min": 4.5
+  },
+  {
+    "theme": "light",
+    "token": "colorLinkHover",
+    "contrast": 8.974418634453837,
+    "min": 4.5
+  },
+  {
+    "theme": "light",
+    "token": "colorLinkActive",
+    "contrast": 8.974418634453837,
+    "min": 4.5
+  },
+  {
+    "theme": "light",
+    "token": "colorBorder",
+    "contrast": 3.9494396480491156,
+    "min": 3
+  },
+  {
+    "theme": "light",
+    "token": "controlOutline",
+    "contrast": 6.159341084905322,
+    "min": 3
+  },
+  {
+    "theme": "light",
+    "token": "colorPrimary / white",
+    "contrast": 6.159341084905322,
+    "min": 4.5
+  },
+  {
+    "theme": "light",
+    "token": "colorPrimaryHover / white",
+    "contrast": 6.159341084905322,
+    "min": 4.5
+  },
+  {
+    "theme": "light",
+    "token": "colorPrimaryActive / white",
+    "contrast": 8.974418634453837,
+    "min": 4.5
+  },
+  {
+    "theme": "light",
+    "token": "colorSuccess / status background",
+    "contrast": 5.4378998530195455,
+    "min": 4.5
+  },
+  {
+    "theme": "light",
+    "token": "colorWarning / status background",
+    "contrast": 6.531458087397254,
+    "min": 4.5
+  },
+  {
+    "theme": "light",
+    "token": "colorError / status background",
+    "contrast": 7.088252505699412,
+    "min": 4.5
+  },
+  {
+    "theme": "light",
+    "token": "colorInfo / status background",
+    "contrast": 5.499080920699226,
+    "min": 4.5
+  },
+  {
+    "theme": "light",
+    "check": "keyboard-focus-contained-and-footer-visible-at-390x640",
+    "pass": true
+  },
+  {
+    "theme": "dark",
+    "token": "colorText",
+    "contrast": 13.402131056145574,
+    "min": 4.5
+  },
+  {
+    "theme": "dark",
+    "token": "colorTextSecondary",
+    "contrast": 8.18567135559205,
+    "min": 4.5
+  },
+  {
+    "theme": "dark",
+    "token": "colorTextPlaceholder",
+    "contrast": 7.56773238433333,
+    "min": 4.5
+  },
+  {
+    "theme": "dark",
+    "token": "colorLink",
+    "contrast": 8.187946799472586,
+    "min": 4.5
+  },
+  {
+    "theme": "dark",
+    "token": "colorLinkHover",
+    "contrast": 10.611521441002976,
+    "min": 4.5
+  },
+  {
+    "theme": "dark",
+    "token": "colorLinkActive",
+    "contrast": 6.162370140316661,
+    "min": 4.5
+  },
+  {
+    "theme": "dark",
+    "token": "colorBorder",
+    "contrast": 4.66459490756154,
+    "min": 3
+  },
+  {
+    "theme": "dark",
+    "token": "controlOutline",
+    "contrast": 8.187946799472586,
+    "min": 3
+  },
+  {
+    "theme": "dark",
+    "token": "colorPrimary / white",
+    "contrast": 5.188129156755824,
+    "min": 4.5
+  },
+  {
+    "theme": "dark",
+    "token": "colorPrimaryHover / white",
+    "contrast": 5.188129156755824,
+    "min": 4.5
+  },
+  {
+    "theme": "dark",
+    "token": "colorPrimaryActive / white",
+    "contrast": 7.232796144216493,
+    "min": 4.5
+  },
+  {
+    "theme": "dark",
+    "token": "colorSuccess / status background",
+    "contrast": 10.060645697004263,
+    "min": 4.5
+  },
+  {
+    "theme": "dark",
+    "token": "colorWarning / status background",
+    "contrast": 11.339204086871863,
+    "min": 4.5
+  },
+  {
+    "theme": "dark",
+    "token": "colorError / status background",
+    "contrast": 6.635742194841388,
+    "min": 4.5
+  },
+  {
+    "theme": "dark",
+    "token": "colorInfo / status background",
+    "contrast": 7.72665840846378,
+    "min": 4.5
+  },
+  {
+    "theme": "dark",
+    "check": "keyboard-focus-contained-and-footer-visible-at-390x640",
+    "pass": true
+  }
+]

@@ -7,18 +7,9 @@
   <meta name="description" content="StackPier 可交互审阅原型。所有数据为浏览器内模拟，不连接任何真实服务器或服务。">
   <title>栈桥 · 交互原型</title>
   <script src="assets/core/loading.js"></script>
-  <link rel="stylesheet" href="assets/styles/tokens.css">
-  <link rel="stylesheet" href="assets/styles/base.css">
-  <link rel="stylesheet" href="assets/styles/workspace.css">
-  <link rel="stylesheet" href="assets/styles/responsive.css">
-  <link rel="stylesheet" href="assets/styles/configuration.css">
-  <link rel="stylesheet" href="assets/features/programs/programs.css">
-  <link rel="stylesheet" href="assets/features/deployments/file-mappings.css">
-  <link rel="stylesheet" href="assets/features/projects/deployment.css">
-  <link rel="stylesheet" href="assets/features/frp/frp.css">
-  <link rel="stylesheet" href="assets/features/assets/assets.css">
-  <link rel="stylesheet" href="assets/features/network/dns.css">
-  <link rel="stylesheet" href="assets/features/network/firewall.css">
+  <link rel="stylesheet" href="assets/antd/legacy.css">
+  <link rel="stylesheet" href="assets/antd/runtime.css">
+  <script defer src="assets/antd/runtime.js"></script>
   <!-- 按依赖顺序加载独立组件；defer 共用同一份状态，不拼接页面或生成大脚本。 -->
   <script defer src="assets/core/utils.js"></script>
   <script defer src="assets/data/sample.js"></script>
@@ -99,6 +90,7 @@
   <script defer src="assets/features/frp/recovery.js"></script>
   <script defer src="assets/features/frp/configuration-operations.js"></script>
   <script defer src="assets/core/routes.js"></script>
+  <script defer src="assets/core/antd-bridge.js"></script>
   <script defer src="assets/boot.js"></script>
 </head>
 <body>
