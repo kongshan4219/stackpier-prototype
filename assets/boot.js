@@ -6,6 +6,7 @@ if (prototypeLoading.errors.length) {
 } else {
   try {
     initializeCloudflare();
+    initializeUnifiedFirewall();
     initializeAssets();
     initializeFailedDeployments();
     initializeFrp();

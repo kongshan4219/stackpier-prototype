@@ -31,6 +31,8 @@ function finishRuntimeOperation(o,result='success',{recheck=false}={}){
 }
 
 function finishOperation(o,result='success'){
+ if(o?.input?.netType==='firewall'&&o.input.action==='setup')return finishFirewallSetup(o,result);
+ const firewallError=o?.input?.netType==='firewall'&&result==='success'?firewallPortOperationError(o.input):'';if(firewallError)result='unknown';
  if(o?.input?.action==='port-batch'&&result==='success'&&firewallBatchError(o.input))result='unknown';
  if(o?.input?.netType==='firewall'&&o.input.action!=='port-batch'&&result==='success'&&JSON.stringify(S.firewalls.find(r=>r.id===o.input.targetId)||null)!==JSON.stringify(o.input.before||null))result='unknown';
  const host=o?.input?.serverTarget?.id;if(host&&result==='success'&&serverSnapshotError(o.input.serverTarget))result='unknown';
@@ -42,6 +44,7 @@ function finishOperation(o,result='success'){
  else if(result==='failed'){o.steps.forEach((s,i)=>{s.status=i===0?'failed':'pending';s.note=i===0?'明确失败，原操作确认结束':'前置失败，未执行'});o.message='本次操作明确失败，已记录失败点；不会自动重试或回退。';}
  else if(result==='unknown'){let unknownAt=Math.max(1,o.steps.length-2);o.steps.forEach((s,i)=>{s.status=i<unknownAt?'success':i===unknownAt?'unknown':'pending';s.note=i<unknownAt?'已有证据保留':i===unknownAt?'响应丢失，需要核对原操作':'是否执行尚不明确'});o.message='响应丢失，结果待核对。保留已有证据和必要的冲突保护，不盲目重放。';if(p&&sr(p.server))sr(p.server).state='unknown';}
  else{o.steps.forEach((s,i)=>{s.status=i===o.steps.length-1?'failed':'success';s.note=i===o.steps.length-1?'本分项失败；不会抹掉前面已完成结果':'已核对完成'});o.message='部分完成：已成功的分项保留，失败部分单独处理。';}
+ if(firewallError)o.message=firewallError+'；保留原操作与恢复保护。';
  if(p){
   if(['deploy','apply','update'].includes(o.kind)){
    recordProjectResources(p,o,result);

@@ -4,7 +4,7 @@ const lifeName={draft:'未部署',incomplete:'部署未完成',installed:'已部
 
 const runtimeName={running:'运行中',stopped:'已停止',partial:'部分运行',unknown:'待核对',na:'未取得服务运行观测'};
 
-const statusName={running:'执行中',success:'成功',failed:'明确失败',partial:'部分完成',unknown:'结果待核对',rejected:'已拒绝',skipped:'已跳过',missed:'已错过',pending:'未执行',deleted:'已删除'};
+const statusName={running:'执行中',success:'成功',failed:'明确失败',partial:'部分完成',unknown:'结果待核对',rejected:'已拒绝',skipped:'已跳过',missed:'已错过',pending:'未执行',deleted:'已删除','rolled-back':'已恢复'};
 
 const statusTone={running:'running',success:'success',failed:'error',partial:'warning',unknown:'warning',rejected:'warning',skipped:'',missed:'',pending:'',deleted:''};
 
