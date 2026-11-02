@@ -1,9 +1,9 @@
 // 上游字段与流程的中文审阅文案；模拟和待决提示为 StackPier 适配。
 export const c={
- reviewTools:'原型审阅工具 · 不进入正式界面',unavailable:'不可用',read:'已读取',disabled:'未启用',publicScope:'Zone · public（上游固定范围；多 Zone 待 D2）',basicScope:'1PANEL_BASIC_BEFORE / 1PANEL_BASIC / 1PANEL_BASIC_AFTER（链归属待 D2）',verify:'核对原操作',verifyResult:' · 模拟核对：未确认成功，未重发',custom:'自定义',panel:'面板',
+ reviewTools:'原型审阅工具 · 不进入正式界面',unavailable:'不可用',read:'已读取',disabled:'未启用',publicScope:'Zone · public（已确认跟随 1Panel）',basicScope:'1PANEL_BASIC_BEFORE / 1PANEL_BASIC / 1PANEL_BASIC_AFTER（已确认移植自有链与初始化）',verify:'核对原操作',verifyResult:' · 模拟核对：未确认成功，未重发',custom:'自定义',panel:'面板',
  add:'添加',ruleItem:'规则条目',selectAll:'全选',effective:'已匹配发布路径',ineffective:'未生效 / 孤立策略',orphanHint:'此端点不再匹配容器发布路径；保留策略供查看或删除。',mixedFamily:'混合地址族仅允许全部拒绝；按来源限制请分开设置。',
  title:'防火墙',intro:'管理系统入站规则、Docker 发布端口与端口转发。',source:'1Panel v2.4.0 · 04099ae2',simulation:'浏览器交互原型 · 所有服务器和结果均为虚构，不执行系统命令',
- server:'目标服务器',scenario:'审阅场景',outcome:'下次模拟结果',review:'适配差异待决',legacy:'查看当前 StackPier 原型',create:'创建',edit:'编辑',remove:'删除',batch:'批量删除',import:'导入',export:'导出',refresh:'刷新',reset:'重置',initialize:'初始化',bind:'绑定',unbind:'解绑',repair:'修复',start:'启动',stop:'停止',restart:'重启',cancel:'取消',submit:'提交（模拟）',confirm:'确认（模拟）',close:'关闭',search:'搜索端口、IP 或描述',all:'全部',protocol:'协议',sourceIP:'来源 IP',port:'目标端口',action:'策略',description:'描述',priority:'位置 / 优先级',family:'地址族',operations:'操作',raw:'原始规则',detail:'详情',protected:'受保护规则',opaque:'无法完整解析',whitelist:'端口白名单',settings:'设置',noRules:'暂无匹配规则',accept:'允许',drop:'拒绝',reject:'拒绝并响应',running:'运行中',stopped:'已停止',bound:'已绑定',unbound:'未绑定',backup:'重置前备份',restore:'从备份初始化',backupNone:'不加载备份',task:'模拟任务记录',back:'返回修改',taskDetail:'操作详情',pending:'D1 已确认跟随 1Panel；D2–D6 待逐项确认',
+ server:'目标服务器',scenario:'审阅场景',outcome:'下次模拟结果',review:'适配差异待决',legacy:'查看当前 StackPier 原型',create:'创建',edit:'编辑',remove:'删除',batch:'批量删除',import:'导入',export:'导出',refresh:'刷新',reset:'重置',initialize:'初始化',bind:'绑定',unbind:'解绑',repair:'修复',start:'启动',stop:'停止',restart:'重启',cancel:'取消',submit:'提交（模拟）',confirm:'确认（模拟）',close:'关闭',search:'搜索端口、IP 或描述',all:'全部',protocol:'协议',sourceIP:'来源 IP',port:'目标端口',action:'策略',description:'描述',priority:'位置 / 优先级',family:'地址族',operations:'操作',raw:'原始规则',detail:'详情',protected:'受保护规则',opaque:'无法完整解析',whitelist:'端口白名单',settings:'设置',noRules:'暂无匹配规则',accept:'允许',drop:'拒绝',reject:'拒绝并响应',running:'运行中',stopped:'已停止',bound:'已绑定',unbound:'未绑定',backup:'重置前备份',restore:'从备份初始化',backupNone:'不加载备份',task:'模拟任务记录',back:'返回修改',taskDetail:'操作详情',pending:'D1、D2 已确认跟随 1Panel；D3–D6 待逐项确认',
  tabs:[['system','系统防火墙'],['docker','Docker 端口防护'],['forwarding','端口转发'],['settings','设置']],
  scenes:[['normal','正常'],['empty','空数据'],['read-failed','读取失败'],['ipv6-failed','IPv6 不可用'],['uninstalled','未安装'],['stopped','已停止 / 未绑定'],['conflict','后端冲突'],['readonly','无写入权限']],
  outcomes:[['success','成功'],['failed','命令失败'],['partial','部分成功'],['unknown','响应丢失 / 结果未知']],
@@ -19,7 +19,7 @@ export const c={
  result:{queued:'已受理，等待模拟完成',success:'模拟完成；不代表真实规则已生效',failed:'模拟命令失败；保留错误与原目标',partial:'模拟部分成功；逐项结果保留，不报告整批成功',unknown:'响应丢失，结果未知；不得按新操作重发'},
  decisions:[
  ['D1 · 管理器识别（已确认）','上游按工具存在和优先级探测，允许显式选择；firewalld / UFW 同装报错。','已确认跟随 1Panel：新实现使用其探测顺序与显式选择；不沿用旧实际入站识别策略。'],
- ['D2 · 作用范围','上游 firewalld 固定 public；iptables / nftables 使用 BASIC 三链。','StackPier 已支持多 Zone，不自动接管未知链。是否保留多 Zone、如何引入自有链待定。'],
+ ['D2 · 作用范围（已确认）','上游 firewalld 固定 public；iptables / nftables 使用 BASIC 三链。','已确认跟随 1Panel：firewalld 固定 public，不保留多 Zone 扩展；移植自有链及初始化行为。'],
  ['D3 · 写入保护','上游任务、进程互斥、局部补偿、备份。','是否保留固定预览、120 秒独立恢复、新 SSH 确认和防误封？这些不等价于上游补偿。'],
  ['D4 · 导入与批量','上游规则数组，系统文件 64 MiB，原子展开 500；批次可能部分成功。','StackPier 版本化 JSON、256 KiB / 50 条。是否双格式兼容、采用何种批次语义？'],
  ['D5 · 重置与联动','完整范围已同意纳入；重置、初始化、禁 Ping、Docker 重启、Fail2Ban 恢复会修改系统。','具体清理边界、默认值、确认内容待逐项决定。'],
