@@ -3,7 +3,7 @@ export const c={
  reviewTools:'原型审阅工具 · 不进入正式界面',unavailable:'不可用',read:'已读取',disabled:'未启用',publicScope:'Zone · public（已确认跟随 1Panel）',basicScope:'1PANEL_BASIC_BEFORE / 1PANEL_BASIC / 1PANEL_BASIC_AFTER（已确认移植自有链与初始化）',verify:'核对原操作',verifyResult:' · 模拟核对：未确认成功，未重发',custom:'自定义',panel:'面板',
  add:'添加',ruleItem:'规则条目',selectAll:'全选',effective:'已匹配发布路径',ineffective:'未生效 / 孤立策略',orphanHint:'此端点不再匹配容器发布路径；保留策略供查看或删除。',mixedFamily:'混合地址族仅允许全部拒绝；按来源限制请分开设置。',
  title:'防火墙',intro:'管理系统入站规则、Docker 发布端口与端口转发。',source:'1Panel v2.4.0 · 04099ae2',simulation:'浏览器交互原型 · 所有服务器和结果均为虚构，不执行系统命令',
- server:'目标服务器',scenario:'审阅场景',outcome:'下次模拟结果',review:'适配差异待决',legacy:'查看当前 StackPier 原型',create:'创建',edit:'编辑',remove:'删除',batch:'批量删除',import:'导入',export:'导出',refresh:'刷新',reset:'重置',initialize:'初始化',bind:'绑定',unbind:'解绑',repair:'修复',start:'启动',stop:'停止',restart:'重启',cancel:'取消',submit:'提交（模拟）',confirm:'确认（模拟）',close:'关闭',search:'搜索端口、IP 或描述',all:'全部',protocol:'协议',sourceIP:'来源 IP',port:'目标端口',action:'策略',description:'描述',priority:'位置 / 优先级',family:'地址族',operations:'操作',raw:'原始规则',detail:'详情',protected:'受保护规则',opaque:'无法完整解析',whitelist:'端口白名单',settings:'设置',noRules:'暂无匹配规则',accept:'允许',drop:'拒绝',reject:'拒绝并响应',running:'运行中',stopped:'已停止',bound:'已绑定',unbound:'未绑定',backup:'重置前备份',restore:'从备份初始化',backupNone:'不加载备份',task:'模拟任务记录',back:'返回修改',taskDetail:'操作详情',pending:'D1–D5 已确认跟随 1Panel；D6 待确认',
+ server:'目标服务器',scenario:'审阅场景',outcome:'下次模拟结果',review:'适配裁决记录',legacy:'查看当前 StackPier 原型',create:'创建',edit:'编辑',remove:'删除',batch:'批量删除',import:'导入',export:'导出',refresh:'刷新',reset:'重置',initialize:'初始化',bind:'绑定',unbind:'解绑',repair:'修复',start:'启动',stop:'停止',restart:'重启',cancel:'取消',submit:'提交（模拟）',confirm:'确认（模拟）',close:'关闭',search:'搜索端口、IP 或描述',all:'全部',protocol:'协议',sourceIP:'来源 IP',port:'目标端口',action:'策略',description:'描述',priority:'位置 / 优先级',family:'地址族',operations:'操作',raw:'原始规则',detail:'详情',protected:'受保护规则',opaque:'无法完整解析',whitelist:'端口白名单',settings:'设置',noRules:'暂无匹配规则',accept:'允许',drop:'拒绝',reject:'拒绝并响应',running:'运行中',stopped:'已停止',bound:'已绑定',unbound:'未绑定',backup:'重置前备份',restore:'从备份初始化',backupNone:'不加载备份',task:'模拟任务记录',back:'返回修改',taskDetail:'操作详情',pending:'D1–D6 已裁决；完整原型待确认',
  tabs:[['system','系统防火墙'],['docker','Docker 端口防护'],['forwarding','端口转发'],['settings','设置']],
  scenes:[['normal','正常'],['empty','空数据'],['read-failed','读取失败'],['ipv6-failed','IPv6 不可用'],['uninstalled','未安装'],['stopped','已停止 / 未绑定'],['conflict','后端冲突'],['readonly','无写入权限']],
  outcomes:[['success','成功'],['failed','命令失败'],['partial','部分成功'],['unknown','响应丢失 / 结果未知']],
@@ -23,7 +23,7 @@ export const c={
  ['D3 · 写入保护（已确认）','上游任务、进程互斥、局部补偿、备份。','已确认完全跟随 1Panel，不叠加旧固定预览、120 秒独立恢复、新 SSH 确认及额外防误封门槛；保留上游校验和受保护规则。'],
  ['D4 · 导入与批量（已确认）','上游规则数组，系统文件 64 MiB，原子展开 500；批次可能部分成功。','已确认完全跟随 1Panel：采用各模块 JSON 数组、限额和部分成功语义，不兼容旧 stackpier-port-rules 导入格式。'],
  ['D5 · 重置与联动（已确认）','完全跟随 1Panel 的清理范围、默认备份、确认流程及处理顺序。','Docker 重启与 Fail2Ban 恢复遵循上游条件；禁 Ping 保留运行时和持久化语义。原型仅模拟。'],
- ['D6 · 历史操作','上游使用自身配置、Task 和备份。','StackPier 已有 SQLite 修订、幂等请求、未知操作及恢复回执，兼容策略待定。']]
+ ['D6 · 历史操作（已确认）','新操作完全跟随 1Panel；旧记录仅保留查询及原始状态。','不再续执行或恢复旧操作，不自动删除；后续由用户手动清理。']]
 };
 
 export const serverNames={alpha:'演示主机 A · 192.0.2.10',beta:'演示主机 B · 192.0.2.11'};
