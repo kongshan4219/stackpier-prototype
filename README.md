@@ -27,6 +27,8 @@
 
 ## 交互说明
 
+- [1Panel 四模块防火墙审阅稿](docs/firewall-1panel-port.md)：独立入口 `/?firewall=1panel#firewall`，基于固定上游源码，行为差异等待逐项裁决。
+
 - [凭据正文输入](docs/credential-input.md)：FRP、STCP 与通知输入只接受虚构值，编辑留空保留且不回填。
 
 - [防火墙端口规则](docs/firewall-port-rules.md)：firewalld 服务启停、已有规则编辑、批量删除和 JSON 导入导出的模拟交互。

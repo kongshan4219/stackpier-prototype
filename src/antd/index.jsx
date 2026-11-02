@@ -7,6 +7,7 @@ import {parse} from './convert';
 import {productTheme,applyVariables} from './theme';
 import {copy} from './copy';
 import './product.css';
+import FirewallPort from './firewall-port/page';
 let barObserver;
 const roots=new Map();let mode=localStorage.getItem('stackpier-review-theme')==='dark'?'dark':'light';let scenario='normal';
 const motion=matchMedia('(prefers-reduced-motion: reduce)');
@@ -18,8 +19,9 @@ function release(el){const root=roots.get(el);if(root){flushSync(()=>root.unmoun
 function upgrade(el,kind='page'){const html=el.innerHTML;
  if(kind==='page'){
   const dom=document.createElement('template');dom.innerHTML=html;
-  const workbench=dom.content.querySelector('#main');if(workbench&&scenario!=='normal'){workbench.querySelectorAll(':scope > :not(.page-heading)').forEach(n=>n.remove());workbench.insertAdjacentHTML('beforeend','<div id="review-state-root"></div>');}
+  const workbench=dom.content.querySelector('#main');const firewallPort=workbench?.querySelector('.firewall-port-card')&&new URLSearchParams(location.search).get('firewall')==='1panel';if(firewallPort)workbench.innerHTML='<div id="firewall-port-root"></div>';if(workbench&&!firewallPort&&scenario!=='normal'){workbench.querySelectorAll(':scope > :not(.page-heading)').forEach(n=>n.remove());workbench.insertAdjacentHTML('beforeend','<div id="review-state-root"></div>');}
   mount(el,parse(dom.innerHTML));
+  if(firewallPort)mount(el.querySelector('#firewall-port-root'),<FirewallPort/>);
   const bar=el.querySelector('.review-controls');if(bar){const host=document.createElement('span');bar.prepend(host);mount(host,<ReviewControls/>)}
   barObserver?.disconnect();const reviewBar=el.querySelector('.review-bar');if(reviewBar){barObserver=new ResizeObserver(()=>document.documentElement.style.setProperty('--review-offset',reviewBar.getBoundingClientRect().height+'px'));barObserver.observe(reviewBar);}
   const state=el.querySelector('#review-state-root');if(state)mount(state,<PageState/>);
