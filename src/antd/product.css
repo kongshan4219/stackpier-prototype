@@ -17,3 +17,8 @@ dialog.dialog{padding:0!important;border:0!important;background:transparent!impo
 .anticon svg{fill:currentColor;stroke:none;width:1em;height:1em}
 
 .workspace-sidebar{top:var(--review-offset,var(--review-height))}.nav-open .overlay{top:var(--review-offset,var(--review-height))}
+
+/* 部署配置卡片保留内边距，不同内容长度的操作区统一靠底。 */
+.configuration-card{display:flex;flex-direction:column;padding:21px}
+.configuration-card .project-header h3{overflow-wrap:anywhere}
+.configuration-card .card-actions{margin-top:auto;padding-top:18px;gap:10px;flex-wrap:wrap}
