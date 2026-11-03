@@ -1,5 +1,6 @@
 // 上游字段与流程的中文审阅文案；模拟和待决提示为 StackPier 适配。
 export const c={
+ confirmProvider:"输入后端名称确认重置",
  reviewTools:'原型审阅工具 · 不进入正式界面',unavailable:'不可用',read:'已读取',disabled:'未启用',publicScope:'Zone · public（已确认跟随 1Panel）',basicScope:'1PANEL_BASIC_BEFORE / 1PANEL_BASIC / 1PANEL_BASIC_AFTER（已确认移植自有链与初始化）',verify:'核对原操作',verifyResult:' · 模拟核对：未确认成功，未重发',custom:'自定义',panel:'面板',
  add:'添加',ruleItem:'规则条目',selectAll:'全选',effective:'已匹配发布路径',ineffective:'未生效 / 孤立策略',orphanHint:'此端点不再匹配容器发布路径；保留策略供查看或删除。',mixedFamily:'混合地址族仅允许全部拒绝；按来源限制请分开设置。',
  title:'防火墙',intro:'管理系统入站规则、Docker 发布端口与端口转发。',source:'1Panel v2.4.0 · 04099ae2',simulation:'浏览器交互原型 · 所有服务器和结果均为虚构，不执行系统命令',

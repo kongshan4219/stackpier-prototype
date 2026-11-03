@@ -35,3 +35,5 @@ D1–D6 面板是审阅工具，不进入正式产品。上游固定 public、�
 - 浏览器脚本需 `STACKPIER_PREVIEW_URL` 指向本机回环、`STACKPIER_SCREENSHOTS` 指向约定临时目录，依赖通过 `STACKPIER_PLAYWRIGHT_MODULE` 与 `CHROMIUM` 指定。不可指向真实 StackPier 实例。
 
 实际运行结果和源码身份由主仓库本次验收记录保存；原型通过不等于正式防火墙验收。
+
+2026-11-03 正式接入同步：重置确认增加精确输入当前后端名称，与已确认 D5 和固定上游 `rule-reset.vue` 一致；默认备份、取消与模拟执行边界保持。此同步不改变已确认的四页布局或新增需求。

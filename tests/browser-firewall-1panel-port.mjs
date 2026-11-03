@@ -10,7 +10,7 @@ const check=(name,value)=>{assert.ok(value,name);checks.push(name);console.log('
 const button=(p,name)=>p.getByRole('button',{name:new RegExp(name.split('').join('\\s*'))}).first();
 async function select(p,label,text){await p.getByRole('combobox',{name:label,exact:true}).click();await p.locator('.ant-select-dropdown:visible').getByText(text,{exact:true}).click()}
 async function tab(p,name){await p.getByRole('tab',{name,exact:true}).click()}
-async function confirm(p){await p.getByRole('dialog').last().getByRole('button',{name:'确认（模拟）'}).click();await p.waitForTimeout(800)}
+async function confirm(p){const input=p.getByLabel('输入后端名称确认重置',{exact:true});if(await input.count()){check('重置需精确输入后端',await p.getByRole('dialog').last().getByRole('button',{name:'确认（模拟）'}).isDisabled());const label=await p.getByRole('dialog').last().locator('.ant-form-item-label').first().innerText();await input.fill(label.split(' · ').at(-1));}await p.getByRole('dialog').last().getByRole('button',{name:'确认（模拟）'}).click();await p.waitForTimeout(800)}
 try{
  const p=await browser.newPage({viewport:{width:1440,height:1100}});p.on('pageerror',e=>errors.push(e.message));p.on('request',r=>{if(!r.url().startsWith(base)&&!r.url().startsWith('data:'))errors.push('unexpected request '+r.url())});
  await p.goto(base+'/?firewall=1panel#firewall');await p.locator('.fw-port').waitFor();

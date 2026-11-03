@@ -28,7 +28,7 @@ function Screen({server,host,update}){
  const rows=source.filter(r=>(family==='all'||r.family===family)&&(action==='all'||r.action===action)&&JSON.stringify(r).toLowerCase().includes(q.toLowerCase()));
  const label=key=>c[key]||key;
  function ask(operation,labelText,apply,summary=''){
-  setError('');setRequest({action:operation,label:labelText,apply,summary,server:serverNames[server],revision:host.revision});
+  setError('');setRequest({provider:backend,action:operation,label:labelText,apply,summary,server:serverNames[server],revision:host.revision});
  }
  function complete(extra){
   const req=request;if(!req)return;

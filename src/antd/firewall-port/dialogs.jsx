@@ -51,10 +51,11 @@ export function ImportDialog({kind,provider,onClose,onSave}){
  </Modal>;
 }
 export function ConfirmDialog({request,backups,onClose,onConfirm}){
- const [backup,setBackup]=useState(true),[restore,setRestore]=useState(''),[dockerRestart,setDockerRestart]=useState(false);
- return <Modal open title={request.label} onCancel={onClose} onOk={()=>onConfirm({backup,restore,dockerRestart})} okText={c.confirm} cancelText={c.cancel}>
+ const [backup,setBackup]=useState(true),[restore,setRestore]=useState(''),[dockerRestart,setDockerRestart]=useState(false),[confirmProvider,setConfirmProvider]=useState('');
+ return <Modal open title={request.label} okButtonProps={{disabled:request.action==='reset'&&confirmProvider!==request.provider}} onCancel={onClose} onOk={()=>onConfirm({backup,restore,dockerRestart})} okText={c.confirm} cancelText={c.cancel}>
  <Alert type="warning" title={request.action==='reset'?c.resetHelp:c.confirmHelp}/>
  <p><strong>{c.server}</strong> · {request.server}</p><p>{request.summary}</p>
+ {request.action==='reset'&&<Form.Item label={c.confirmProvider+' · '+request.provider}><Input aria-label={c.confirmProvider} value={confirmProvider} onChange={e=>setConfirmProvider(e.target.value)}/></Form.Item>}
  {request.action==='reset'&&<Checkbox checked={backup} onChange={e=>setBackup(e.target.checked)}>{c.backup}</Checkbox>}
  {['initialize','start'].includes(request.action)&&<Form layout="vertical"><Form.Item label={c.restore}><Select aria-label={c.restore} value={restore} onChange={setRestore} options={[{value:'',label:c.backupNone},...backups.map(b=>({value:b.id,label:b.name}))]}/></Form.Item></Form>}
  {['start','stop','restart','reset'].includes(request.action)&&<Checkbox checked={dockerRestart} onChange={e=>setDockerRestart(e.target.checked)}>{c.dockerRestart}</Checkbox>}
