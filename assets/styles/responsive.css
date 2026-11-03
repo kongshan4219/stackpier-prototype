@@ -1,6 +1,6 @@
 @keyframes spin{to{transform:rotate(360deg)}
 }
-@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important}
+@media(prefers-reduced-motion:reduce){*:not(.anticon-spin,.ant-spin-dot-spin,.ant-spin-dot-item),*:not(.anticon-spin):before,*:after{animation:none!important}*,*:before,*:after{transition:none!important}
 }
 @media(min-width:1600px){.workbench{padding-top:38px}
 .page-heading{margin-bottom:30px}
