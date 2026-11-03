@@ -19,21 +19,19 @@ function projectAppliedPlan(p){
    ['程序固定版本',h(frp.program?.filename||frp.program?.name||'历史程序信息未记录')+projectPlanDigest(frp.program?.sha256)],
    ['控制端点',h((node.ip||node.bind_addr||'未记录')+':'+(node.bind_port||'—'))],
    ['管理接口',frp.adminPort?h('127.0.0.1:'+frp.adminPort+'，仅经目标 SSH 读取'):'历史参照未记录'],
-   ['允许映射端口',frp.allowedPortStart?h(frp.allowedPortStart+'–'+frp.allowedPortEnd):'历史参照未记录'],
-   ['成功条件','核实官方程序版本、文件摘要、有效 JSON 配置、unit 与真实 FRP 管理状态；部署服务不代表映射通路已可用。']);
+   ['允许映射端口',frp.allowedPortStart?h(frp.allowedPortStart+'–'+frp.allowedPortEnd):'历史参照未记录']);
   return projectPlanDetails(items);
  }
  const directory=cfg.dataDir?.replace(/\/data\/?$/,'')||`/srv/stackpier-demo/${p.name}`;
  if(projectUsesUnitBody(p,cfg)){
   items.push(['运行方式','systemd'],['服务',h(p.name+'.service')],['服务文件',`<code>/etc/systemd/system/${h(p.name)}.service</code>`],
-   ['固定正文摘要',projectPlanDigest(snapshot.unitSHA256||projectTextSHA(cfg.source))],['成功条件','服务文件与映射按固定输入交付、unit 校验通过，再核验 systemd 运行状态（浏览器模拟）。'],['业务健康检查','未配置；后续单独配置。']);
+   ['固定正文摘要',projectPlanDigest(snapshot.unitSHA256||projectTextSHA(cfg.source))],['业务健康检查','未配置']);
   return projectPlanDetails(items)+`<details><summary>已应用服务文件正文 · 原样保存</summary><pre class="code asset-text">${h(cfg.source)}</pre></details><h3>固定文件与目录映射</h3>`+(cfg.pathMappings?.length?configurationMappingSummary(cfg.pathMappings,true):'<p class="muted">未配置文件与目录映射。</p>')+notice('映射内容未读取','浏览器保留本次路径与同步规则，不读取管理端文件，不生成映射内容摘要，也不执行 rsync。');
  }
  if(p.type==='compose'){
   const compose=snapshot.compose;
   items.push(['运行方式','Docker Compose'],['项目范围',`<code>${h(compose?.projectName||p.name)}</code>`],
-   ['独占目录',`<code>${h(directory)}</code>`],['固定配置摘要',projectPlanDigest(compose?.sha256||projectTextSHA(cfg.source))],
-   ['成功条件','全部服务容器运行并满足各自健康检查；Docker 实际发布地址、端口与目标符合固定快照；镜像与交付文件一致。发布核验不代表应用协议或业务通路已验证。']);
+   ['独占目录',`<code>${h(directory)}</code>`],['固定配置摘要',projectPlanDigest(compose?.sha256||projectTextSHA(cfg.source))]);
   const services=compose?.services;
   const table=services?`<div class="table-wrap"><table aria-label="Compose 固定服务"><thead><tr><th>服务</th><th>固定镜像</th><th>端口</th><th>环境变量名称</th><th>健康检查</th></tr></thead><tbody>${services.map(service=>`<tr><td>${h(service.name)}</td><td><code>${h(service.image)}</code></td><td>${h((service.ports||[]).join('、')||'—')}</td><td>${h((service.environment||[]).join('、')||'—')}</td><td>${service.healthcheck?'已配置':'未配置'}</td></tr>`).join('')}</tbody></table></div>`:'<p class="muted">历史参照未保存固定服务摘要。</p>';
   const files=(snapshot.files||[]).length?`<section><h3>固定文件</h3><ul>${snapshot.files.map(file=>`<li><code>${h(file.targetPath)}</code> · ${h(file.binary?.size||'大小未记录')} ${projectPlanDigest(file.binary?.sha256)}</li>`).join('')}</ul></section>`:'';
@@ -43,7 +41,6 @@ function projectAppliedPlan(p){
  const files=projectFixedFiles(p);
  items.push(['服务',h(p.name+'.service')],['独占目录',`<code>${h(directory)}</code>`],
   ['程序固定版本',h(files[0].name)+projectPlanDigest(files[0].sha256)],
-  ['配置固定版本',h(files[1].name)+projectPlanDigest(files[1].sha256)],
-  ['成功条件',h(`文件摘要一致、unit 校验通过、服务运行且主进程的 HTTP 127.0.0.1:${cfg.port}/health 返回 200。`)]);
+  ['配置固定版本',h(files[1].name)+projectPlanDigest(files[1].sha256)]);
  return projectPlanDetails(items);
 }

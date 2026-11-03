@@ -15,8 +15,8 @@ export const c={
  errors:{port:'端口须为 1–65535 或有效范围。',address:'请输入有效 IP 或 CIDR，且与地址族一致。',required:'请填写至少一个来源或端口。',limit:'组合展开不能超过 500 条。',single:'编辑只接受单条原子规则。',json:'文件必须是 JSON 数组，且字段有效。',size:'文件超过当前模块导入限制。',duplicate:'存在重复规则，请核对后再提交。',protected:'受保护的规则不能删除或更改规则内容。',stale:'目标已切换或观察已变化，请重新打开。',priority:'firewalld 优先级须在 -32768 到 32767；位置须为正整数。'},
  importHelp:'选择 JSON 文件后核对条目；系统规则 64 MiB，Docker / 转发 256 KiB、500 条。使用 1Panel 规则格式，不支持旧 stackpier-port-rules 格式。',
  confirmHelp:'请核对目标服务器与操作内容。此处仅为浏览器模拟，不执行真实命令。',
- resetHelp:'按 1Panel 对应后端和子系统清理规则并停止服务／解绑。默认先备份，也可仅重置；联动遵循上游条件。本次仅模拟。',
- dockerRestart:'同时重启 Docker（有流量影响）',ipv6:'IPv6 支持',ping:'禁止 Ping',backend:'后端',backendHint:'选择不等于安装或自动迁移；四类后端的管理范围不同。',portWhitelistHint:'上游含面板端口与 SSH 端口；StackPier 的远端 SSH 路径及控制端端口映射待决定。',
+ resetHelp:'将清理所选防火墙的管理规则，并停止服务或解除绑定，可能中断连接。建议保留重置前备份。本次仅模拟。',
+ dockerRestart:'同时重启 Docker（有流量影响）',ipv6:'IPv6 支持',ping:'禁止 Ping',backend:'后端',backendHint:'选择已安装的防火墙管理工具；切换不会安装软件或迁移规则。',portWhitelistHint:'面板端口与 SSH 端口会加入白名单，仅作用于所选服务器（模拟）。',
  result:{queued:'已受理，等待模拟完成',success:'模拟完成；不代表真实规则已生效',failed:'模拟命令失败；保留错误与原目标',partial:'模拟部分成功；逐项结果保留，不报告整批成功',unknown:'响应丢失，结果未知；不得按新操作重发'},
  decisions:[
  ['D1 · 管理器识别（已确认）','上游按工具存在和优先级探测，允许显式选择；firewalld / UFW 同装报错。','已确认跟随 1Panel：新实现使用其探测顺序与显式选择；不沿用旧实际入站识别策略。'],
