@@ -1,0 +1,133 @@
+/* StackPier Console design tokens (direction A, confirmed 2026-11-03).
+   Semantic names only; components never use raw values. */
+:root {
+  color-scheme: light;
+  /* type */
+  --font-ui: "Noto Sans CJK SC", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  --font-code: "Source Code Pro", "JetBrains Mono", "Cascadia Code", ui-monospace, monospace;
+  --text-xs: 11.5px;
+  --text-sm: 12px;
+  --text-md: 13px;
+  --text-lg: 15px;
+  --text-xl: 20px;
+  --leading: 1.5;
+  --weight-medium: 500;
+  --weight-strong: 600;
+
+  /* space (4px grid) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+
+  /* size */
+  --control-sm: 26px;
+  --control-md: 30px;
+  --control-lg: 36px;
+  --touch-min: 40px;
+  --nav-width: 216px;
+  --topbar-h: 48px;
+  --content-max: 1280px;
+
+  /* shape */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --border-width: 1px;
+
+  /* motion */
+  --duration-fast: 120ms;
+  --duration-base: 180ms;
+  --ease: cubic-bezier(.2, .7, .3, 1);
+
+  /* color: neutral */
+  --color-bg: #ffffff;
+  --color-bg-subtle: #f6f7f9;
+  --color-surface: #ffffff;
+  --color-surface-raised: #ffffff;
+  --color-surface-sunken: #f3f4f7;
+  --color-hover: #eef0f3;
+  --color-selected: #eef1fd;
+  --color-border: #e3e5ea;
+  --color-border-strong: #cdd1d8;
+  --color-text: #14161a;
+  --color-text-secondary: #4b5059;
+  --color-text-tertiary: #6b717c;
+  --color-text-disabled: #9ca1aa;
+  /* color: accent */
+  --color-accent: #3451d1;
+  --color-accent-hover: #2a43b3;
+  --color-accent-text: #3451d1;
+  --color-on-accent: #ffffff;
+  --color-accent-subtle: #eef1fd;
+  /* color: status (fg = text-safe, bg = subtle fill, line = border) */
+  --color-ok: #0f7a3f;
+  --color-ok-bg: #e7f5ec;
+  --color-warn: #9a5b00;
+  --color-warn-bg: #fff4e0;
+  --color-warn-line: #f0cf95;
+  --color-danger: #c21f30;
+  --color-danger-bg: #fdecee;
+  --color-danger-line: #f1b5bc;
+  --color-on-danger: #ffffff;
+  --color-info: #3451d1;
+  --color-info-bg: #eef1fd;
+  --color-neutral: #6b717c;
+  --color-neutral-bg: #f0f1f4;
+  /* diff */
+  --color-diff-add-bg: #e7f5ec;
+  --color-diff-del-bg: #fdecee;
+  /* focus & overlay */
+  --color-focus: #3451d1;
+  --color-scrim: rgba(12, 14, 20, .45);
+  --shadow-popover: 0 8px 24px rgba(16, 20, 30, .12), 0 0 0 1px rgba(16, 20, 30, .06);
+  --shadow-dialog: 0 16px 48px rgba(16, 20, 30, .18);
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --color-bg: #0f1115;
+  --color-bg-subtle: #0b0d10;
+  --color-surface: #14171c;
+  --color-surface-raised: #1a1e24;
+  --color-surface-sunken: #191d23;
+  --color-hover: #1f242c;
+  --color-selected: #1c2340;
+  --color-border: #262b33;
+  --color-border-strong: #39404b;
+  --color-text: #e9ebef;
+  --color-text-secondary: #b3b8c2;
+  --color-text-tertiary: #8c929d;
+  --color-text-disabled: #5d636d;
+  --color-accent: #7c93ff;
+  --color-accent-hover: #97a8ff;
+  --color-accent-text: #97a8ff;
+  --color-on-accent: #0b0d10;
+  --color-accent-subtle: #1c2340;
+  --color-ok: #4cc782;
+  --color-ok-bg: #10261a;
+  --color-warn: #f0b44c;
+  --color-warn-bg: #2b2110;
+  --color-warn-line: #5c4419;
+  --color-danger: #ff6b78;
+  --color-danger-bg: #2d1418;
+  --color-danger-line: #5e2830;
+  --color-on-danger: #1a0508;
+  --color-info: #97a8ff;
+  --color-info-bg: #1c2340;
+  --color-neutral: #8c929d;
+  --color-neutral-bg: #1d2128;
+  --color-diff-add-bg: #10261a;
+  --color-diff-del-bg: #2d1418;
+  --color-focus: #97a8ff;
+  --color-scrim: rgba(0, 0, 0, .6);
+  --shadow-popover: 0 8px 24px rgba(0, 0, 0, .45), 0 0 0 1px #2c323b;
+  --shadow-dialog: 0 16px 48px rgba(0, 0, 0, .55), 0 0 0 1px #2c323b;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root { --duration-fast: 0ms; --duration-base: 0ms; }
+}

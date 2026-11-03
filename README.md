@@ -4,7 +4,9 @@
 
 原型用于讨论产品需求和交互。页面中的模拟功能不自动成为正式应用的功能范围或实现方案，正式前后端按本轮确认的需求设计。
 
-当前本地审阅稿采用 Radix Primitives + Tailwind CSS：[设计与接入](docs/radix-redesign.md) · [验证报告](docs/radix-validation.md)。本轮只重做原型，等待视觉审阅；正式 Web 保持已确认的 Ant Design 基线，公开原型尚未更新。
+**2026-11-03 起新的设计系统与原型位于 [app/](app/README.md)（方向 A「精密控制台」，Radix Primitives + CSS Token）。** 以下内容描述旧原型，仅作历史参照。
+
+旧审阅稿采用 Radix Primitives + Tailwind CSS：[设计与接入](docs/radix-redesign.md) · [验证报告](docs/radix-validation.md)。本轮只重做原型，等待视觉审阅；正式 Web 保持已确认的 Ant Design 基线，公开原型尚未更新。
 
 ## 组件目录
 

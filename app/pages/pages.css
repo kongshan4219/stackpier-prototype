@@ -1,0 +1,2 @@
+/* Page-level styles. Route focus lands on h1 without a visible ring (it is not an interactive control). */
+#content h1[tabindex="-1"]:focus { outline: none; }
