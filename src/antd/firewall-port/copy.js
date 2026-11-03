@@ -1,7 +1,7 @@
 // 上游字段与流程的中文审阅文案；模拟和待决提示为 StackPier 适配。
 export const c={
  confirmProvider:"输入后端名称确认重置",
- reviewTools:'原型审阅工具 · 不进入正式界面',unavailable:'不可用',read:'已读取',disabled:'未启用',publicScope:'Zone · public（已确认跟随 1Panel）',basicScope:'1PANEL_BASIC_BEFORE / 1PANEL_BASIC / 1PANEL_BASIC_AFTER（已确认移植自有链与初始化）',verify:'核对原操作',verifyResult:' · 模拟核对：未确认成功，未重发',custom:'自定义',panel:'面板',
+ reviewTools:'原型审阅工具 · 不进入正式界面',unavailable:'不可用',read:'已读取',disabled:'未启用',publicScope:'Zone · public',basicScope:'1PANEL_BASIC_BEFORE / 1PANEL_BASIC / 1PANEL_BASIC_AFTER',verify:'核对原操作',verifyResult:' · 模拟核对：未确认成功，未重发',custom:'自定义',panel:'面板',
  add:'添加',ruleItem:'规则条目',selectAll:'全选',effective:'已匹配发布路径',ineffective:'未生效 / 孤立策略',orphanHint:'此端点不再匹配容器发布路径；保留策略供查看或删除。',mixedFamily:'混合地址族仅允许全部拒绝；按来源限制请分开设置。',
  title:'防火墙',intro:'管理系统入站规则、Docker 发布端口与端口转发。',source:'1Panel v2.4.0 · 04099ae2',simulation:'浏览器交互原型 · 所有服务器和结果均为虚构，不执行系统命令',
  server:'目标服务器',scenario:'审阅场景',outcome:'下次模拟结果',review:'适配裁决记录',legacy:'查看当前 StackPier 原型',create:'创建',edit:'编辑',remove:'删除',batch:'批量删除',import:'导入',export:'导出',refresh:'刷新',reset:'重置',initialize:'初始化',bind:'绑定',unbind:'解绑',repair:'修复',start:'启动',stop:'停止',restart:'重启',cancel:'取消',submit:'提交（模拟）',confirm:'确认（模拟）',close:'关闭',search:'搜索端口、IP 或描述',all:'全部',protocol:'协议',sourceIP:'来源 IP',port:'目标端口',action:'策略',description:'描述',priority:'位置 / 优先级',family:'地址族',operations:'操作',raw:'原始规则',detail:'详情',protected:'受保护规则',opaque:'无法完整解析',whitelist:'端口白名单',settings:'设置',noRules:'暂无匹配规则',accept:'允许',drop:'拒绝',reject:'拒绝并响应',running:'运行中',stopped:'已停止',bound:'已绑定',unbound:'未绑定',backup:'重置前备份',restore:'从备份初始化',backupNone:'不加载备份',task:'模拟任务记录',back:'返回修改',taskDetail:'操作详情',pending:'D1–D6 已裁决；完整原型已确认',
@@ -13,8 +13,8 @@ export const c={
  fields:{sourceAddress:'来源 IP / CIDR（可输入多项）',destinationPort:'目标端口（可输入多项）',protocol:'协议',action:'策略',description:'描述',priority:'优先级 / 插入位置',family:'地址族',port:'源端口',targetIP:'目标 IP（留空为回环地址）',targetPort:'目标端口',interface:'入站网卡',mode:'防护模式',sources:'来源 IP / CIDR',type:'白名单类型'},
  modes:[['deny_sources','拒绝指定来源'],['allow_sources','仅允许指定来源'],['deny_all','全部拒绝']],
  errors:{port:'端口须为 1–65535 或有效范围。',address:'请输入有效 IP 或 CIDR，且与地址族一致。',required:'请填写至少一个来源或端口。',limit:'组合展开不能超过 500 条。',single:'编辑只接受单条原子规则。',json:'文件必须是 JSON 数组，且字段有效。',size:'文件超过当前模块导入限制。',duplicate:'存在重复规则，请核对后再提交。',protected:'受保护的规则不能删除或更改规则内容。',stale:'目标已切换或观察已变化，请重新打开。',priority:'firewalld 优先级须在 -32768 到 32767；位置须为正整数。'},
- importHelp:'选择 JSON 文件后核对条目；系统规则 64 MiB，Docker / 转发 256 KiB、500 条。已确认跟随 1Panel 格式和批次语义，不支持旧 stackpier-port-rules 格式。',
- confirmHelp:'D3 已确认完全跟随 1Panel 的任务、互斥、补偿和备份；不增加旧固定预览、120 秒独立恢复或新 SSH 确认。此处仅为浏览器模拟。',
+ importHelp:'选择 JSON 文件后核对条目；系统规则 64 MiB，Docker / 转发 256 KiB、500 条。使用 1Panel 规则格式，不支持旧 stackpier-port-rules 格式。',
+ confirmHelp:'请核对目标服务器与操作内容。此处仅为浏览器模拟，不执行真实命令。',
  resetHelp:'按 1Panel 对应后端和子系统清理规则并停止服务／解绑。默认先备份，也可仅重置；联动遵循上游条件。本次仅模拟。',
  dockerRestart:'同时重启 Docker（有流量影响）',ipv6:'IPv6 支持',ping:'禁止 Ping',backend:'后端',backendHint:'选择不等于安装或自动迁移；四类后端的管理范围不同。',portWhitelistHint:'上游含面板端口与 SSH 端口；StackPier 的远端 SSH 路径及控制端端口映射待决定。',
  result:{queued:'已受理，等待模拟完成',success:'模拟完成；不代表真实规则已生效',failed:'模拟命令失败；保留错误与原目标',partial:'模拟部分成功；逐项结果保留，不报告整批成功',unknown:'响应丢失，结果未知；不得按新操作重发'},
