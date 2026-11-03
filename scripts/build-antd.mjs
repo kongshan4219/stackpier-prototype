@@ -8,7 +8,7 @@ const output=process.env.STACKPIER_PROTOTYPE_OUTPUT;
 if(!output||!path.isAbsolute(output)||output===root||output.startsWith(root+'/')||root.startsWith(output+'/'))throw Error('Set STACKPIER_PROTOTYPE_OUTPUT to an isolated absolute output directory');
 const req=createRequire(path.join(deps,'package.json'));
 const {build}=await import(pathToFileURL(req.resolve('vite')));
-const tokens=path.resolve(root,'../designs/ant-design-system/project/tokens.json');
+const tokens=path.resolve(root,'../designs/ant-design-system/project/archived/antd-6.6.8/tokens.json');
 await fs.access(tokens);
 await fs.mkdir(output,{recursive:true});
 await fs.cp(path.join(root,'assets'),path.join(output,'assets'),{recursive:true});

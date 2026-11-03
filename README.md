@@ -54,7 +54,7 @@
 
 ## 维护方法
 
-`index.html` 按依赖顺序加载 Ant Design React 公共层与原有业务模拟脚本。`src/antd/` 维护统一主题、组件适配和新增文案；`scripts/build-antd.mjs` 构建本地 npm 依赖，不使用设计系统预览 bundle。设计系统从主仓库 `designs/ant-design-system/project/tokens.json` 直接读取，因此应在已初始化子模块的主仓库中构建。
+`index.html` 按依赖顺序加载 Ant Design React 公共层与原有业务模拟脚本。`src/antd/` 维护统一主题、组件适配和新增文案；`scripts/build-antd.mjs` 构建本地 npm 依赖，不使用设计系统预览 bundle。设计系统从主仓库 `designs/ant-design-system/project/archived/antd-6.6.8/tokens.json` 直接读取，因此应在已初始化子模块的主仓库中构建。
 
 修改功能时，在对应组件中维护渲染和交互。公共弹窗容器负责打开、关闭、焦点和布局；功能通过 `registerPrototypeHandlers` 注册处理逻辑。新增组件同步维护入口加载顺序，避免聚合成单个大文件。
 
