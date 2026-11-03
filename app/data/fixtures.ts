@@ -62,6 +62,11 @@ export function seed(): DB {
         facts: '文件已上传，写入服务单元后连接中断，未收到启动结果。',
         steps: [{ label: '核对目标与快照', state: 'done' }, { label: '上传文件', state: 'done' }, { label: '写入服务单元', state: 'unknown' }, { label: '启动并核验', state: 'pending' }],
         snapshot: [['配置', '服务标准配置 · 修订 3'], ['服务器', 'deploy@192.0.2.24:22'], ['服务单元', 'stackpier-sample-agent.service']] },
+      { id: 'op-5f90', kind: 'deploy', label: '部署', target: { type: 'project', id: 'p-wiki', name: 'wiki' }, startedAt: '2026-11-02T19:40:00+08:00', finishedAt: '2026-11-02T19:41:10+08:00', result: 'failed',
+        facts: '镜像拉取失败（registry.example.test 拒绝访问），未创建项目。',
+        steps: [{ label: '核对目标与快照', state: 'done' }, { label: '上传文件', state: 'done' }, { label: '同步目录并拉起服务', state: 'failed' }, { label: '启动并核验', state: 'pending' }],
+        snapshot: [['配置', '个人站点 · 修订 5'], ['服务器', 'deploy@192.0.2.24:22']],
+        residue: ['/opt/stackpier/wiki/compose.yaml', '/opt/stackpier/wiki/.env', '/opt/stackpier/wiki/site/（12 个文件）'] },
       { id: 'op-6c21', kind: 'start', label: '启动', target: { type: 'project', id: 'p-notes', name: 'notes' }, startedAt: '2026-11-03T10:24:00+08:00', finishedAt: '2026-11-03T10:24:20+08:00', result: 'failed',
         facts: 'web 已启动；api 启动后退出（exit 1）。', steps: [{ label: '启动 web', state: 'done' }, { label: '启动 api', state: 'failed' }] },
       { id: 'op-5b10', kind: 'restart', label: '重启', target: { type: 'project', id: 'p-agent', name: 'sample-agent' }, startedAt: '2026-11-02T22:04:00+08:00', finishedAt: '2026-11-02T22:04:08+08:00', result: 'success',
@@ -83,7 +88,8 @@ export function seed(): DB {
         { id: 'r3', type: 'CNAME', name: 'www.example.test', content: 'notes.example.test', proxied: true, ttl: 1 },
         { id: 'r4', type: 'TXT', name: 'example.test', content: '"v=spf1 -all"', proxied: false, ttl: 3600 },
       ] },
-      { id: 'zone-2', name: 'lab.example.test', records: [] },
+      { id: 'zone-2', name: 'lab.example.test', records: Array.from({ length: 46 }, (_, i) => ({ id: 'lab' + i, type: 'A' as const, name: `node-${String(i + 1).padStart(2, '0')}.lab.example.test`, content: `198.51.100.${i + 10}`, proxied: false, ttl: 300 })) },
+      { id: 'zone-3', name: 'archive.example.test', records: [] },
     ],
     firewall: [
       { serverId: 'srv-edge', manager: 'firewalld', running: true, pingBlocked: false,
@@ -93,7 +99,7 @@ export function seed(): DB {
           { id: 'fw3', port: '18080', protocol: 'tcp', source: '198.51.100.0/24', action: 'accept', note: 'agent 管理端口', usedBy: 'sample-agent' },
         ],
         docker: [{ container: 'notes-web-1', ports: '0.0.0.0:8080→80/tcp' }],
-        forwards: [] },
+        forwards: [{ id: 'fwd1', family: 'ipv4', protocol: 'tcp', port: '2222', targetIP: '10.0.0.12', targetPort: '22', iface: '' }] },
       { serverId: 'srv-relay', manager: 'firewalld', running: true, pingBlocked: true,
         rules: [{ id: 'fw4', port: '7000', protocol: 'tcp', source: '全部', action: 'accept', note: 'FRP 服务端', usedBy: 'frps' }, { id: 'fw5', port: '15000', protocol: 'tcp', source: '全部', action: 'accept', note: 'nas-web' }],
         docker: [], forwards: [] },
@@ -106,11 +112,16 @@ export function seed(): DB {
       { id: 'e2', projectId: 'p-agent', at: '2026-11-01T03:10:00+08:00', kind: 'recovered', detail: '服务恢复运行', delivered: true },
       { id: 'e3', projectId: 'p-agent', at: '2026-11-01T03:05:00+08:00', kind: 'abnormal', detail: '服务未运行（inactive）', delivered: true },
     ],
+    deliveries: [
+      { id: 'dlv-31c0', channelId: 'ch1', eventId: 'e1', at: '2026-11-03T10:25:03+08:00', result: 'delivered', status: 'HTTP 200' },
+      { id: 'dlv-2b7e', channelId: 'ch1', eventId: 'e2', at: '2026-11-01T03:10:02+08:00', result: 'unknown', status: '连接在响应前中断' },
+      { id: 'dlv-1a44', channelId: 'ch1', eventId: 'e3', at: '2026-11-01T03:05:02+08:00', result: 'failed', status: 'HTTP 502' },
+    ],
     settings: { notifyOn: { abnormal: true, recovered: true }, instance: { version: 'dev-20261103（原型）', dataDir: '/var/lib/stackpier', listen: '127.0.0.1:8080' } },
   }
 }
 
 export function emptyDB(): DB {
   const s = seed()
-  return { ...s, servers: [], credentials: [], configurations: [], files: [], projects: [], operations: [], frp: [], cloudflare: null, zones: [], firewall: [], channels: [], events: [] }
+  return { ...s, servers: [], credentials: [], configurations: [], files: [], projects: [], operations: [], frp: [], cloudflare: null, zones: [], firewall: [], channels: [], events: [], deliveries: [] }
 }

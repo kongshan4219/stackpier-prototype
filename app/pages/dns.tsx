@@ -15,6 +15,7 @@ export function Dns() {
   const [edit, setEdit] = useState<DnsRecord | 'new' | null>(null)
   const [del, setDel] = useState<DnsRecord | null>(null)
   const [connect, setConnect] = useState(false)
+  const [page, setPage] = useState(0)
   const zone = db.zones.find((z) => z.id === zoneId)
   const records = (zone?.records ?? []).filter((r) => !q || (r.name + r.content).includes(q))
   const busy = db.operations.some((o) => o.target.type === 'dns' && o.result === 'running')
@@ -27,17 +28,21 @@ export function Dns() {
       ) : (
         <>
           <div className="toolbar">
-            <Select aria-label="Zone" value={zoneId} onValueChange={setZoneId} placeholder="选择 Zone" options={db.zones.map((z) => ({ value: z.id, label: z.name, hint: `${z.records.length} 条记录` }))} />
-            <SearchInput placeholder="搜索名称或内容" value={q} onChange={(e) => setQ(e.target.value)} aria-label="搜索记录" />
+            <Select aria-label="Zone" value={zoneId} onValueChange={(v) => { setZoneId(v); setPage(0) }} placeholder="选择 Zone" options={db.zones.map((z) => ({ value: z.id, label: z.name, hint: `${z.records.length} 条记录` }))} />
+            <SearchInput placeholder="搜索名称或内容" value={q} onChange={(e) => { setQ(e.target.value); setPage(0) }} aria-label="搜索记录" />
             <span className="grow" />
             <Button variant="primary" icon="plus" disabled={!zone || busy} onClick={() => setEdit('new')}>添加记录</Button>
           </div>
           {busy && <Callout tone="info" title="DNS 变更进行中" live>完成前不能提交新的变更。</Callout>}
-          <Panel flush footer={zone ? `第 1 页 · 每页 ${PAGE} 条 · 共 ${zone.records.length} 条` : undefined}>
+          <Panel flush footer={zone && records.length > 0 ? <>
+            <span className="grow">第 {page + 1} / {Math.ceil(records.length / PAGE)} 页 · 共 {records.length} 条</span>
+            <Button size="sm" disabled={page === 0} onClick={() => setPage(page - 1)}>上一页</Button>
+            <Button size="sm" disabled={(page + 1) * PAGE >= records.length} onClick={() => setPage(page + 1)}>下一页</Button>
+          </> : undefined}>
             {!zone ? <Empty title="选择一个 Zone" /> : !zone.records.length ? <Empty icon="dns" title="此 Zone 没有记录" actions={<Button onClick={() => setEdit('new')}>添加记录</Button>} /> : !records.length ? <Empty icon="search" title="没有匹配的记录" /> : (
               <div className="ds-table-wrap"><table className="ds-table">
                 <thead><tr><th>类型</th><th>名称</th><th>内容</th><th>代理</th><th>TTL</th><th data-align="end"><span className="sr-only">操作</span></th></tr></thead>
-                <tbody>{records.slice(0, PAGE).map((r) => (
+                <tbody>{records.slice(page * PAGE, page * PAGE + PAGE).map((r) => (
                   <tr key={r.id}>
                     <td><Badge mono>{r.type}</Badge></td>
                     <td className="mono">{r.name}</td>

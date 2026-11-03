@@ -26,7 +26,7 @@ export function Projects({ tab }: { tab: 'list' | 'failed' }) {
         <Panel flush>
           {failed.length ? (
             <ul className="ds-list">{failed.map((o) => (
-              <li key={o.id}><div className="main"><a className="ds-cell-title" href={href(`/operations/${o.id}`)}>{o.target.name}</a><span className="ds-cell-sub">{time(o.startedAt)} · {o.facts}</span></div><Button size="sm" onClick={() => go(`/operations/${o.id}`)}>查看与清理</Button></li>
+              <li key={o.id}><div className="main"><a className="ds-cell-title" href={href(`/operations/${o.id}`)}>{o.target.name}</a><span className="ds-cell-sub">{time(o.startedAt)} · {o.facts}</span></div>{o.cleaned ? <Status tone="ok">已清理</Status> : o.residue ? <Status tone="warn">有残留</Status> : null}<Button size="sm" onClick={() => go(`/operations/${o.id}`)}>{o.cleaned ? '查看' : '查看与清理'}</Button></li>
             ))}</ul>
           ) : <Empty icon="check" title="没有部署失败记录">部署失败时不会创建项目，失败记录和残留清理入口会出现在这里。</Empty>}
         </Panel>
@@ -305,10 +305,12 @@ function UninstallDialog({ p, open, onOpenChange }: { p: Project; open: boolean;
         <Button variant="danger-solid" disabled={typed !== p.name} onClick={() => { uninstallProject(p); onOpenChange(false); toast({ title: '已开始卸载', tone: 'info' }); go('/projects') }}>永久卸载</Button>
       </>}>
       <section><SectionLabel>将永久删除</SectionLabel>
-        <Consequences items={[{ text: <>服务{p.unit ? <> <span className="mono">{p.unit}</span></> : ''} 及其运行进程</>, tone: 'danger' }, { text: <>专属目录 <span className="mono">{p.dir}</span></>, tone: 'danger' }]} />
+        {p.type === 'compose'
+          ? <Consequences items={[{ text: '停止并移除本项目的全部容器。', tone: 'danger' }, { text: '经核实归属本项目的命名卷数据与独占文件，无法恢复。', tone: 'danger' }, { text: <>项目目录 <span className="mono">{p.dir}</span></>, tone: 'danger' }]} />
+          : <Consequences items={[{ text: <>服务{p.unit ? <> <span className="mono">{p.unit}</span></> : ''} 及其运行进程</>, tone: 'danger' }, { text: <>专属目录 <span className="mono">{p.dir}</span></>, tone: 'danger' }]} />}
       </section>
       <section><SectionLabel>保留</SectionLabel>
-        <Consequences items={[{ text: '部署配置、文件版本与操作记录' }, { text: '与其他项目共享的资源（如 FRP 服务端）' }]} />
+        <Consequences items={[{ text: '部署配置、文件版本与操作记录' }, { text: p.type === 'compose' ? '归属不明或被其他项目使用的卷与文件——存在时会阻止清理' : '与其他项目共享的资源（如 FRP 服务端）' }]} />
       </section>
       <Field label={<>输入项目名称 <span className="mono">{p.name}</span> 以确认</>}>
         <Input mono value={typed} onChange={(e) => setTyped(e.target.value)} autoComplete="off" />

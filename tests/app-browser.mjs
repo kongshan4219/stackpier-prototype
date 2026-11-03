@@ -7,7 +7,7 @@ const req = createRequire(path.join(process.env.STACKPIER_PROTOTYPE_DEPS, 'packa
 const { chromium } = req('playwright-core')
 const base = process.env.STACKPIER_APP_URL ?? 'http://127.0.0.1:18433/'
 const shots = process.env.STACKPIER_SHOTS
-const routes = ['overview','projects','projects/p-agent','projects/p-agent/config','projects/p-notes','projects/p-notes/logs','projects/failed','servers','servers/srv-nas','configurations','configurations/cfg-web','configurations/new?type=frp','files','frp','dns','firewall?server=srv-edge','monitoring','operations','operations/op-7f3a','settings','design-system']
+const routes = ['projects/p-notes/files','overview','projects','projects/p-agent','projects/p-agent/config','projects/p-notes','projects/p-notes/logs','projects/failed','servers','servers/srv-nas','configurations','configurations/cfg-web','configurations/new?type=frp','files','frp','dns','firewall?server=srv-edge','monitoring','operations','operations/op-7f3a','settings','design-system']
 const b = await chromium.launch({ executablePath: process.env.STACKPIER_CHROMIUM ?? '/usr/bin/google-chrome', args: ['--no-sandbox'] })
 const errs = []
 let pass = 0
@@ -73,6 +73,35 @@ ok(await perm.isDisabled(), 'uninstall disabled before name typed')
 await p.getByLabel(/输入项目名称/).fill('frps'); ok(await perm.isEnabled(), 'uninstall enabled after name typed')
 out && await p.screenshot({ path: `${out}/flow-uninstall-${w}.png` })
 await p.keyboard.press('Escape')
+// Failed deploy residue cleanup keeps history
+await p.goto(U + 'projects/failed'); await p.waitForTimeout(300)
+ok(await p.getByText('有残留').isVisible(), 'failed record shows residue')
+await p.getByRole('button', { name: '查看与清理' }).first().click(); await p.waitForTimeout(300)
+await p.getByRole('button', { name: '清理残留…' }).click(); await p.getByRole('button', { name: '永久删除残留' }).click()
+await p.waitForTimeout(1800)
+ok(await p.getByText('已完成清理，历史保留。').isVisible(), 'residue cleaned, record kept')
+// Compose uninstall lists volume scope
+await p.goto(U + 'projects/p-notes'); await p.waitForTimeout(300)
+await p.getByRole('button', { name: '更多操作' }).click(); await p.getByRole('menuitem', { name: /完整卸载/ }).click()
+ok(await p.getByText('经核实归属本项目的命名卷数据与独占文件，无法恢复。').isVisible(), 'compose uninstall scope')
+await p.keyboard.press('Escape')
+// DNS pagination
+await p.goto(U + 'dns'); await p.waitForTimeout(300)
+await p.getByLabel('Zone', { exact: true }).click(); await p.getByRole('option', { name: /lab.example.test/ }).click()
+ok(await p.getByText('第 1 / 3 页 · 共 46 条').isVisible(), 'dns pagination summary')
+await p.getByRole('button', { name: '下一页' }).click()
+ok(await p.getByText('node-21.lab.example.test').isVisible(), 'dns page 2 rows')
+// Firewall forward validation
+await p.goto(U + 'firewall?server=srv-edge'); await p.waitForTimeout(400)
+await p.getByRole('tab', { name: '端口转发' }).click()
+ok(await p.getByText('10.0.0.12:22').isVisible(), 'forward rule listed')
+await p.getByRole('button', { name: '添加转发' }).click(); await p.getByRole('dialog').getByRole('button', { name: '添加' }).click()
+ok(await p.getByText('填写端口或端口范围。').isVisible(), 'forward validation')
+await p.keyboard.press('Escape')
+// Notification deliveries
+await p.goto(U + 'monitoring'); await p.waitForTimeout(300)
+await p.getByRole('tab', { name: '通知投递' }).click()
+ok(await p.getByText('dlv-2b7e').isVisible() && await p.getByText(/有投递结果未知/).isVisible(), 'delivery history with unknown guidance')
 // Scenarios: error + empty
 await p.getByRole('button', { name: /原型模拟/ }).click(); await p.getByRole('menuitemradio', { name: '读取失败' }).click(); await p.waitForTimeout(400)
 ok(await p.getByText('读取失败', { exact: true }).first().isVisible(), 'error scenario shows retry state')

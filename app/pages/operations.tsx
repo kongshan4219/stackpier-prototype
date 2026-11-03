@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { Button, Callout, Empty, KeyValue, Panel, SearchInput, Select, Status } from '../ds'
+import { Button, Callout, ConfirmDialog, Consequences, Empty, KeyValue, Panel, SearchInput, Select, Status } from '../ds'
 import { PageHeader } from '../shell'
-import { useDB, verifyOperation } from '../data/store'
+import { useDB, verifyOperation, cleanupResidue } from '../data/store'
 import { go, href, time } from '../lib'
 import { LoadGate, OpStatus } from './common'
 
@@ -50,6 +50,8 @@ const stepText = { done: '完成', failed: '失败', unknown: '未知', running:
 
 export function OperationDetail({ id }: { id: string }) {
   const o = useDB((d) => d.operations.find((x) => x.id === id))
+  const cleaning = useDB((d) => d.operations.some((x) => x.kind === 'cleanup' && x.target.id === o?.target.id && x.result === 'running'))
+  const [confirm, setConfirm] = useState(false)
   if (!o) return <div className="page"><Empty icon="operations" title="操作不存在" actions={<Button onClick={() => go('/operations')}>返回操作记录</Button>} /></div>
   const targetHref = o.target.type === 'project' ? `/projects/${o.target.id}` : `/${o.target.type}`
   return (
@@ -63,6 +65,15 @@ export function OperationDetail({ id }: { id: string }) {
       )}
       {o.result === 'running' && <Callout tone="info" title="进行中" live>{o.facts}</Callout>}
       {o.result === 'failed' && <Callout tone="danger" title="失败">{o.facts} 已完成的步骤不会自动回滚；按下方步骤状态判断是否需要清理。</Callout>}
+      {o.residue && (
+        <Panel title="残留资源" description={o.cleaned ? '已完成清理，历史保留。' : '部署失败时留在服务器上的文件；清理前会再次核对原操作。'}
+          actions={o.cleaned ? <Status tone="ok">已清理</Status> : <Button variant="danger" busy={cleaning} onClick={() => setConfirm(true)}>清理残留…</Button>}>
+          <ul className="ds-consequences">{o.residue.map((r) => <li key={r} className="mono" style={{ textDecoration: o.cleaned ? 'line-through' : undefined, color: o.cleaned ? 'var(--color-text-tertiary)' : undefined }}>{r}</li>)}</ul>
+        </Panel>
+      )}
+      <ConfirmDialog open={confirm} onOpenChange={setConfirm} title="清理部署残留？" confirmLabel="永久删除残留" variant="danger-solid" onConfirm={() => { cleanupResidue(o.id); setConfirm(false) }}>
+        <Consequences items={[{ text: '永久删除上方列出的文件与目录。', tone: 'danger' }, { text: '归属不明或被其他项目使用的资源会阻止清理。' }, { text: '失败记录保留在历史中。' }]} />
+      </ConfirmDialog>
       {o.recovered && <Callout tone="ok" title="已核对">{o.facts}</Callout>}
       <div className="split">
         <Panel title="步骤" flush>

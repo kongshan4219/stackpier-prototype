@@ -45,6 +45,8 @@ interface RunOptions {
   kind: string; label: string; target: Operation['target']; steps: string[]
   outcome?: Exclude<OpResult, 'running'>; facts?: string; snapshot?: [string, string][]
   onSuccess?: (d: DB) => DB; durationMs?: number
+  /** Leftovers recorded when the simulated operation fails. */
+  residue?: string[]
 }
 
 /** Starts a simulated operation and returns its id immediately (like the real API's accepted request). */
@@ -59,7 +61,7 @@ export function runOperation(o: RunOptions): string {
         if (op.id !== id) return op
         const failAt = outcome === 'success' ? -1 : Math.max(0, op.steps.length - 1)
         return {
-          ...op, result: outcome, finishedAt: now(),
+          ...op, result: outcome, finishedAt: now(), residue: outcome === 'failed' ? o.residue : undefined,
           facts: o.facts ?? (outcome === 'success' ? '全部步骤已完成并核验。' : outcome === 'failed' ? '最后一步失败，前面的步骤已完成。' : '连接中断，未收到最后一步的结果。'),
           steps: op.steps.map((s, i): OpStep => ({ ...s, state: failAt < 0 || i < failAt ? 'done' : i === failAt ? (outcome === 'failed' ? 'failed' : 'unknown') : 'pending' })),
         }
@@ -105,6 +107,7 @@ export function deployProject(input: { type: DeployType; serverId: string; name:
     steps: ['核对目标与快照', '上传文件', input.type === 'compose' ? '同步目录并拉起服务' : '写入服务单元', '启动并核验'],
     snapshot: [['配置', `${cfg.name} · 修订 ${cfg.revision}`], ['服务器', `${srv.user}@${srv.host}:${srv.port}`]],
     durationMs: 2200,
+    residue: [`/opt/stackpier/${input.name}/`, ...(input.type === 'compose' ? [] : [`/etc/systemd/system/stackpier-${input.name}.service`])],
     onSuccess: (db) => ({
       ...db,
       projects: [...db.projects, {
@@ -121,6 +124,16 @@ export function uninstallProject(p: Project) {
   return runOperation({
     kind: 'uninstall', label: '完整卸载', target: { type: 'project', id: p.id, name: p.name }, steps: ['停止服务', '删除专属文件与目录', '移除服务单元'],
     onSuccess: (d) => ({ ...d, projects: d.projects.filter((x) => x.id !== p.id) }),
+  })
+}
+
+/** Cleans leftovers of a failed deploy; the failed record stays in history. */
+export function cleanupResidue(failedId: string) {
+  const f = db.operations.find((o) => o.id === failedId)
+  if (!f) return
+  return runOperation({
+    kind: 'cleanup', label: '清理残留', target: f.target, steps: ['核对原操作与残留资源', '删除残留文件与目录'],
+    onSuccess: (d) => ({ ...d, operations: d.operations.map((o) => (o.id === failedId ? { ...o, cleaned: true } : o)) }),
   })
 }
 

@@ -42,6 +42,8 @@ export interface Operation {
   target: { type: 'project' | 'server' | 'frp' | 'dns' | 'firewall' | 'monitoring'; id: string; name: string }
   startedAt: string; finishedAt?: string; result: OpResult
   facts: string; steps: OpStep[]; snapshot?: [string, string][]; recovered?: boolean
+  /** Failed deploys: leftovers on the server and whether a cleanup resolved them. */
+  residue?: string[]; cleaned?: boolean
 }
 
 export interface FrpConnection {
@@ -53,15 +55,17 @@ export interface DnsRecord { id: string; type: 'A' | 'AAAA' | 'CNAME' | 'TXT'; n
 export interface DnsZone { id: string; name: string; records: DnsRecord[] }
 
 export interface FirewallRule { id: string; port: string; protocol: 'tcp' | 'udp' | 'tcp/udp'; source: string; action: 'accept' | 'drop'; note: string; usedBy?: string }
-export interface FirewallHost { serverId: string; manager: 'firewalld' | 'ufw' | 'none'; running: boolean; pingBlocked: boolean; rules: FirewallRule[]; docker: { container: string; ports: string }[]; forwards: { from: string; to: string; protocol: string }[] }
+export interface FirewallHost { serverId: string; manager: 'firewalld' | 'ufw' | 'none'; running: boolean; pingBlocked: boolean; rules: FirewallRule[]; docker: { container: string; ports: string }[]; forwards: FirewallForward[] }
+export interface FirewallForward { id: string; family: 'ipv4' | 'ipv6'; protocol: 'tcp' | 'udp' | 'tcp/udp'; port: string; targetIP: string; targetPort: string; iface: string }
 
 export interface Channel { id: string; name: string; kind: 'webhook'; url: string; enabled: boolean; lastDelivery?: { at: string; ok: boolean; status: string } }
+export interface Delivery { id: string; channelId: string; eventId: string; at: string; result: 'delivered' | 'failed' | 'unknown'; status: string }
 export interface MonitorEvent { id: string; projectId: string; at: string; kind: 'abnormal' | 'recovered'; detail: string; delivered: boolean }
 
 export interface DB {
   servers: Server[]; credentials: Credential[]; configurations: Configuration[]; files: FileAsset[]
   projects: Project[]; operations: Operation[]; frp: FrpConnection[]
   cloudflare: { account: string; tokenHint: string; connectedAt: string } | null; zones: DnsZone[]
-  firewall: FirewallHost[]; channels: Channel[]; events: MonitorEvent[]
+  firewall: FirewallHost[]; channels: Channel[]; events: MonitorEvent[]; deliveries: Delivery[]
   settings: { notifyOn: { abnormal: boolean; recovered: boolean }; instance: { version: string; dataDir: string; listen: string } }
 }

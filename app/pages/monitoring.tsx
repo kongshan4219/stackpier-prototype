@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Badge, Button, Callout, Dialog, Empty, Field, Input, Menu, Panel, Status, Switch, Tabs, TabPanel, useToast } from '../ds'
+import { Badge, Button, Callout, Dialog, Empty, Field, Input, Menu, Panel, SearchInput, Status, Switch, Tabs, TabPanel, useToast } from '../ds'
 import { PageHeader } from '../shell'
 import { useDB, mutate } from '../data/store'
 import type { Channel } from '../data/model'
@@ -16,7 +16,7 @@ export function Monitoring() {
     <div className="page">
       <PageHeader title="巡检与通知" sub="定时观测受管服务；状态变为异常或恢复时通过 Webhook 通知。" />
       <LoadGate id="monitoring" skeleton>{() => (
-        <Tabs label="巡检分类" value={tab} onValueChange={setTab} tabs={[{ value: 'projects', label: '项目巡检' }, { value: 'events', label: '异常与恢复' }, { value: 'channels', label: '通知渠道' }]}>
+        <Tabs label="巡检分类" value={tab} onValueChange={setTab} tabs={[{ value: 'projects', label: '项目巡检' }, { value: 'events', label: '异常与恢复' }, { value: 'deliveries', label: '通知投递' }, { value: 'channels', label: '通知渠道' }]}>
           <TabPanel value="projects">
             <Panel flush>
               {!db.projects.length ? <Empty icon="monitor" title="还没有项目">部署项目后可在这里开启巡检。</Empty> : (
@@ -44,6 +44,7 @@ export function Monitoring() {
               ))}</ul> : <Empty icon="check" title="没有异常记录" />}
             </Panel>
           </TabPanel>
+          <TabPanel value="deliveries"><Deliveries /></TabPanel>
           <TabPanel value="channels">
             <div className="stack">
               <Callout tone="info">渠道收到 HTTP 2xx 即记为已送达；下游是否真正收到消息由接收方决定。</Callout>
@@ -66,6 +67,39 @@ export function Monitoring() {
         </Tabs>
       )}</LoadGate>
       {channel && <ChannelDialog channel={channel === 'new' ? undefined : channel} onClose={() => setChannel(null)} />}
+    </div>
+  )
+}
+
+function Deliveries() {
+  const db = useDB((d) => d)
+  const [q, setQ] = useState('')
+  const rows = db.deliveries.filter((x) => !q || x.id.includes(q.trim()))
+  const tone = { delivered: 'ok', failed: 'danger', unknown: 'warn' } as const
+  const text = { delivered: '已送达', failed: '失败', unknown: '结果未知' }
+  return (
+    <div className="stack">
+      <div className="toolbar"><SearchInput placeholder="按投递 ID 查询" value={q} onChange={(e) => setQ(e.target.value)} aria-label="按投递 ID 查询" /></div>
+      {db.deliveries.some((x) => x.result === 'unknown') && <Callout tone="warn">有投递结果未知：请先在接收端核对是否已收到，不要据此重复发送。</Callout>}
+      <Panel flush>
+        {!db.deliveries.length ? <Empty icon="bell" title="暂无通知投递">添加并启用渠道后，异常与恢复会在这里留下投递记录。</Empty> : !rows.length ? <Empty icon="search" title="没有匹配的投递" /> : (
+          <div className="ds-table-wrap"><table className="ds-table">
+            <thead><tr><th>投递</th><th>渠道</th><th>事件</th><th>结果</th><th>响应</th></tr></thead>
+            <tbody>{rows.map((x) => {
+              const e = db.events.find((v) => v.id === x.eventId)
+              return (
+                <tr key={x.id}>
+                  <td><span className="mono">{x.id}</span><div className="ds-cell-sub">{time(x.at)}</div></td>
+                  <td>{db.channels.find((c) => c.id === x.channelId)?.name ?? '已删除的渠道'}</td>
+                  <td>{e ? `${e.kind === 'abnormal' ? '异常' : '恢复'} · ${e.detail}` : '—'}</td>
+                  <td><Status tone={tone[x.result]}>{text[x.result]}</Status></td>
+                  <td className="mono secondary">{x.status}</td>
+                </tr>
+              )
+            })}</tbody>
+          </table></div>
+        )}
+      </Panel>
     </div>
   )
 }
