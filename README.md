@@ -57,7 +57,7 @@
 
 ## 维护方法
 
-`index.html` 按依赖顺序加载 React 工作台与原有业务模拟脚本。`src/radix/` 管理新界面；`assets/core/radix-bridge.js` 接入模拟状态、动作和原生表单。`scripts/build-radix.mjs` 直接消费主仓库 `designs/ant-design-system/project/tokens.json` 与 `components/src/ui.jsx`，因此应在已初始化子模块的主仓库中构建。Ant 转换层与依赖已移除，不加载设计系统的预览 bundle。
+`index.html` 按依赖顺序加载 React 工作台与原有业务模拟脚本。`src/radix/` 管理新界面；`assets/core/radix-bridge.js` 接入模拟状态、动作和原生表单。`scripts/build-radix.mjs` 直接消费主仓库归档 `designs/ant-design-system/project/archived/radix-tailwind-20261103/` 的 `tokens.json` 与 `components/src/ui.jsx`，因此应在已初始化子模块的主仓库中构建。Ant 转换层与依赖已移除，不加载设计系统的预览 bundle。
 
 修改功能时，在对应组件中维护渲染和交互。公共弹窗容器负责打开、关闭、焦点和布局；功能通过 `registerPrototypeHandlers` 注册处理逻辑。新增组件同步维护入口加载顺序，避免聚合成单个大文件。
 
