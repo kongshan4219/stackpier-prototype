@@ -1,5 +1,5 @@
 import React,{useState} from 'react';
-import {Alert,Button,Checkbox,Drawer,Form,Input,InputNumber,Modal,Select,Space,Table,Upload} from 'antd';
+import {Alert,Button,Checkbox,Drawer,Form,Input,InputNumber,Modal,Select,Space,Table,Upload} from '../controls';
 import {c} from './copy';
 import {normalize,parseImport,options} from './model';
 function RuleInputs({value='',onChange,disabled=false,single=false,id}){

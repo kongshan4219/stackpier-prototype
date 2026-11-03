@@ -23,10 +23,15 @@ function templateDetailBody(state){
  if(record.editorSchema)return configurationSavedDetail(template,record,projects);
  return `<div class="stack">${state.projectId?notice('来源项目：'+pname(state.projectId),'只读查看部署来源；编辑公共配置是独立操作。'):''}${select('asset-template-revision','配置历史修订',(template.revisions||[template]).map(item=>[item.rev,'C'+item.rev+(item.rev===template.rev?' · 最新':'' )]),record.rev)}${detail([['配置名称',h(template.name)],['配置修订','C'+record.rev],['文件映射',fileMappingSummary(record.fileMappings)],['关联项目',projects.length+' 个']])}<section class="stack"><h3>附带文件映射</h3>${record.fileMappings?.map(mapping=>`<article class="asset-reference"><div class="between wrap"><strong>${h(mappingName(mapping))}</strong>${mapping.pins?.[0]?btn('查看文件','asset-file',{id:mapping.pins[0].fileId,revision:mapping.pins[0].revision},'small ghost'):''}</div><code>${h(mapping.targetPath)}</code><p class="small muted">${h(mapping.architectureRule||'auto')} · ${(mapping.pins||[]).map(pin=>'R'+pin.revision).join(' / ')}</p></article>`).join('')||empty('没有文件映射','正文原样保存。')}</section><section><h3>部署正文 · 原样保存</h3><pre class="code asset-text">${h(record.tpl)}</pre></section><section class="stack"><h3>关联项目</h3>${projects.map(project=>`<article class="asset-reference"><div class="between wrap"><strong>${h(project.name)}</strong>${btn('查看项目配置','asset-project',{id:project.id},'small ghost')}</div><p class="small muted">${h(sname(project.server))} · 草稿 C${project.cfg.templateRev} / 已应用 C${project.appliedSnapshot?.templateRevision||'—'}</p></article>`).join('')||empty('暂无关联项目','可在部署预览中选择目标服务器。')}</section>${notice('编辑公共配置的影响范围',`${projects.length} 个关联项目将收到有可用更新提示；保存不会改变任何项目的已应用快照或服务器读取结果。`)}${btn('编辑公共配置','asset-edit-template',{id:template.id},'primary')}</div>`;
 }
+function assetDrawerView(){
+ return {title:assetDrawer.kind==='file'?'公共文件详情':'部署配置 · 只读详情',subtitle:'浏览器本地模拟资产与引用记录',
+  body:assetDrawer.kind==='file'?fileDetailBody(assetDrawer):templateDetailBody(assetDrawer),
+  foot:(assetDrawerStack.length?btn('返回上级详情','asset-back'):'')+btn('关闭详情','asset-close')};
+}
 function renderAssetDrawer(){
  if(!assetDrawer)return;
- const title=assetDrawer.kind==='file'?'公共文件详情':'部署配置 · 只读详情';
- assetDialog.innerHTML=`<div class="dialog-layout"><header class="dialog-header"><div><h2 id="asset-detail-title">${title}</h2><p>浏览器本地模拟资产与引用记录</p></div><button class="modal-close" data-action="asset-close" aria-label="关闭详情">${I('close')}</button></header><div class="dialog-body">${assetDrawer.kind==='file'?fileDetailBody(assetDrawer):templateDetailBody(assetDrawer)}</div><footer class="dialog-footer">${assetDrawerStack.length?btn('返回上级详情','asset-back'):''}${btn('关闭详情','asset-close')}</footer></div>`;
+ const view=assetDrawerView();
+ assetDialog.innerHTML='<div class="dialog-layout"><header class="dialog-header"><div><h2 id="asset-detail-title">'+h(view.title)+'</h2><p>'+h(view.subtitle)+'</p></div><button class="modal-close" data-action="asset-close" aria-label="关闭详情">'+I('close')+'</button></header><div class="dialog-body">'+view.body+'</div><footer class="dialog-footer">'+view.foot+'</footer></div>';
 }
 assetDialog.addEventListener('cancel',event=>{event.preventDefault();closeAssetDrawer();});
 document.addEventListener('change',event=>{if(['asset-revision','asset-template-revision'].includes(event.target.id)&&assetDrawer){assetDrawer.revision=Number(event.target.value);renderAssetDrawer();}});

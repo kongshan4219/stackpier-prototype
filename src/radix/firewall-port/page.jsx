@@ -1,9 +1,8 @@
 import React,{useRef,useState} from 'react';
-import {Alert,Button,Card,Checkbox,Collapse,Drawer,Empty,Form,Input,Modal,Select,Space,Switch,Table,Tabs,Tag,Typography} from 'antd';
+import {Alert,Button,Card,Checkbox,Collapse,Drawer,Empty,Form,Input,Modal,Select,Space,Switch,Table,Tabs,Tag,Typography} from '../controls';
 import {c,serverNames} from './copy';
 import {seed,options,exported} from './model';
 import {Editor,ImportDialog,ConfirmDialog} from './dialogs';
-import './style.css';
 import DockerInventory from './docker';
 const providers=['firewalld','ufw','iptables','nftables'];
 export default function FirewallPort(){

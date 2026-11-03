@@ -1,10 +1,10 @@
 .file-mapping-section{display:grid;gap:14px;padding-top:18px;border-top:1px solid var(--line)}
 .file-mapping-section>.between{align-items:flex-end;gap:16px}
 .file-mapping-list{display:grid;gap:12px}
-.file-mapping-row{display:grid;grid-template-columns:minmax(180px,1fr) minmax(260px,1.5fr) auto;gap:12px;align-items:end;padding:14px;border:1px solid var(--line);border-radius:8px;background:#fbfcfd}
+.file-mapping-row{display:grid;grid-template-columns:minmax(180px,1fr) minmax(260px,1.5fr) auto;gap:12px;align-items:end;padding:14px;border:1px solid var(--line);border-radius:8px;background:var(--canvas)}
 .file-mapping-row>.btn{margin-bottom:1px}
 .file-mapping-empty{padding:18px;border:1px dashed var(--line);border-radius:8px;text-align:center}
-.file-mapping-preview{display:grid;gap:10px;padding:14px;border:1px solid var(--line);border-radius:8px;background:#fbfcfd}
+.file-mapping-preview{display:grid;gap:10px;padding:14px;border:1px solid var(--line);border-radius:8px;background:var(--canvas)}
 .file-mapping-preview .between{align-items:flex-start;gap:16px}
 .file-mapping-preview code{text-align:right}
 

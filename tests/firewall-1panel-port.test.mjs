@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {normalize,parseImport,seed} from '../src/antd/firewall-port/model.js';
-import {isValidIPOrCIDR,normalizePortRange} from '../src/antd/firewall-port/validation.ts';
+import {normalize,parseImport,seed} from '../src/radix/firewall-port/model.js';
+import {isValidIPOrCIDR,normalizePortRange} from '../src/radix/firewall-port/validation.ts';
 test('上游校验：双栈 CIDR 与端口边界',()=>{
  for(const ip of ['192.0.2.1','192.0.2.0/24','2001:db8::/64','::ffff:192.0.2.1'])assert.equal(isValidIPOrCIDR(ip),true);
  for(const ip of ['999.2.3.4','2001:::1','192.0.2.1/33','::1/129'])assert.equal(isValidIPOrCIDR(ip),false);

@@ -14,7 +14,7 @@ const check=(name,result)=>{assert.ok(result,name);checks.push(name);};
 async function boot(page,hash='#templates'){await page.goto(base+'/'+hash);await page.waitForFunction(()=>prototypeLoading.ready);}
 async function action(page,name,data={}){await page.locator('[data-action="'+name+'"]'+Object.entries(data).map(([key,value])=>'[data-'+key+'="'+value+'"]').join('')).first().click();}
 async function capture(page,name){await page.screenshot({path:path.join(out,name+'.png')});}
-async function fitting(page,label){check(label+'无横向溢出',await page.locator('dialog[open]').evaluate(el=>el.scrollWidth<=el.clientWidth+1&&document.documentElement.scrollWidth<=innerWidth+1));}
+async function fitting(page,label){check(label+'无横向溢出',await page.locator('#modal [role=dialog]').evaluate(el=>el.scrollWidth<=el.clientWidth+1&&document.documentElement.scrollWidth<=innerWidth+1));}
 async function savedState(page){return page.evaluate(()=>JSON.stringify([S.templates,S.projects,S.operations]));}
 async function projectSnapshots(page){return page.evaluate(()=>JSON.stringify(S.projects.map(p=>[p.id,p.cfg,p.applied,p.appliedSnapshot,p.serverReadSnapshot])));}
 async function save(page){await page.getByRole('button',{name:'保存部署配置',exact:true}).click();}
@@ -32,7 +32,7 @@ try{
   check(width+' 新建提供必填服务文件正文',await page.getByLabel('服务文件正文',{exact:true}).evaluate(el=>el.tagName==='TEXTAREA'&&el.required));
   check(width+' 新建不再选择固定程序配置或健康端口',await page.locator('#tpl-program,#tpl-config,#tpl-port').count()===0);
   check(width+' 新建不增加 Compose 变量字段',await page.locator('#tpl-variables').count()===0);
-  check(width+' 显示 systemd 运行状态与独立健康检查边界',(await page.locator('#modal').innerText()).includes('运行状态')&&(await page.locator('#modal').innerText()).includes('后续单独配置'));
+  check(width+' 显示 systemd 运行状态与独立健康检查边界',(await page.locator('#modal').innerText()).includes('运行状态')&&(await page.locator('#modal').innerText()).includes('需另行配置'));
   await fitting(page,width+' systemd 初始编辑器');await capture(page,'prototype-systemd-unit-'+width);
   await page.getByLabel('配置名称',{exact:true}).fill('QA systemd browser '+width);
   await save(page);
@@ -117,7 +117,7 @@ try{
   check(width+' 预览固定已保存正文修订与映射',fixed.systemdMode==='unit'&&fixed.source===source+'# returned draft\n'&&fixed.templateRev===record.rev+1&&fixed.pathMappings.length===2&&fixed.pathMappings[1].deleteExtraneous===true);
   check(width+' 预览正文不可编辑',await page.locator('#modal textarea').count()===0);
   check(width+' 预览呈现服务文件落点',previewText.includes('qa-systemd-'+width+'.service'));
-  check(width+' 预览采用 systemd 状态核验',previewText.includes('运行状态')&&previewText.includes('后续单独配置')&&!previewText.includes('/health'));
+  check(width+' 预览采用 systemd 状态核验',previewText.includes('运行状态')&&/另行配置|后续单独配置/.test(previewText)&&!previewText.includes('/health'));
   check(width+' 预览呈现固定映射及目录删除规则',previewText.includes('/srv/qa-fixture/settings.conf')&&previewText.includes('/srv/qa-fixture/assets')&&previewText.includes('完全同步，删除多余条目'));
   check(width+' 合法输入允许模拟部署',await page.getByRole('button',{name:'执行模拟部署',exact:true}).isEnabled());
   await fitting(page,width+' systemd 固定预览');await capture(page,'prototype-systemd-unit-preview-'+width);

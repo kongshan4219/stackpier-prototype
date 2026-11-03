@@ -128,7 +128,7 @@ export function prototype(saved, { hash = '', missingScript } = {}) {
   if (missingScript) assert.ok(scripts.some(script => script.src === missingScript), '故障注入必须指定真实入口组件');
   // React 视觉运行库由浏览器测试验证；内存替身继续覆盖原模拟业务。
   for (const url of urls) {
-    if (url.pathname.endsWith("/assets/antd/runtime.js")) continue;
+    if (url.pathname.endsWith("/assets/radix/runtime.js")) continue;
     if (missingScript && url.href === new URL(missingScript, root).href) dispatch('error', new Element('script', { src: missingScript }), {}, window);
     else vm.runInContext(readFileSync(url, 'utf8'), context, { filename: url.pathname });
   }

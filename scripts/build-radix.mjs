@@ -1,0 +1,33 @@
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import {createRequire} from 'node:module';
+import {execFileSync} from 'node:child_process';
+
+const root=path.resolve(import.meta.dirname,'..');
+const deps=process.env.STACKPIER_PROTOTYPE_DEPS;
+const output=process.env.STACKPIER_PROTOTYPE_OUTPUT;
+if(!deps||!output||![deps,output].every(path.isAbsolute)||output===root||output.startsWith(root+'/')||root.startsWith(output+'/'))throw Error('Set isolated absolute STACKPIER_PROTOTYPE_DEPS and STACKPIER_PROTOTYPE_OUTPUT directories');
+const req=createRequire(path.join(deps,'package.json'));
+const {build}=req('esbuild');
+const design=path.resolve(root,'../designs/ant-design-system/project');
+const tokens=JSON.parse(await fs.readFile(path.join(design,'tokens.json'),'utf8'));
+const scalar=value=>typeof value==='string'&&value.startsWith('{')?`var(--${value.slice(1,-1)})`:value;
+const declarations=theme=>tokens.color.tokens.map(t=>`--${t.name}:${scalar(typeof t.value==='string'?t.value:t.value[theme])};`).join('');
+const globals=['spacing','radius','size','duration','shadow'].flatMap(group=>(tokens[group]?.tokens||[]).map(t=>`--${t.name}:${scalar(t.value)};`));
+globals.push(`--font-ui:${tokens.type.families.ui};--font-code:${tokens.type.families.code};`);
+await fs.mkdir(path.join(output,'assets/radix'),{recursive:true});
+await fs.cp(path.join(root,'assets'),path.join(output,'assets'),{recursive:true});
+await fs.copyFile(path.join(root,'index.html'),path.join(output,'index.html'));
+const css=await fs.readFile(path.join(root,'src/radix/styles.css'),'utf8');
+const designCSS=(await fs.readFile(path.join(design,'components/src/styles.css'),'utf8')).replace(/^@(?:import|source)[^\n]*\n/gm,'');
+const input=path.join(output,'tailwind-input.css');
+await fs.writeFile(input,`@import "${path.join(deps,'node_modules/tailwindcss/index.css')}";\n@source "${root}/src/radix";\n@source "${design}/components/src/ui.jsx";\n:root{${globals.join('')}${declarations('light')}}\n:root[data-theme=dark]{${declarations('dark')}}\n`+designCSS+'\n'+css.replaceAll('"../../assets/','"'+root+'/assets/'));
+const pkg=JSON.parse(await fs.readFile(path.join(deps,'node_modules/@tailwindcss/cli/package.json'),'utf8'));
+const cli=path.join(deps,'node_modules/@tailwindcss/cli',typeof pkg.bin==='string'?pkg.bin:Object.values(pkg.bin)[0]);
+execFileSync(process.execPath,[cli,'-i',input,'-o',path.join(output,'assets/radix/runtime.css'),'--minify'],{stdio:'inherit',cwd:deps});
+await fs.unlink(input);
+await build({entryPoints:[path.join(root,'src/radix/index.jsx')],bundle:true,format:'iife',target:['chrome111','safari16.4','firefox128'],outfile:path.join(output,'assets/radix/runtime.js'),minify:true,jsx:'automatic',nodePaths:[path.join(deps,'node_modules')],alias:{'@design/ui':path.join(design,'components/src/ui.jsx')},define:{'process.env.NODE_ENV':'"production"'},loader:{'.css':'empty'},metafile:true}).then(async result=>{
+ if(Object.keys(result.metafile.inputs).some(name=>name.includes('/antd/')))throw Error('Ant Design leaked into the Radix bundle');
+ await fs.writeFile(path.join(output,'build-manifest.json'),JSON.stringify({designSystem:'Radix Primitives + Tailwind CSS',inputs:Object.keys(result.metafile.inputs).filter(name=>!name.includes('node_modules')),outputs:result.metafile.outputs},null,2)+'\n');
+});
+console.log('Prototype output: '+output);

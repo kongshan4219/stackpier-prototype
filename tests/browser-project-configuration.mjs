@@ -12,6 +12,10 @@ const checks=[],errors=[];
 const browser=await chromium.launch({...(process.env.CHROMIUM?{executablePath:process.env.CHROMIUM}:{}),args:['--no-sandbox']});
 function check(name,value){assert.ok(value,name);checks.push(name);}
 async function click(page,action,data={},scope=''){
+ if(action==='navtoggle'){await page.getByRole('button',{name:'打开导航'}).click();return;}
+ if(action==='navigate'&&await page.locator('.navigation-drawer').count())scope='.navigation-drawer';
+ if(action==='tab'){await page.getByRole('tab',{name:({overview:'概览',config:'配置',monitor:'巡检',logs:'日志',history:'操作记录'})[data.id],exact:true}).click();return;}
+ if(action==='scenes'){await page.getByRole('button',{name:'原型工具'}).click();await page.getByRole('menuitem',{name:'试用场景',exact:true}).click();return;}
  const selector=scope+' [data-action="'+action+'"]'+Object.entries(data).map(([key,value])=>'[data-'+key+'="'+value+'"]').join('');
  await page.locator(selector.trim()).first().click();
 }

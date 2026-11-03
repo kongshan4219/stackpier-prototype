@@ -4,9 +4,9 @@
 
 ## 入口与使用
 
-构建与启动沿用 [README](../README.md#预览与验证)，本次页面入口为 `/?firewall=1panel#firewall`；普通 `/#firewall` 保持已确认旧原型。可指定 `STACKPIER_PROTOTYPE_VITE_CACHE` 隔离本任务 Vite 缓存。
+构建与启动沿用 [README](../README.md#预览与验证)，本次页面入口为 `/?firewall=1panel#firewall`；普通 `/#firewall` 保持原有模拟流程。两者均使用当前 Radix 构建，依赖和产物放在独立任务缓存目录。
 
-页面继承 StackPier 外壳、Ant Design 深浅主题和服务器选择，内容按上游系统防火墙、Docker 端口防护、端口转发、设置组织。这里的任务、备份、权限、服务器与命令结果全部是浏览器模拟，不访问任何 API。新审阅数据在当前 React 会话内保存，刷新页面、切换外壳主题或重新进入会重置；没有写入原有防火墙样例存储。
+页面继承 StackPier 外壳、Radix 设计系统深浅主题和服务器选择，内容按上游系统防火墙、Docker 端口防护、端口转发、设置组织。这里的任务、备份、权限、服务器与命令结果全部是浏览器模拟，不访问任何 API。新审阅数据在当前 React 会话内保存，刷新页面或离页后重新进入会重置；切换主题保留当前状态，没有写入原有防火墙样例存储。已确认行为不变，新视觉见 [Radix 重做说明](radix-redesign.md)。
 
 建议审阅顺序：
 
@@ -19,7 +19,7 @@
 
 ## 来源与实现边界
 
-[来源与 GPL](third-party/1panel/README.md)；`src/antd/firewall-port/validation.ts` 是上游纯校验文件原样复制。`copy.js` 集中文案，`model.js` 仅模拟模型及输入处理，`page.jsx` 组织状态与四页，`dialogs.jsx` 维护表单/导入/确认，`docker.jsx` 维护容器端口详情。
+[来源与 GPL](third-party/1panel/README.md)；`src/radix/firewall-port/validation.ts` 是上游纯校验文件原样复制。`copy.js` 集中文案，`model.js` 仅模拟模型及输入处理，`page.jsx` 组织状态与四页，`dialogs.jsx` 维护表单/导入/确认，`docker.jsx` 维护容器端口详情。
 
 迁移上游 Vue 交互到 React，未复用上游 API 服务或启动 agent。原型采用虚构观察演示 raw/opaque、保护项、状态/权限和任务结果；**没有移植 Go 四后端解析、命令编译、持久化或真实恢复**。浏览器数组替换不代表真实 remove/add 的顺序和补偿已经实现，重置备份也不代表目标侧文件已保存。
 

@@ -1,0 +1,22 @@
+export const copy = {
+  product:'栈桥', english:'StackPier', workspace:'个人工作空间', prototype:'交互原型',
+  simulation:'浏览器内模拟 · 不连接真实服务器', local:'数据保存在当前浏览器',
+  theme:'切换主题', light:'浅色', dark:'深色', tools:'原型工具', navigation:'打开导航', mainNavigation:'主导航', close:'关闭',
+  scenes:'试用场景', feedback:'记下修改', about:'原型说明', logout:'退出登录',
+  state:'页面状态', normal:'正常', loading:'加载中', empty:'空状态', error:'读取失败',
+  loadingTitle:'正在读取页面数据', emptyTitle:'暂无记录', emptyText:'这里展示当前页面的数据为空时的布局。',
+  errorTitle:'暂时无法读取数据', errorText:'这是原型的读取失败场景，已有模拟数据仍然保留。',
+  recover:'恢复正常页面', retry:'重新读取', skip:'跳到页面内容',
+  projects:'项目', projectDescription:'查看服务状态，管理配置与部署。', deploy:'部署项目',
+  list:'项目列表', failures:'失败记录', search:'搜索项目、软件或服务器…', server:'服务器', allServers:'全部服务器',
+  stateFilter:'项目状态', allStates:'全部状态', running:'运行中', stopped:'已停止', partial:'异常 / 部分运行', unknown:'待核对', pending:'配置待应用', cleanup:'清理待处理',
+  table:'列表', cards:'卡片', views:'项目显示方式', clear:'清除筛选', project:'项目 / 运行方式',
+  observation:'最近观测', issues:'待处理', actions:'操作', manage:'管理服务', continueCleanup:'继续清理 / 核对', noIssue:'暂无',
+  noProjects:'没有符合条件的项目', noProjectsText:'调整搜索条件，或部署一个新项目。',
+  operations:'部署与清理记录', evidence:'保留固定目标、执行结果和恢复入口。',
+  overview:'概览', config:'配置', monitor:'巡检', logs:'日志', history:'操作记录',
+  start:'启动', stop:'停止', apply:'应用配置', more:'更多操作', back:'项目列表',
+  confirm:'确认', cancel:'取消', previous:'上一页', next:'下一页', selectAll:'选择全部', selectRow:'选择此行',
+  detail:'详情', required:'请填写此字段。', page:'页', saved:'已保存',
+};
+export const recordCount = count => `共 ${count} 个项目`;
