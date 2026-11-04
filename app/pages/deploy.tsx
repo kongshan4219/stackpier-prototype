@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Button, Callout, ChoiceGroup, Consequences, Dialog, Field, Input, KeyValue, SectionLabel, Segmented, Select, Steps } from '../ds'
+import { Button, Callout, ChoiceGroup, ConfirmDialog, Consequences, Dialog, Field, Input, KeyValue, SectionLabel, Segmented, Select, Steps } from '../ds'
 import { useDB, deployProject } from '../data/store'
 import type { DeployType } from '../data/model'
 import { endpoint, href, shortHash, size, time, typeText } from '../lib'
@@ -9,7 +9,7 @@ const steps = ['选择类型', '填写部署', '核对预览', '执行']
 const NAME = /^[a-z][a-z0-9-]{1,30}$/
 
 export function DeployDialog({ open, onOpenChange, preset }: {
-  open: boolean; onOpenChange: (v: boolean) => void; preset?: { type?: DeployType; configurationId?: string }
+  open: boolean; onOpenChange: (v: boolean) => void; preset?: { type?: DeployType; configurationId?: string; serverId?: string; name?: string }
 }) {
   const db = useDB((d) => d)
   const [step, setStep] = useState(0)
@@ -20,21 +20,24 @@ export function DeployDialog({ open, onOpenChange, preset }: {
   const [touched, setTouched] = useState(false)
   const [outcome, setOutcome] = useState<'success' | 'failed' | 'unknown'>('success')
   const [opId, setOpId] = useState<string>()
+  const [overwrite, setOverwrite] = useState(false)
 
   useEffect(() => {
     if (!open) return
     setStep(preset?.type ? 1 : 0); setType(preset?.type); setConfigurationId(preset?.configurationId ?? '')
-    setServerId(''); setName(''); setTouched(false); setOpId(undefined); setOutcome('success')
-  }, [open, preset?.type, preset?.configurationId])
+    setServerId(preset?.serverId ?? ''); setName(preset?.name ?? ''); setOverwrite(false); setTouched(false); setOpId(undefined); setOutcome('success')
+  }, [open, preset?.type, preset?.configurationId, preset?.serverId, preset?.name])
 
   const configs = db.configurations.filter((c) => c.type === type)
   const cfg = db.configurations.find((c) => c.id === configurationId)
   const srv = db.servers.find((s) => s.id === serverId)
   const op = db.operations.find((o) => o.id === opId)
   const nameError = !name ? '填写服务名称。' : !NAME.test(name) ? '以小写字母开头，只用小写字母、数字和连字符，2–31 个字符。'
-    : db.projects.some((p) => p.serverId === serverId && p.name === name) ? `${srv?.name} 上已有同名项目。` : undefined
+    : db.projects.some((p) => p.serverId === serverId && p.name === name && (type !== 'systemd' || p.type !== 'systemd')) ? `${srv?.name} 上已有同名项目。` : undefined
   const errors = { server: !serverId ? '选择目标服务器。' : undefined, name: nameError, cfg: !configurationId ? '选择部署配置。' : undefined }
   const valid = !errors.server && !errors.name && !errors.cfg
+  const existing = db.projects.find((p) => p.serverId === serverId && p.name === name && p.type === 'systemd')
+  function execute() { setOverwrite(false); setOpId(deployProject({ type: type!, serverId, name, configurationId, outcome })); setStep(3) }
   const running = op?.result === 'running'
 
   const files = cfg?.systemd?.mappings ?? cfg?.compose?.mappings ?? []
@@ -46,15 +49,16 @@ export function DeployDialog({ open, onOpenChange, preset }: {
       <Button variant="primary" icon="search" onClick={() => { setTouched(true); if (valid) setStep(2) }}>检查并预览</Button>
     </> : step === 2 ? <>
       <Button onClick={() => setStep(1)}>返回修改</Button>
-      <Button variant="primary" onClick={() => { setOpId(deployProject({ type: type!, serverId, name, configurationId, outcome })); setStep(3) }}>确认部署</Button>
+      <Button variant="primary" onClick={() => existing && type === 'systemd' ? setOverwrite(true) : execute()}>确认部署</Button>
     </> : <>
-      {op?.result === 'success' && <Button variant="primary" onClick={() => { onOpenChange(false); location.hash = `/projects/p-${name}` }}>查看项目</Button>}
+      {op?.result === 'success' && <Button variant="primary" onClick={() => { onOpenChange(false); location.hash = `/projects/${existing?.id ?? `p-${name}`}` }}>查看项目</Button>}
       {op?.result === 'unknown' && <Button variant="primary" onClick={() => { onOpenChange(false); location.hash = `/operations/${op.id}` }}>核对原操作</Button>}
       {op?.result === 'failed' && <Button onClick={() => { onOpenChange(false); location.hash = `/operations/${op.id}` }}>查看操作详情</Button>}
       <Button onClick={() => onOpenChange(false)} disabled={running}>{running ? '执行中…' : '关闭'}</Button>
     </>
 
   return (
+    <><ConfirmDialog open={overwrite} onOpenChange={setOverwrite} title="项目已部署，是否继续覆盖？" confirmLabel="继续并覆盖" variant="danger" onConfirm={execute}>继续后将停止服务，覆盖服务正文和映射，再启动并核验运行状态。目录映射会删除目标目录内多余内容；取消不会修改服务器。</ConfirmDialog>
     <Dialog open={open} onOpenChange={onOpenChange} dismissible={!running} size="md"
       title={step === 3 ? `部署 ${name}` : '部署项目'}
       description={<Steps steps={steps} current={step} />}
@@ -149,6 +153,6 @@ export function DeployDialog({ open, onOpenChange, preset }: {
           {op.result === 'unknown' && <Callout tone="warn" title="结果未知" live>{op.facts} 不要重新部署；先核对原操作，确认服务器上的实际结果。</Callout>}
         </>
       )}
-    </Dialog>
+    </Dialog></>
   )
 }

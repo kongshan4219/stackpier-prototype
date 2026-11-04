@@ -101,7 +101,8 @@ export function deployProject(input: { type: DeployType; serverId: string; name:
   const d = getDB()
   const cfg = d.configurations.find((c) => c.id === input.configurationId)!
   const srv = d.servers.find((s) => s.id === input.serverId)!
-  const pid = 'p-' + input.name
+  const existing = input.type === 'systemd' ? d.projects.find((p) => p.serverId === input.serverId && p.name === input.name && p.type === 'systemd') : undefined
+  const pid = existing?.id ?? 'p-' + input.name
   return runOperation({
     kind: 'deploy', label: '部署', target: { type: 'project', id: pid, name: input.name }, outcome: input.outcome,
     steps: ['核对目标与快照', '上传文件', input.type === 'compose' ? '同步目录并拉起服务' : '写入服务单元', '启动并核验'],
@@ -110,10 +111,10 @@ export function deployProject(input: { type: DeployType; serverId: string; name:
     residue: [`/opt/stackpier/${input.name}/`, ...(input.type === 'compose' ? [] : [`/etc/systemd/system/stackpier-${input.name}.service`])],
     onSuccess: (db) => ({
       ...db,
-      projects: [...db.projects, {
+      projects: [...db.projects.filter((p) => p.id !== existing?.id), {
         id: pid, name: input.name, type: input.type, serverId: input.serverId, configurationId: cfg.id, configRevision: cfg.revision, stage: 'deployed',
-        runtime: { state: 'running', observedAt: now() }, monitor: { method: input.type === 'compose' ? 'Compose 服务状态' : 'systemd 状态', intervalMin: 5, enabled: true },
-        dir: `/opt/stackpier/${input.name}`, unit: input.type === 'compose' ? undefined : `stackpier-${input.name}.service`, updatable: input.type === 'systemd', createdAt: now(),
+        runtime: { state: 'running', observedAt: now() }, monitor: existing?.monitor ?? { method: input.type === 'compose' ? 'Compose 容器健康状态' : 'systemd 状态', intervalMin: 5, enabled: false },
+        dir: `/opt/stackpier/${input.name}`, unit: input.type === 'compose' ? undefined : `stackpier-${input.name}.service`, updatable: input.type === 'systemd', createdAt: existing?.createdAt ?? now(),
       }],
     }),
   })

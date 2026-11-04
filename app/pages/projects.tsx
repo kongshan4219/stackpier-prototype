@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { Badge, Button, ButtonGroup, Callout, Code, ConfirmDialog, Consequences, Dialog, Diff, Empty, Fact, Facts, Field, Input, KeyValue, Menu, Panel, SearchInput, SectionLabel, Select, Status, Switch, useToast } from '../ds'
 import { PageHeader } from '../shell'
 import { useDB, lifecycle, uninstallProject, runOperation, mutate } from '../data/store'
@@ -101,7 +101,7 @@ export function ProjectDetail({ id, tab = 'overview' }: { id: string; tab?: stri
             <Button icon="stop" disabled={blocked || p.runtime.state === 'stopped'} onClick={() => setConfirm('stop')}>停止</Button>
             <Button icon="restart" disabled={blocked} onClick={() => setConfirm('restart')}>重启</Button>
           </ButtonGroup>
-          {p.updatable && <Button variant="primary" icon="update" disabled={blocked} onClick={() => setConfirm('update')}>受控更新</Button>}
+          {p.updatable && <Button variant="primary" icon="update" disabled={blocked} onClick={() => setConfirm('update')}>重新部署</Button>}
           <Menu label="更多操作" items={[
             { label: '核对受管文件', icon: 'search', onSelect: () => go(`/projects/${p.id}/files`), disabled: blocked },
             { label: '完整卸载…', icon: 'trash', tone: 'danger', separatorBefore: true, onSelect: () => setConfirm('uninstall'), disabled: blocked },
@@ -150,7 +150,7 @@ export function ProjectDetail({ id, tab = 'overview' }: { id: string; tab?: stri
         <Consequences items={[{ text: '服务会短暂中断，重启后核验运行状态。', tone: 'warn' }]} />
       </ConfirmDialog>
       <UninstallDialog p={p} open={confirm === 'uninstall'} onOpenChange={() => setConfirm(null)} />
-      <UpdateDialog p={p} open={confirm === 'update'} onOpenChange={() => setConfirm(null)} />
+      <DeployDialog open={confirm === 'update'} onOpenChange={() => setConfirm(null)} preset={{type:'systemd', configurationId:p.configurationId, serverId:p.serverId, name:p.name}} />
     </div>
   )
 }
@@ -203,7 +203,7 @@ function ConfigTab({ p, onUpdate }: { p: Project; onUpdate: () => void }) {
       {p.draft && (
         <Panel title="未应用的草稿" description={`${time(p.draft.changedAt)} 保存`} actions={<>
           <Button size="sm" onClick={() => setDiscard(true)}>丢弃草稿</Button>
-          {p.updatable && <Button size="sm" variant="primary" onClick={onUpdate}>通过受控更新应用</Button>}
+          {p.updatable && <Button size="sm" variant="primary" onClick={onUpdate}>重新部署并覆盖</Button>}
         </>}>
           <p>{p.draft.summary}。草稿只保存在管理端，服务器上仍是修订 {p.configRevision}。</p>
         </Panel>
@@ -315,36 +315,6 @@ function UninstallDialog({ p, open, onOpenChange }: { p: Project; open: boolean;
       <Field label={<>输入项目名称 <span className="mono">{p.name}</span> 以确认</>}>
         <Input mono value={typed} onChange={(e) => setTyped(e.target.value)} autoComplete="off" />
       </Field>
-    </Dialog>
-  )
-}
-
-function UpdateDialog({ p, open, onOpenChange }: { p: Project; open: boolean; onOpenChange: (v: boolean) => void }) {
-  const db = useDB((d) => d)
-  const prog = db.files.find((f) => f.id === 'f-agent')!
-  const [rev, setRev] = useState(String(prog.versions[0].revision))
-  const toast = useToast()
-  const current = useMemo(() => 2, [])
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange} title={`受控更新 ${p.name}`} description="替换程序版本，失败时按原快照恢复。"
-      note="预览已固定所选版本" footer={<>
-        <Button onClick={() => onOpenChange(false)}>取消</Button>
-        <Button variant="primary" disabled={rev === String(current)} onClick={() => {
-          runOperation({ kind: 'update', label: '受控更新', target: { type: 'project', id: p.id, name: p.name }, steps: ['核对远端文件与快照一致', '上传新版本', '替换并重启', '核验运行状态'], durationMs: 2000,
-            onSuccess: (d) => ({ ...d, projects: d.projects.map((x) => x.id === p.id ? { ...x, draft: undefined, configRevision: d.configurations.find((c) => c.id === x.configurationId)!.revision } : x) }) })
-          onOpenChange(false); toast({ title: '已提交受控更新', body: '进度见操作记录。', tone: 'info' })
-        }}>确认更新</Button>
-      </>}>
-      <Field label="程序版本" hint="仅支持固定程序模式的 systemd 项目。">
-        <Select value={rev} onValueChange={setRev} options={prog.versions.map((v) => ({ value: String(v.revision), label: `修订 ${v.revision}${v.revision === current ? '（当前）' : ''}`, hint: `${v.note ?? ''} ${time(v.createdAt)}` }))} />
-      </Field>
-      <section><SectionLabel>确认后</SectionLabel>
-        <Consequences items={[
-          { text: '先核对服务器上的受管文件仍与部署快照一致；不一致则停止，不覆盖。' },
-          { text: '替换程序后重启服务，服务会短暂中断。', tone: 'warn' },
-          { text: '核验失败时恢复原程序并重启。' },
-        ]} />
-      </section>
     </Dialog>
   )
 }
