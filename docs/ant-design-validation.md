@@ -1,5 +1,7 @@
 # Ant Design 原型验证
 
+路径说明：本页旧原型源码、脚本与测试已迁至 `legacy/radix-tailwind/`；相对命令在该目录执行，历史验收与证据身份保持不变。
+
 日期：2026-11-01。状态：**原型自验证完成，用户已确认采用为迁移基线；正式前端结果由主仓库单独记录。**
 
 ## 环境与隔离
@@ -38,7 +40,7 @@ Linux，Node 22.23.2，Chrome for Testing 151.0.7922.34，playwright-core 1.58.2
 
 ## 复验入口
 
-先按 [README](../README.md) 构建并启动静态服务。四个浏览器脚本分别为 `scripts/check-antd.cjs`、`interactions-antd.cjs`、`details-antd.cjs`、`accessibility-antd.cjs`。运行时提供 `STACKPIER_PROTOTYPE_DEPS`（含 node_modules 的独立缓存目录）、`CHROMIUM_PATH`（已安装浏览器可执行文件），可用 `STACKPIER_PROTOTYPE_URL` 覆盖默认 4327 地址。报告写入依赖缓存目录下的 `evidence/`；脚本不会写生产数据。
+先按 [README](../legacy/radix-tailwind/README.md) 构建并启动静态服务。四个浏览器脚本分别为 `scripts/check-antd.cjs`、`interactions-antd.cjs`、`details-antd.cjs`、`accessibility-antd.cjs`。运行时提供 `STACKPIER_PROTOTYPE_DEPS`（含 node_modules 的独立缓存目录）、`CHROMIUM_PATH`（已安装浏览器可执行文件），可用 `STACKPIER_PROTOTYPE_URL` 覆盖默认 4327 地址。报告写入依赖缓存目录下的 `evidence/`；脚本不会写生产数据。
 
 模拟单元测试：`node --test --experimental-test-isolation=none tests/*.test.mjs`。
 

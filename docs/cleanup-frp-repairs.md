@@ -1,5 +1,7 @@
 # 清理与 FRP：五项修复及回归证据
 
+路径说明：本页旧原型源码、脚本与测试已迁至 `legacy/radix-tailwind/`；相对命令在该目录执行，历史验收与证据身份保持不变。
+
 2026-10-05。基于 PR #4 实际分支 `feature/service-project-lifecycle` 的 `a6d2694b118a3a55bd356c1aebd2f33d36e83f17`；起始工作区干净，main 为 c200c3d，未回退、未覆盖文件联动或 Cloudflare 多账号。主仓库不变，PR 保持草稿、不合并。
 
 ## 五项结果与复验

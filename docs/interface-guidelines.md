@@ -1,5 +1,7 @@
 # 原型界面规则
 
+路径说明：本页旧原型源码、脚本与测试已迁至 `legacy/radix-tailwind/`；相对命令在该目录执行，历史验收与证据身份保持不变。
+
 当前本地原型采用 Radix Primitives + Tailwind CSS，[页面与接入规范](radix-redesign.md)是本轮审阅依据。正式 Web 保持已确认 Ant Design 基线。
 
 ## 文字与组件

@@ -1,5 +1,7 @@
 # Radix 原型验证
 
+旧原型现位于 `legacy/radix-tailwind/`；下文源码相对路径与命令均以该目录为工作目录，依赖使用其中的独立 package.json 和锁文件。历史检查结果与截图身份不变。
+
 2026-11-03，针对[本地重做稿](radix-redesign.md)。源码与本报告同一提交，主仓库 `docs/prototype.md` 记录固定指针。未推送、未发布，正式 Web 未修改。
 
 ## 实际结果
@@ -21,7 +23,7 @@
 
 ## 复现
 
-从原型目录按 [README](../README.md#预览与验证) 构建并启动本地预览，然后执行：
+从原型目录按 [README](../legacy/radix-tailwind/README.md#预览与验证) 构建并启动本地预览，然后执行：
 
 ```sh
 node --test --experimental-test-isolation=none tests/*.test.mjs

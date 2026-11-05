@@ -1,5 +1,7 @@
 # 部署配置选择流程
 
+路径说明：本页旧原型源码、脚本与测试已迁至 `legacy/radix-tailwind/`；相对命令在该目录执行，历史验收与证据身份保持不变。
+
 状态：用户已确认交互并授权接入正式前后端；本原型全部为浏览器模拟，不代表正式应用或真实服务的执行结果。
 
 ## 操作
@@ -30,4 +32,4 @@
 - [桌面部署表单](screenshots/deployment-config-selection-desktop.jpg)
 - [窄屏部署表单](screenshots/deployment-config-selection-mobile.jpg)
 
-运行与组件检查入口见[原型说明](../README.md)。
+运行与组件检查入口见[原型说明](../legacy/radix-tailwind/README.md)。

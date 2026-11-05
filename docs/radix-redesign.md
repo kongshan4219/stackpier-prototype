@@ -1,5 +1,7 @@
 # Radix 原型重做
 
+旧原型现位于 `legacy/radix-tailwind/`；下文源码相对路径与命令均以该目录为工作目录，依赖使用其中的独立 package.json 和锁文件。历史检查结果与截图身份不变。
+
 2026-11-03 本地审阅稿。采用主仓库「应用设计系统」的 Radix Primitives + Tailwind CSS。用户要求先重做原型，正式 Web 保持 Ant Design；本稿尚未获视觉确认，也未推送或发布。
 
 ## 页面规范
@@ -34,4 +36,4 @@
 
 ## 验收与待审阅
 
-构建与启动见 [README](../README.md)，实际检查见[验证报告](radix-validation.md)。本地浏览器自测不能代替用户视觉确认、Safari / Firefox 实测或正式后端验收。旧 Ant 验证资料保留为历史记录。
+构建与启动见 [README](../legacy/radix-tailwind/README.md)，实际检查见[验证报告](radix-validation.md)。本地浏览器自测不能代替用户视觉确认、Safari / Firefox 实测或正式后端验收。旧 Ant 验证资料保留为历史记录。

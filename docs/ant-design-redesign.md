@@ -49,6 +49,6 @@
 
 ## 维护入口
 
-运行方式见 [README](../README.md)。更新设计系统后重新构建，检查 theme.js 的映射与本产品覆盖；升级依赖必须同步锁文件与浏览器回归。原型确认前，现有正式界面视觉基线仍有效，不把本稿当作已批准的正式实现。
+运行方式见 [README](../legacy/radix-tailwind/README.md)。更新设计系统后重新构建，检查 theme.js 的映射与本产品覆盖；升级依赖必须同步锁文件与浏览器回归。原型确认前，现有正式界面视觉基线仍有效，不把本稿当作已批准的正式实现。
 
 普通 Button 的 hover / active 文字复用已加强的 colorLinkHover / colorLinkActive，修复深色默认悬停文字对比度不足；与正式 React 主题同步，不回写独立设计系统。

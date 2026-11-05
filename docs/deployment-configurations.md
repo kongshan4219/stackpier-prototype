@@ -1,5 +1,7 @@
 # 公共部署配置
 
+路径说明：本页旧原型源码、脚本与测试已迁至 `legacy/radix-tailwind/`；相对命令在该目录执行，历史验收与证据身份保持不变。
+
 Compose 与 FRP 配置编辑按正式 Web UI 的 `webui/src/pages/ConfigurationEditor.tsx` 对齐；systemd 按本轮确认的新设计提供服务正文与路径映射，正式能力待后续实现。保存生成公共配置新修订，已有项目和操作保留固定快照；首次部署选择配置，见[部署配置选择流程](deployment-config-selection.md)。
 
 ## 表单与布局

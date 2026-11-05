@@ -4,13 +4,14 @@ import {createRequire} from 'node:module';
 import {execFileSync} from 'node:child_process';
 
 const root=path.resolve(import.meta.dirname,'..');
+const prototypeRoot=path.resolve(root,'../..');
 const deps=process.env.STACKPIER_PROTOTYPE_DEPS;
 const output=process.env.STACKPIER_PROTOTYPE_OUTPUT;
-if(!deps||!output||![deps,output].every(path.isAbsolute)||output===root||output.startsWith(root+'/')||root.startsWith(output+'/'))throw Error('Set isolated absolute STACKPIER_PROTOTYPE_DEPS and STACKPIER_PROTOTYPE_OUTPUT directories');
+if(!deps||!output||![deps,output].every(path.isAbsolute)||output===prototypeRoot||output.startsWith(prototypeRoot+'/')||prototypeRoot.startsWith(output+'/'))throw Error('Set isolated absolute STACKPIER_PROTOTYPE_DEPS and STACKPIER_PROTOTYPE_OUTPUT directories');
 const req=createRequire(path.join(deps,'package.json'));
 const {build}=req('esbuild');
 // The Radix + Tailwind system was archived on 2026-11-04 when the Console system replaced it.
-const design=path.resolve(root,'../designs/ant-design-system/project/archived/radix-tailwind-20261103');
+const design=path.resolve(prototypeRoot,'../designs/ant-design-system/project/archived/radix-tailwind-20261103');
 const tokens=JSON.parse(await fs.readFile(path.join(design,'tokens.json'),'utf8'));
 const scalar=value=>typeof value==='string'&&value.startsWith('{')?`var(--${value.slice(1,-1)})`:value;
 const declarations=theme=>tokens.color.tokens.map(t=>`--${t.name}:${scalar(typeof t.value==='string'?t.value:t.value[theme])};`).join('');

@@ -1,86 +1,15 @@
 # 栈桥交互原型
 
-当前入口为 [app/](app/README.md)，采用「精密控制台」Radix Primitives + CSS Token。默认 `npm run build` 构建当前原型，`npm run build:app` 保留为兼容别名；两者均执行类型检查，需要按 [app 构建说明](app/README.md#构建与预览)设置独立依赖与输出目录。
+当前入口是 [app/](app/README.md)，采用精密控制台 Radix Primitives + CSS Token。全部数据为虚构，操作只在浏览器内模拟，不连接真实服务器。
 
-全部数据为虚构，操作只在浏览器内模拟，不连接真实服务器。原型不替代正式应用的功能合同或验收。
-
-## 历史原型
-
-以下目录与预览方法仅适用于旧 `index.html` 原型（Radix Primitives + Tailwind CSS）。显式使用 `npm run build:legacy` 构建，旧源码、测试及设计归档保持原位。正式 Web 的当前接入状态以主仓库 `docs/console-migration.md` 为准。
-
-## 组件目录
-
-| 路径 | 职责 |
+| 目录 | 职责 |
 | --- | --- |
-| `assets/components/` | 工作台外壳、图标、公共控件和弹窗容器。 |
-| `assets/features/` | 各功能页面、弹窗、按钮及表单处理。 |
-| `assets/features/assets/` | 稳定 ID / 修订关系、迁移、文件与配置详情抽屉、落点预览和单项目采用。 |
-| `assets/features/programs.js`、`assets/features/programs/` | 通用文件列表、内容分析、上传和命名确认；可识别的 ELF 文件额外记录架构。 |
-| `assets/features/deployments.js`、`assets/features/deployments/` | 部署配置列表，以及systemd 正文与路径映射原型、按正式界面对齐的 Compose / FRP 编辑器。 |
-| `assets/features/projects/` | 项目列表、详情、部署、失败记录、残留清理、固定部署信息及受管文件摘要核对。 |
-| `assets/features/frp/` | FRP 参考模板、虚构样例、模型、文件生成、页面、弹窗和模拟操作。 |
-| `assets/features/operations/` | 操作记录界面、模拟执行与结果处理。 |
-| `assets/features/network/` | Cloudflare 账号、逐 Zone DNS 权限、防火墙及网络模拟操作。 |
-| `assets/core/` | 状态持久化、工具、导航、交互注册表、事件分发和加载失败提示。 |
-| `assets/data/` | 虚构初始数据与试用场景。 |
-| `src/radix/` | React 工作台、项目页面、Radix 浮层与防火墙组合组件；修改前读 [局部规则](src/radix/AGENTS.md)。 |
-| `assets/styles/`、功能 CSS | 配置编辑与领域专用布局；基础样式和响应式入口在 `src/radix/styles.css`。 |
-| `assets/boot.js` | 全部组件就绪后的初始化入口。 |
-| `tests/` | 浏览器接口的内存替身与组件交互测试。 |
+| `app/` | 当前原型与设计系统源码 |
+| `scripts/build-app.mjs` | 当前构建与类型检查 |
+| `tests/` | 当前原型浏览器回归 |
+| [legacy/radix-tailwind/](legacy/radix-tailwind/README.md) | 旧原型、模拟模型、历史检查脚本与独立依赖 |
+| `docs/` | 历史功能说明、验收与截图；保留证据身份 |
 
-## 交互说明
+在本目录运行 `npm run build`（`build:app` 为兼容别名），按 [app 构建说明](app/README.md#构建与预览)设置独立依赖与输出目录。
 
-- [1Panel 四模块防火墙审阅稿](docs/firewall-1panel-port.md)：独立入口 `/?firewall=1panel#firewall`，保留固定上游源码和已确认的 D1–D6 行为，控件已换为当前设计系统。
-
-- [凭据正文输入](docs/credential-input.md)：FRP、STCP 与通知输入只接受虚构值，编辑留空保留且不回填。
-
-- [防火墙端口规则](docs/firewall-port-rules.md)：firewalld 服务启停、已有规则编辑、批量删除和 JSON 导入导出的模拟交互。
-- [统一防火墙接入](docs/firewall-setup.md)：历史盘点、安装／迁移与恢复模拟；当前主页面不再提供自动迁移入口。
-- [服务器状态](docs/server-status.md)：登记信息持久化、页面内模拟轮询与离页停止。
-- [界面规则](docs/interface-guidelines.md)：文字层级、公共组件、响应式与键盘操作。
-- [文件](docs/files.md)：任意类型文件的上传、架构识别、命名、去重与替换规则。
-- [资产版本联动](docs/asset-linkage.md)：文件修订、项目草稿、已应用/读取快照、迁移及关键截图。
-- [部署配置](docs/deployment-configurations.md)：三类编辑表单、systemd 正文、文件／目录映射及保存规则。
-- [部署项目](docs/project-deployment.md)：部署入口、失败记录、残留清理和同机项目名唯一性。
-- [部署配置选择流程](docs/deployment-config-selection.md)：先选类型，部署只填三项；配置集中编辑与保存返回，待用户审阅。
-- [项目文件与巡检](docs/project-files-and-checks.md)：按正式界面对齐的配置页、文件摘要核对、独立草稿入口和巡检方式。
-- [Cloudflare 账号与 DNS](docs/cloudflare-accounts.md)：连接管理弹窗、独立 DNS、逐 Zone 权限、固定身份提交与旧数据迁移；[验证与截图](docs/cloudflare-validation.md)。
-- [配置 / FRP](docs/frp-connections.md)：连接映射管理、公共资产引用、配置采用 / 应用与统一项目部署；[附件行为对照](docs/frp-reference-behavior.md)与[验收证据](docs/frp-validation.md)。
-
-- [操作上下文与返回修改验收](docs/operation-context-repairs.md)：固定目标、FRP 身份、网络草稿、项目副本与历史路由。
-
-- [项目与 FRP 最新生命周期验收](docs/service-lifecycle-validation.md)：部署成功才建项目、完全卸载、共享引用保护及幂等迁移。
-
-- [清理与 FRP 五项修复](docs/cleanup-frp-repairs.md)：清理解决关联、交付资源台账、visitor 独占、改绑解除旧配置及浏览器前后截图。
-
-- [FRP 部分应用目标恢复](docs/frp-incomplete-targets.md)：逐次固定目标证据、未解决占用、恢复和迁移及回归截图。
-
-## 维护方法
-
-`index.html` 按依赖顺序加载 React 工作台与原有业务模拟脚本。`src/radix/` 管理新界面；`assets/core/radix-bridge.js` 接入模拟状态、动作和原生表单。`scripts/build-radix.mjs` 直接消费主仓库归档 `designs/ant-design-system/project/archived/radix-tailwind-20261103/` 的 `tokens.json` 与 `components/src/ui.jsx`，因此应在已初始化子模块的主仓库中构建。Ant 转换层与依赖已移除，不加载设计系统的预览 bundle。
-
-修改功能时，在对应组件中维护渲染和交互。公共弹窗容器负责打开、关闭、焦点和布局；功能通过 `registerPrototypeHandlers` 注册处理逻辑。新增组件同步维护入口加载顺序，避免聚合成单个大文件。
-
-## 预览与验证
-
-依赖和构建包位于仓库外的任务缓存目录；首次安装依赖前复制本目录 package.json 与 package-lock.json 到专用缓存目录，并在那里执行 `npm ci --ignore-scripts --cache /srv/cache/stackpier-tmp/npm-cache`。已有依赖可直接使用：
-
-```sh
-STACKPIER_PROTOTYPE_DEPS=/srv/cache/stackpier-tmp/radix-prototype-20261103 \
-STACKPIER_PROTOTYPE_OUTPUT=/srv/cache/stackpier-tmp/radix-prototype-20261103/preview \
-npm run build:legacy
-python3 -m http.server 4339 --bind 127.0.0.1 \
-  --directory /srv/cache/stackpier-tmp/radix-prototype-20261103/preview
-```
-
-浏览器访问 `http://127.0.0.1:4339/`。若端口占用，请为自己选择空闲端口，不停止其他人的服务。页面及所有组件依赖均由本地静态服务加载；不连接真实服务器。结束审阅后停止自己启动的服务。
-
-运行组件测试：
-
-```sh
-node --test --experimental-test-isolation=none tests/*.test.mjs
-```
-
-页面或交互修改还需在浏览器检查相关流程、布局、焦点和弹窗。测试结果只代表原型模拟，不代表正式应用实现或用户验收。
-
-浏览器检查入口与环境变量见[验证报告](docs/radix-validation.md)。旧 Ant 验收资料作为历史保留，不用于证明当前界面。
+旧版使用 `npm run build:legacy`；`STACKPIER_PROTOTYPE_DEPS` 必须指向使用 `legacy/radix-tailwind/package.json` 与锁文件安装的独立依赖目录，不与当前依赖混用。`npm test` 保留旧模拟单元回归入口，等价于 `npm run test:legacy`；当前原型浏览器检查仍使用 `tests/app-browser.mjs`。
