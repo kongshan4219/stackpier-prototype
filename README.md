@@ -1,12 +1,12 @@
 # 栈桥交互原型
 
-源码入口为 [index.html](index.html)，需先构建 Radix Primitives + Tailwind CSS 预览包。数据和操作均为浏览器内模拟，演示状态保存在当前站点的 localStorage，不连接真实服务器。
+当前入口为 [app/](app/README.md)，采用「精密控制台」Radix Primitives + CSS Token。默认 `npm run build` 构建当前原型，`npm run build:app` 保留为兼容别名；两者均执行类型检查，需要按 [app 构建说明](app/README.md#构建与预览)设置独立依赖与输出目录。
 
-原型用于讨论产品需求和交互。页面中的模拟功能不自动成为正式应用的功能范围或实现方案，正式前后端按本轮确认的需求设计。
+全部数据为虚构，操作只在浏览器内模拟，不连接真实服务器。原型不替代正式应用的功能合同或验收。
 
-**2026-11-03 起新的设计系统与原型位于 [app/](app/README.md)（方向 A「精密控制台」，Radix Primitives + CSS Token）。** 以下内容描述旧原型，仅作历史参照。
+## 历史原型
 
-旧审阅稿采用 Radix Primitives + Tailwind CSS：[设计与接入](docs/radix-redesign.md) · [验证报告](docs/radix-validation.md)。本轮只重做原型，等待视觉审阅；正式 Web 保持已确认的 Ant Design 基线，公开原型尚未更新。
+以下目录与预览方法仅适用于旧 `index.html` 原型（Radix Primitives + Tailwind CSS）。显式使用 `npm run build:legacy` 构建，旧源码、测试及设计归档保持原位。正式 Web 的当前接入状态以主仓库 `docs/console-migration.md` 为准。
 
 ## 组件目录
 
@@ -68,7 +68,7 @@
 ```sh
 STACKPIER_PROTOTYPE_DEPS=/srv/cache/stackpier-tmp/radix-prototype-20261103 \
 STACKPIER_PROTOTYPE_OUTPUT=/srv/cache/stackpier-tmp/radix-prototype-20261103/preview \
-node scripts/build-radix.mjs
+npm run build:legacy
 python3 -m http.server 4339 --bind 127.0.0.1 \
   --directory /srv/cache/stackpier-tmp/radix-prototype-20261103/preview
 ```

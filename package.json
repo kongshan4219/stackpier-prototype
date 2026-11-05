@@ -16,8 +16,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "node scripts/build-radix.mjs",
+    "build": "node scripts/build-app.mjs",
     "test": "node --test --experimental-test-isolation=none tests/*.test.mjs",
-    "build:app": "node scripts/build-app.mjs"
+    "build:app": "node scripts/build-app.mjs",
+    "build:legacy": "node scripts/build-radix.mjs"
   }
 }
